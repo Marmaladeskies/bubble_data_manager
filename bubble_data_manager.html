@@ -863,6 +863,12 @@
       // Optional Configuration for storing persisent column order
       let originalHeadersRaw = [];
       const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
+      const PROTECTED_FIELDS = [
+        "_id",
+        "Created Date",
+        "Created By",
+        "Modified Date",
+      ]; // Bubble's protected system IDs
       const FIELD_NAME_PREFIX = "column order"; // arbitrary prefix all of the column sorting data field names in your database begin with
 
       // Build the full DATA_TYPES array with layout keys from a base list
@@ -1612,13 +1618,7 @@
           const field = cell.getAttribute("data-field");
 
           // Prevent editing of Bubble's protected system IDs
-          if (
-            field === "_id" ||
-            field === "Created Date" ||
-            field === "Created By" ||
-            field === "Modified Date"
-          )
-            return;
+          if (PROTECTED_FIELDS.includes(field)) return;
 
           const currentValue = cell.innerText;
           cell.setAttribute("data-original", currentValue); // Store for cancellation
@@ -2121,12 +2121,7 @@
           const td = document.createElement("td");
           td.setAttribute("data-field", header);
 
-          if (
-            header === "_id" ||
-            header === "Created Date" ||
-            header === "Modified Date" ||
-            header === "Created By"
-          ) {
+          if (PROTECTED_FIELDS.includes(header)) {
             td.innerHTML =
               '<span style="color: #999; font-style: italic; font-size: 12px;">auto</span>';
           } else {
@@ -2216,13 +2211,7 @@
         cells.forEach((cell) => {
           const field = cell.getAttribute("data-field");
           // Skip system-managed fields
-          if (
-            field === "_id" ||
-            field === "Created Date" ||
-            field === "Modified Date" ||
-            field === "Created By"
-          )
-            return;
+          if (PROTECTED_FIELDS.includes(field)) return;
 
           const input = cell.querySelector("input");
           const select = cell.querySelector("select");

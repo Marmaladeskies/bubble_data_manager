@@ -2029,10 +2029,9 @@
         let successCount = 0;
         let failCount = 0;
 
-        for (let i = 0; i < idsToDelete.length; i++) {
-          const id = idsToDelete[i];
-          countSpan.textContent = `Deleting ${i + 1} of ${count}...`;
+        countSpan.textContent = `Deleting ${count} row${count !== 1 ? "s" : ""}...`;
 
+        const deletePromises = idsToDelete.map(async (id) => {
           try {
             const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
             const response = await fetch(fetchUrl, {
@@ -2044,6 +2043,19 @@
               throw new Error(`HTTP ${response.status}`);
             }
 
+            return { id, success: true };
+          } catch (error) {
+            console.error(`Failed to delete ${id}:`, error);
+            return { id, success: false };
+          }
+        });
+
+        const results = await Promise.all(deletePromises);
+
+        for (const { id, success } of results) {
+          if (success) {
+            successCount++;
+
             // Remove from local cache
             cachedRecords = cachedRecords.filter((r) => r._id !== id);
             selectedRowIds.delete(id);
@@ -2051,10 +2063,7 @@
             // Remove the row from the DOM immediately
             const row = document.getElementById(`row-${id}`);
             if (row) row.remove();
-
-            successCount++;
-          } catch (error) {
-            console.error(`Failed to delete ${id}:`, error);
+          } else {
             failCount++;
           }
         }
@@ -2456,6 +2465,46 @@
           alert(`Failed to save layout to Bubble: ${error.message}`);
         }
       }
+
+      // --- PERFORMANCE BENCHMARK ---
+      (function () {
+        async function mockFetch(id) {
+          return new Promise((resolve) => setTimeout(resolve, 50));
+        }
+
+        async function runSequential(ids) {
+          const start = performance.now();
+          for (const id of ids) {
+            await mockFetch(id);
+          }
+          return performance.now() - start;
+        }
+
+        async function runConcurrent(ids) {
+          const start = performance.now();
+          await Promise.all(ids.map((id) => mockFetch(id)));
+          return performance.now() - start;
+        }
+
+        async function main() {
+          const ids = Array.from({ length: 50 }, (_, i) => i);
+          console.log(
+            "Simulating deletion of 50 records with 50ms latency each...",
+          );
+
+          const seqTime = await runSequential(ids);
+          console.log(`Sequential execution time: ${seqTime.toFixed(2)} ms`);
+
+          const conTime = await runConcurrent(ids);
+          console.log(`Concurrent execution time: ${conTime.toFixed(2)} ms`);
+
+          const speedup = seqTime / conTime;
+          console.log(`Speedup: ${speedup.toFixed(2)}x`);
+        }
+
+        // Attach to window for manual execution if desired
+        window.runPerformanceBenchmark = main;
+      })();
     </script>
   </body>
 </html>

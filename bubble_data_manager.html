@@ -117,16 +117,6 @@
     }
 
     /* Layout Styles */
-    .toolbar {
-      background: #f4f6f8;
-      padding: 15px;
-      border-radius: 6px;
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
-
     .active-table-group {
       display: flex;
       align-items: center;
@@ -135,18 +125,7 @@
       border-bottom: 1px solid #ddd;
     }
 
-    .search-group {
-      display: flex;
-      gap: 15px;
-      flex-wrap: wrap;
-      align-items: center;
-    }
-
-    #search-field {
-      max-width: fit-content;
-    }
-
-    .search-bar {
+    .constraint-bar {
       display: flex;
       gap: 8px;
       align-items: center;
@@ -697,25 +676,19 @@
         flex: 1 1 100%;
       }
 
-      .search-group {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 10px;
-      }
-
-      .search-bar {
+      .constraint-bar {
         flex-wrap: wrap;
         gap: 8px;
       }
 
-      .search-bar label {
+      .constraint-bar label {
         flex: 1 1 100%;
       }
 
-      .search-bar select,
-      .search-bar input[type="text"],
-      .search-bar .input-wrapper,
-      .search-bar button {
+      .constraint-bar select,
+      .constraint-bar input[type="text"],
+      .constraint-bar .input-wrapper,
+      .constraint-bar button {
         flex: 1 1 100%;
         width: 100%;
       }
@@ -820,27 +793,6 @@
     </select>
   </h1>
   <select id="data-type-selector" style="display: none;" onchange="handleDataTypeChange()"></select>
-  <div class="toolbar">
-    <div class="search-group">
-      <div class="search-bar">
-        <label style="font-size: 14px; font-weight: 500">Search Bubble:</label>
-        <select id="search-field"></select>
-        <div class="input-wrapper" style="flex: 1; min-width: 200px">
-          <input type="text" id="search-value" placeholder="Search (exact matches only)..."
-            oninput="toggleClearBtn('search-value', 'clear-search-btn')"
-            onkeydown="if (event.key === 'Enter') applyServerSearch();" />
-          <button type="button" id="clear-search-btn" class="input-clear-btn" onclick="clearServerSearch()"
-            title="Clear search" style="display: none">
-            ×
-          </button>
-        </div>
-        <button class="btn btn-primary" onclick="applyServerSearch()" style="max-width: fit-content">
-          Search
-        </button>
-      </div>
-      <span class="badge">Bubble's search is limited to exact matches only.</span>
-    </div>
-  </div>
   <div id="column-filter-group" class="column-filter-group">
     <div class="column-filter-header">
       <span style="font-size: 14px; font-weight: 500; color: #222;">Select Columns To Display:</span>
@@ -857,7 +809,7 @@
     <div class="column-filter-header">
       <span style="font-size: 14px; font-weight: 500; color: #222;">Filter Records by Column Constraint:</span>
     </div>
-    <div class="search-bar" style="flex-wrap: wrap;">
+    <div class="constraint-bar" style="flex-wrap: wrap;">
       <select id="constraint-field" style="max-width: fit-content;"
         onchange="updateConstraintOperators(this.value)"></select>
       <select id="constraint-operator" style="max-width: fit-content;"
@@ -1278,7 +1230,6 @@
     let currentCursor = 0;
     const LIMIT = 100;
     let currentConstraints = [];
-    let fieldsPopulated = false;
     let constraintFieldsPopulated = false;
     let cachedRecords = []; // Holds raw server results for local filtering
     let columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
@@ -1436,20 +1387,15 @@
 
       // 2. Reset Search Constraints
       currentConstraints = [];
-      document.getElementById("search-value").value = "";
       document.getElementById("table-filter").value = "";
       const constraintValEl = document.getElementById("constraint-value");
       if (constraintValEl) constraintValEl.value = "";
-      toggleClearBtn("search-value", "clear-search-btn");
       toggleClearBtn("table-filter", "clear-filter-btn");
       toggleClearBtn("constraint-value", "clear-constraint-btn");
 
       // 3. Reset the Query Dropdown
-      const searchFieldSelect = document.getElementById("search-field");
-      searchFieldSelect.innerHTML = "";
       const constraintFieldSelect = document.getElementById("constraint-field");
       if (constraintFieldSelect) constraintFieldSelect.innerHTML = "";
-      fieldsPopulated = false; // Forces the script to rescan the new data type's headers
       constraintFieldsPopulated = false;
 
       // 4. Clear Row Selections & Column Filters
@@ -1583,7 +1529,6 @@
         }
 
         // Dynamically populate drop-down fields strictly once
-        populateSearchFields(detectedHeaders);
         populateConstraintFields(detectedHeaders);
         populateColumnFilterGroup(detectedHeaders);
 
@@ -1630,29 +1575,6 @@
         container.innerHTML = `<div class="error">Failed to load data: ${error.message}</div>`;
         pageInfo.innerText = "Error";
       }
-    }
-
-    function populateSearchFields(headers) {
-      if (fieldsPopulated) return;
-      const select = document.getElementById("search-field");
-      select.innerHTML = "";
-
-      // Set "All Fields" as the default combined search option
-      const allOption = document.createElement("option");
-      allOption.value = "any_field";
-      allOption.text = "All Fields";
-      select.appendChild(allOption);
-
-      headers.forEach((header) => {
-        const option = document.createElement("option");
-        option.value = header;
-        option.text = header.replace(/_/g, " ").trim();
-        option.style.textTransform = "capitalize";
-        select.appendChild(option);
-      });
-
-      select.value = "any_field"; // Default to search all fields
-      fieldsPopulated = true;
     }
 
     function populateConstraintFields(headers) {
@@ -1822,51 +1744,6 @@
       }
     }
 
-    // --- SERVER SIDE SEARCH ACTIONS ---
-    function applyServerSearch() {
-      const field = document.getElementById("search-field").value;
-      const value = document.getElementById("search-value").value;
-
-      if (!field) {
-        alert("Please pick a target database field to execute a query.");
-        return;
-      }
-      if (!value.trim()) {
-        clearServerSearch();
-        return;
-      }
-
-      const constraintVal = document.getElementById("constraint-value");
-      if (constraintVal) {
-        constraintVal.value = "";
-        toggleClearBtn("constraint-value", "clear-constraint-btn");
-      }
-
-      // Construct the Bubble API constraint object
-      currentConstraints = [
-        {
-          key: field === "any_field" ? "any field" : field,
-          constraint_type: "text contains",
-          value: value.trim(),
-        },
-      ];
-
-      // Reset to the first page of results
-      currentCursor = 0;
-      fetchAndRenderData();
-    }
-
-    function clearServerSearch() {
-      document.getElementById("search-value").value = "";
-      document.getElementById("search-field").value = "any_field"; // Reset to default
-      toggleClearBtn("search-value", "clear-search-btn");
-      if (currentConstraints.length > 0) {
-        currentConstraints = [];
-        currentCursor = 0;
-        fetchAndRenderData();
-      }
-    }
-
     // --- SERVER SIDE CONSTRAINT FILTER ACTIONS ---
 
     function updateConstraintInput(field) {
@@ -2020,13 +1897,6 @@
       if (needsValue && !value.trim()) {
         clearConstraintFilter();
         return;
-      }
-
-      // Clear the main search field
-      const searchVal = document.getElementById("search-value");
-      if (searchVal) {
-        searchVal.value = "";
-        toggleClearBtn("search-value", "clear-search-btn");
       }
 
       const key = field === "any_field" ? "any field" : field;

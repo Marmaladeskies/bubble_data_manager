@@ -943,19 +943,21 @@
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
-    const API_TOKEN = "<API KEY>";
+    const API_TOKEN = "<your_private_API_key>";
     const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
 
     // Optional Configuration for storing persisent column order
     let originalHeadersRaw = [];
-    const APP_SETTINGS_TYPE = "backenddataconstants"; // data type that stores custom column order (lowercase, remove spaces)
+    const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
+    const FIELD_NAME_PREFIX = "column order"; // arbitrary prefix all of the column sorting data field names in your database begin with
+
+    // Disable editing for these fields:
     const PROTECTED_FIELDS = [
       "_id",
       "Created Date",
       "Created By",
       "Modified Date",
-    ]; // Bubble's protected system IDs
-    const FIELD_NAME_PREFIX = "column order"; // arbitrary prefix all of the column sorting data field names in your database begin with
+    ];
 
     // Build the full DATA_TYPES array with layout keys from a base list
     function buildDataTypes(baseTypes) {
@@ -1592,13 +1594,44 @@
         a.replace(/_/g, " ").trim().toLowerCase().localeCompare(b.replace(/_/g, " ").trim().toLowerCase())
       );
 
+      // Hardcoded overrides for known Bubble system fields
+      const HARDCODED_FIELD_TYPES = {
+        "Created By": "user",
+      };
+
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       sortedHeaders.forEach((header) => {
         const option = document.createElement("option");
         option.value = header;
-        const type = getExpectedType(header);
-        const typeMap = { string: "text", number: "number", boolean: "yes/no", object: "option set", unknown: "unknown" };
-        const friendly = typeMap[type] || type;
-        option.text = `${header.replace(/_/g, " ").trim()} (${friendly})`;
+        const cleanHeader = header.replace(/_/g, " ").trim();
+
+        // Resolve display type in priority order:
+        // 1. Hardcoded overrides for known Bubble system fields
+        // 2. Schema metadata (authoritative, consistent regardless of page data)
+        // 3. Runtime value inspection (last resort for fields absent from metadata)
+        let friendly;
+        if (HARDCODED_FIELD_TYPES[cleanHeader] !== undefined) {
+          friendly = HARDCODED_FIELD_TYPES[cleanHeader];
+        } else if (isBooleanField(activeType, header)) {
+          friendly = "yes/no";
+        } else if (!!getOptionSetForField(activeType, header)) {
+          friendly = "option set";
+        } else {
+          const meta = getFieldMeta(activeType, header);
+          if (meta && meta.type) {
+            friendly = meta.type.startsWith("option.") ? "option set"
+              : meta.type === "boolean"                 ? "yes/no"
+              : meta.type === "number"                  ? "number"
+              : meta.type === "date"                    ? "date"
+              : "text";
+          } else {
+            // No metadata — fall back to runtime value inspection
+            const runtimeTypeMap = { string: "text", number: "number", boolean: "yes/no", object: "option set" };
+            friendly = runtimeTypeMap[getExpectedType(header)] || "text";
+          }
+        }
+
+        option.text = `${cleanHeader} (${friendly})`;
         option.style.textTransform = "capitalize";
         select.appendChild(option);
       });
@@ -1835,20 +1868,20 @@
         ];
       } else if (type === "number") {
         ops = [
-          { value: "num equals",       label: "=" },
-          { value: "num not equal",    label: "<>" },
+          { value: "num equals", label: "=" },
+          { value: "num not equal", label: "<>" },
           { value: "num greater than", label: "greater than" },
-          { value: "num less than",    label: "less than" },
-          { value: "num is empty",     label: "is empty or null" },
+          { value: "num less than", label: "less than" },
+          { value: "num is empty", label: "is empty or null" },
           { value: "num is not empty", label: "is not empty or null" },
         ];
       } else {
         ops = [
-          { value: "contains",             label: "contains" },
-          { value: "does not contain",     label: "does not contain" },
-          { value: "text equals",          label: "=" },
-          { value: "text not equals",      label: "<>" },
-          { value: "is empty or null",     label: "is empty or null" },
+          { value: "contains", label: "contains" },
+          { value: "does not contain", label: "does not contain" },
+          { value: "text equals", label: "=" },
+          { value: "text not equals", label: "<>" },
+          { value: "is empty or null", label: "is empty or null" },
           { value: "is not empty or null", label: "is not empty or null" },
         ];
       }

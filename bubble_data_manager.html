@@ -1806,7 +1806,10 @@
 
       if (filteredRecords.length === 0) {
         renderTable([], detectedHeaders, container);
-        container.innerHTML += `<div style="padding: 10px; text-align: center; color: #666;">No visible records match "${filterValue}" on this page.</div>`;
+        const msgDiv = document.createElement("div");
+        msgDiv.style.cssText = "padding: 10px; text-align: center; color: #666;";
+        msgDiv.textContent = `No visible records match "${filterValue}" on this page.`;
+        container.appendChild(msgDiv);
       } else {
         renderTable(filteredRecords, detectedHeaders, container);
       }

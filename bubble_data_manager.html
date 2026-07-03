@@ -1040,15 +1040,7 @@
         }
 
         // Fallback: check cachedRecords
-        for (let record of cachedRecords) {
-          if (
-            record[fieldDisplayName] !== null &&
-            record[fieldDisplayName] !== undefined
-          ) {
-            return typeof record[fieldDisplayName] === "boolean";
-          }
-        }
-        return false;
+        return getExpectedType(fieldDisplayName) === "boolean";
       }
 
       // Resolve option slug to display name using the cached option set return types from meta
@@ -1100,8 +1092,23 @@
       let currentConstraints = [];
       let fieldsPopulated = false;
       let cachedRecords = []; // Holds raw server results for local filtering
+      let columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
       let detectedHeaders = []; // Holds absolute unique columns
       let settingsRecord = null; // Holds your centralized backend database constants layout settings
+
+      function getExpectedType(field) {
+        if (columnTypeCache[field]) return columnTypeCache[field];
+
+        let expectedType = "unknown";
+        for (let record of cachedRecords) {
+          if (record[field] !== null && record[field] !== undefined) {
+            expectedType = typeof record[field];
+            break;
+          }
+        }
+        columnTypeCache[field] = expectedType;
+        return expectedType;
+      }
 
       // --- COLUMN REORDERING STATE ---
       let isEditingColumns = false;
@@ -1263,6 +1270,7 @@
 
           const data = await response.json();
           cachedRecords = data.response.results || [];
+          columnTypeCache = {}; // Reset cache when new records are fetched
           const remaining = data.response.remaining;
           const count = data.response.count;
 
@@ -1784,13 +1792,7 @@
                   else if (val === "") val = null;
                 } else if (!isOptionSet) {
                   // Determine the expected type by looking at cachedRecords
-                  let expectedType = "unknown";
-                  for (let record of cachedRecords) {
-                    if (record[field] !== null && record[field] !== undefined) {
-                      expectedType = typeof record[field];
-                      break;
-                    }
-                  }
+                  let expectedType = getExpectedType(field);
 
                   // Basic Data Type Casting to prevent 400 errors on Save
                   if (expectedType === "number") {
@@ -2232,13 +2234,7 @@
             else if (val === "false" || val.toLowerCase() === "no") val = false;
           } else if (!isOptionSet) {
             // Determine the expected type by looking at cachedRecords
-            let expectedType = "unknown";
-            for (let record of cachedRecords) {
-              if (record[field] !== null && record[field] !== undefined) {
-                expectedType = typeof record[field];
-                break;
-              }
-            }
+            let expectedType = getExpectedType(field);
 
             // Basic data type casting
             if (expectedType === "number") {

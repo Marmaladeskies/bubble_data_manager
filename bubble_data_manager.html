@@ -634,6 +634,31 @@
       border-left-color: #2563eb;
     }
 
+    .saved-filter-item {
+      padding: 6px 14px 6px 30px;
+      font-size: 12.5px;
+      font-weight: 400;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-left: 3px solid transparent;
+    }
+
+    .saved-filter-item:hover {
+      background: #edf2f7;
+      color: #0f172a;
+    }
+
+    .saved-filter-item.active {
+      background: #f1f5f9;
+      color: #2563eb;
+      font-weight: 600;
+      border-left-color: #94a3b8;
+    }
+
     #next-btn,
     #prev-btn {
       background-color: #dbdbdb;
@@ -834,6 +859,13 @@
         Filter
       </button>
     </div>
+    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; display: flex; gap: 8px; align-items: center;">
+      <span style="font-size: 13px; font-weight: 500; color: #444;">Save current view:</span>
+      <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)" style="flex: 1; padding: 4px 8px; font-size: 13px;" />
+      <button type="button" class="btn btn-success" onclick="saveFilterView()" style="padding: 4px 12px; font-size: 13px; max-width: fit-content;">
+        Save View
+      </button>
+    </div>
   </div>
   <div class="table-filter-container" style="justify-content: space-between">
     <div style="
@@ -950,6 +982,7 @@
     let originalHeadersRaw = [];
     const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
     const FIELD_NAME_PREFIX = "column order"; // arbitrary prefix all of the column sorting data field names in your database begin with
+    const FIELD_FILTER_PREFIX = "data filter";
 
     // Disable editing for these fields:
     const PROTECTED_FIELDS = [
@@ -968,11 +1001,13 @@
           value: dt.value,
           label: dt.label,
           layoutKey: `${FIELD_NAME_PREFIX} ${final_suffix}`,
+          filterKey: `${FIELD_FILTER_PREFIX} ${final_suffix}`,
         };
       });
     }
 
     let DATA_TYPES = [];
+    let currentFilterName = null;
 
     // --- OPTION SET STATE ---
     // Maps option set slug (e.g. 'dropdown_options') to an array of string values
@@ -1171,7 +1206,7 @@
       DATA_TYPES.forEach((dt) => {
         const item = document.createElement("div");
         item.className =
-          "data-type-item" + (dt.value === currentVal ? " active" : "");
+          "data-type-item" + (dt.value === currentVal && !currentFilterName ? " active" : "");
         item.setAttribute("data-type-value", dt.value);
         item.textContent = dt.label;
         item.title = dt.label;
@@ -1180,6 +1215,28 @@
           selectDataTypeFromSidebar(dt.value);
         };
         listEl.appendChild(item);
+
+        // Render saved filters for this data type
+        if (settingsRecord && settingsRecord[dt.filterKey]) {
+          try {
+            const filters = typeof settingsRecord[dt.filterKey] === "string"
+              ? JSON.parse(settingsRecord[dt.filterKey])
+              : settingsRecord[dt.filterKey];
+            Object.keys(filters).sort().forEach((filterName) => {
+              const filterItem = document.createElement("div");
+              filterItem.className = "saved-filter-item" + (dt.value === currentVal && currentFilterName === filterName ? " active" : "");
+              filterItem.textContent = filterName;
+              filterItem.title = `Load view: ${filterName}`;
+              filterItem.onclick = (e) => {
+                e.stopPropagation();
+                loadFilterView(dt.value, filterName);
+              };
+              listEl.appendChild(filterItem);
+            });
+          } catch (e) {
+            console.error(`Error parsing filters for ${dt.label}:`, e);
+          }
+        }
       });
     }
 
@@ -1187,18 +1244,24 @@
       const currentVal = document.getElementById("data-type-selector")?.value;
       const listEl = document.getElementById("data-types-list");
       if (!listEl) return;
+
+      // Update data type items
       listEl.querySelectorAll(".data-type-item").forEach((item) => {
-        if (item.getAttribute("data-type-value") === currentVal) {
+        if (item.getAttribute("data-type-value") === currentVal && !currentFilterName) {
           item.classList.add("active");
         } else {
           item.classList.remove("active");
         }
       });
+
+      // Update saved filter items - we need to check both the parent type and the filter name
+      // To simplify, we can just re-render the sidebar since it's small, or carefully target items
+      renderDataTypeSidebar();
     }
 
     function selectDataTypeFromSidebar(val) {
       const selector = document.getElementById("data-type-selector");
-      if (selector && selector.value !== val) {
+      if (selector) {
         selector.value = val;
         handleDataTypeChange();
       }
@@ -1368,6 +1431,7 @@
 
     // --- DATA TYPE SWITCHING ---
     function handleDataTypeChange() {
+      currentFilterName = null;
       // 0. Reset Column Edit Mode
       isEditingColumns = false;
       const editLink = document.getElementById("edit-columns-link");
@@ -1440,6 +1504,7 @@
         // Only fetch settings if not already cached
         if (!settingsRecord) {
           await fetchSettings();
+          renderDataTypeSidebar();
         }
 
         // Set up headers for authentication
@@ -3072,6 +3137,112 @@
       renderTable(cachedRecords, detectedHeaders, container);
 
       draggedColIdx = null;
+    }
+
+    // --- SAVE FILTERS TO BUBBLE ---
+    async function saveFilterView() {
+      const nameInput = document.getElementById("save-filter-name");
+      const name = nameInput.value.trim();
+
+      if (!name) {
+        alert("Please enter a name for this view.");
+        return;
+      }
+
+      if (!settingsRecord || !settingsRecord._id) {
+        alert("Settings record not found. Cannot save filter.");
+        return;
+      }
+
+      const currentType = document.getElementById("data-type-selector").value;
+      const currentTypeConfig = DATA_TYPES.find((dt) => dt.value === currentType);
+      const targetKey = currentTypeConfig.filterKey;
+
+      const filterSettings = {
+        hiddenColumns: Array.from(hiddenColumns),
+        constraints: currentConstraints,
+      };
+
+      // Load existing filters
+      let existingFilters = {};
+      const rawFilters = settingsRecord[targetKey];
+      if (rawFilters) {
+        try {
+          existingFilters = typeof rawFilters === "string" ? JSON.parse(rawFilters) : rawFilters;
+        } catch (e) {
+          console.error("Error parsing existing filters:", e);
+        }
+      }
+
+      // Add or update the filter
+      existingFilters[name] = filterSettings;
+
+      const fetchUrl = `${API_BASE_URL}${APP_SETTINGS_TYPE}/${settingsRecord._id}`;
+      const btn = document.querySelector("button[onclick='saveFilterView()']");
+      const originalText = btn.textContent;
+      btn.textContent = "Saving...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(fetchUrl, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${API_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ [targetKey]: JSON.stringify(existingFilters) }),
+        });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.body?.message || `HTTP Error: ${response.status}`);
+        }
+
+        settingsRecord[targetKey] = JSON.stringify(existingFilters);
+        nameInput.value = "";
+        currentFilterName = name;
+        renderDataTypeSidebar();
+        alert(`View "${name}" saved successfully.`);
+      } catch (error) {
+        console.error("Save filter error:", error);
+        alert(`Failed to save filter to Bubble: ${error.message}`);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+
+    async function loadFilterView(dataTypeValue, filterName) {
+      const dt = DATA_TYPES.find((d) => d.value === dataTypeValue);
+      if (!dt) return;
+
+      const selector = document.getElementById("data-type-selector");
+      if (selector.value !== dataTypeValue) {
+        selector.value = dataTypeValue;
+        handleDataTypeChange();
+      } else {
+        // Reset state for current type if we're just loading a different filter
+        currentCursor = 0;
+        selectedRowIds.clear();
+        updateSelectionBar();
+      }
+
+      const rawFilters = settingsRecord[dt.filterKey];
+      if (!rawFilters) return;
+
+      try {
+        const filters = typeof rawFilters === "string" ? JSON.parse(rawFilters) : rawFilters;
+        const filter = filters[filterName];
+        if (filter) {
+          hiddenColumns = new Set(filter.hiddenColumns || []);
+          currentConstraints = filter.constraints || [];
+          currentFilterName = filterName;
+          fetchAndRenderData();
+          renderDataTypeSidebar();
+        }
+      } catch (e) {
+        console.error("Error loading filter view:", e);
+      }
     }
 
     // --- SAVE COLUMN ORDER TO BUBBLE ---

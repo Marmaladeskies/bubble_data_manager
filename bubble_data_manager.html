@@ -867,14 +867,16 @@
         <option value="is empty or null">is empty or null</option>
         <option value="is not empty or null">is not empty or null</option>
       </select>
-      <div class="input-wrapper" style="flex: 1; min-width: 200px;">
-        <input type="text" id="constraint-value" placeholder="Enter exact search string..."
-          oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
-          onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
-        <button type="button" id="clear-constraint-btn" class="input-clear-btn" onclick="clearConstraintFilter()"
-          title="Clear constraint filter" style="display: none">
-          ×
-        </button>
+      <div id="constraint-value-container" style="flex: 1; min-width: 200px; display: flex;">
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="text" id="constraint-value" placeholder="Enter exact search string..."
+            oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
+            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
+          <button type="button" id="clear-constraint-btn" class="input-clear-btn" onclick="clearConstraintFilter()"
+            title="Clear constraint filter" style="display: none">
+            ×
+          </button>
+        </div>
       </div>
       <button type="button" class="btn btn-primary" onclick="applyConstraintFilter()" style="max-width: fit-content;">
         Filter
@@ -1676,6 +1678,7 @@
       });
 
       select.value = "any_field";
+      updateConstraintOperators("any_field"); // Make sure the input defaults to text
       constraintFieldsPopulated = true;
     }
 
@@ -1862,6 +1865,73 @@
 
     // --- SERVER SIDE CONSTRAINT FILTER ACTIONS ---
 
+    function updateConstraintInput(field) {
+      const container = document.getElementById("constraint-value-container");
+      if (!container) return;
+
+      const currentType = document.getElementById("data-type-selector")?.value || "";
+      const optionValues = getOptionSetForField(currentType, field);
+      const isBool = isBooleanField(currentType, field);
+
+      // Clear current contents
+      container.innerHTML = "";
+
+      if (isBool) {
+        // Render a <select> dropdown for yes/no fields
+        const select = document.createElement("select");
+        select.id = "constraint-value";
+        select.style.width = "100%";
+        select.style.boxSizing = "border-box";
+        select.style.padding = "8px";
+
+        const blankOpt = document.createElement("option");
+        blankOpt.value = "";
+        blankOpt.text = "— select —";
+        select.appendChild(blankOpt);
+
+        ["yes", "no"].forEach((val) => {
+          const opt = document.createElement("option");
+          opt.value = val === "yes" ? "true" : "false";
+          opt.text = val;
+          select.appendChild(opt);
+        });
+
+        container.appendChild(select);
+      } else if (optionValues && optionValues.length > 0) {
+        const select = document.createElement("select");
+        select.id = "constraint-value";
+        select.style.width = "100%";
+        select.style.boxSizing = "border-box";
+        select.style.padding = "8px";
+
+        const blankOpt = document.createElement("option");
+        blankOpt.value = "";
+        blankOpt.text = "— select —";
+        select.appendChild(blankOpt);
+
+        optionValues.forEach((optVal) => {
+          const opt = document.createElement("option");
+          opt.value = optVal;
+          opt.text = optVal;
+          select.appendChild(opt);
+        });
+
+        container.appendChild(select);
+      } else {
+        // Restore original text input HTML
+        container.innerHTML = `
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="text" id="constraint-value" placeholder="Enter exact search string..."
+            oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
+            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
+          <button type="button" id="clear-constraint-btn" class="input-clear-btn" onclick="clearConstraintFilter()"
+            title="Clear constraint filter" style="display: none">
+            ×
+          </button>
+        </div>`;
+      }
+    }
+
     // Operators that work without a value input
     const NO_VALUE_OPERATORS = ["is empty or null", "is not empty or null", "is yes", "is no", "num is empty", "num is not empty"];
 
@@ -1908,6 +1978,9 @@
         opt.textContent = label;
         operatorEl.appendChild(opt);
       });
+
+      // Update the input field based on the selected field (option set, boolean, or text)
+      updateConstraintInput(field);
 
       // Sync the value-input disabled state for the first option
       toggleConstraintValueInput(operatorEl.value);
@@ -2011,6 +2084,9 @@
       const fieldEl = document.getElementById("constraint-field");
       if (valueEl) valueEl.value = "";
       if (fieldEl) fieldEl.value = "any_field";
+
+      updateConstraintOperators("any_field"); // Reset operators and input type
+
       toggleClearBtn("constraint-value", "clear-constraint-btn");
       if (currentConstraints.length > 0) {
         currentConstraints = [];

@@ -1666,7 +1666,11 @@
       allOption.text = "All Fields";
       select.appendChild(allOption);
 
-      headers.forEach((header) => {
+      const sortedHeaders = [...headers].sort((a, b) =>
+        a.replace(/_/g, " ").trim().toLowerCase().localeCompare(b.replace(/_/g, " ").trim().toLowerCase())
+      );
+
+      sortedHeaders.forEach((header) => {
         const option = document.createElement("option");
         option.value = header;
         const type = getExpectedType(header);

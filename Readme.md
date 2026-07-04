@@ -4,7 +4,8 @@ The default database admin UX in the bubble.io editor is terrible, and using Bub
 
 ![Screenshot](screenshots/default_view.png)
 
-_This improved database manager is a single .html file that can be opened in any browser to manage your bubble database, just like you're using a webpage, with very little setup. This is all frontend code and does not require a python server or any setup beyond editing the [bubble_data_manager.html](bubble_data_manager.html) file to use your app URL and API key. That's it. There are some more advanced features that can be added with less than 20 minutes of setup._
+_This improved database manager is a single .html file that can be opened in any browser to manage your bubble database, just like you're using a webpage, with very little setup. This is all frontend code and does not require a python server or any setup beyond editing the [bubble_data_manager.html](bubble_data_manager.html) file to use your app URL and API key. That's it. There are some more advanced features that can be added with less than 20 minutes of setup._ 
+***Note: these screenshots are out of date. More features have been added***
 
 ## Features:
 - Basic Setup and connect to your database in less than 5 minutes
@@ -12,12 +13,12 @@ _This improved database manager is a single .html file that can be opened in any
 - Automatically detects your app's data types and fields and data tables load with columns in the same order every time
 - Columns can be reordered and their position can be saved permanently
 - Responsive design with no horizontal scroll glitches or bugs
-- Better UX for editing data than native bubble.
+- Better UX for editing data than native bubble
 - Preserve's Bubble's type safety and option sets can easily be loaded
 - And most importantly, you have all of this code, with no weird front-end limitations, so adding or making changes to this (with your favorite AI) is easier, faster, and more customizable than using bubble
 
 Limitations:
-- The search uses bubble's exact string match search which sucks, the keyword filter has better substring searching but only searches the current page view (100 rows). This could potentially be improved.
+- The search uses bubble's exact string match search which sucks, the keyword filter has better substring searching but only searches the current page (100 rows). This could potentially be improved.
 - Option sets must be manually imported (takes 5-10 minutes, step by step instructions are below). And new option sets need to be added manually. However, individual options update automatically once a set has been added, and everything works without importing option sets, but editing fields that use option sets requires typing out option names exactly correct (or else saving changes will fail with an error message).
 - Table data changes need to be refreshed manually unless you want to add webhooks and a python server to this.
 
@@ -42,7 +43,9 @@ _[setup in >5 mins]_
         const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
 ~~~
 
-- Open the bubble_data_manager.html in any browser, and it will automatically connect to your database using your bubble API token and load all data types and fields that have the prerequisite API access and privacy permissions. It will behave near exactly as if the page was part of your bubble app, but you will not need to login as your API authentication is hardcoded. DO NOT SHARE THIS FILE and be careful where you store it. Anyone with access to this file will have access to your database. 
+- Open the bubble_data_manager.html in any browser, and it will automatically connect to your database using your bubble API token and load all data types and fields that have the prerequisite API access and privacy permissions. It will behave near exactly as if the page was part of your bubble app, but you will not need to login as your API authentication is hardcoded. DO NOT SHARE THIS FILE and be careful where you store it. Anyone with access to this file will have access to your database.
+
+***Note: constraint views and column reordering will not be saved persistently unless you follow the next step.
 
 Edit rows right in the table view:
 ![Screenshot](screenshots/edit_row.png)
@@ -53,30 +56,12 @@ Create rows from the table view:
 Delete Rows:
 ![Screenshot](screenshots/delete_row.png)
 
-### Optional Setup:
+### Save Persistent Settings To Your Bubble Database:
   
-#### Reorder Columns:
-_[setup in >10 mins]_
-- You can click 'edit column order' to drag and drop columns, but the new column order will not be persistent unless new fields are created in your bubble database to store custom column order data:
-  + Designate a bubble data type to store these settings in a permanent row (configure this data type as 'APP_SETTINGS_TYPE')
-  + Create a text list field for APP_SETTINGS_TYPE for each data type that you want to save a custom order
-  + The name of each of these fields must follow this format:
-    - Begin each field name with 'column order ' (or change the FIELD_NAME_PREFIX to begin with a different prefix) followed by a space and the lowercase name of the data type (spaces included): 'FIELD_NAME_PREFIX data_type_name_lowercase'
-        
-Example Usage:
-     
-  - You want to generate tables for the 'Events' and 'Personal Records' data types.
-  - You are storing sort order in the data type 'Special Data Constants' that has one row that is never deleted.
-  - You created fields 'column order events' and 'column order personal records' in 'Special Data Constants'
-
-The following configuration of the bubble_data_manager.html is all you need to save custom column ordering:
-  ~~~js
-        // Optional Configuration for storing persisent column order
-        let originalHeadersRaw = [];
-        const APP_SETTINGS_TYPE = 'specialdataconstants'; // name of data type that will store custom column data (lowercase, spaces removed)
-        const FIELD_NAME_PREFIX = 'column order'; // arbitrary prefix all of the column sorting data field names in your database begin with
-  ~~~
-
+- You can click 'edit column order' to drag and drop columns and create custom constraint and column filter views, but the new column order will not be persistent unless a new fields is created in your bubble database to store this data:
+  + Designate a bubble data type to store these settings in a permanent row (configure this data type as 'APP_SETTINGS_TYPE') and make sure it has API access enabled
+  + Add a text field named 'bubble data manager settings' to the APP_SETTINGS_TYPE data type
+  + That's it. Your contraint views and custom column reordering will be saved there and load automatically
 
 ### Load Option Sets:
 _[setup in >10 mins]_

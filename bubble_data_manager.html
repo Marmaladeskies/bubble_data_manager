@@ -613,15 +613,15 @@
 
     select#data-types-dropdown {
       font-weight: 600;
-      font-size: 15px;
-      padding: 8px 36px 8px 12px;
+      font-size: 13px;
+      padding: 8px 25px 8px 8px;
       max-width: fit-content;
       border: 1px solid #ccc;
       border-radius: 4px;
       appearance: none;
       background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23444444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
       background-repeat: no-repeat;
-      background-position: right 12px center;
+      background-position: right 6px center;
       cursor: pointer;
       background-color: white;
     }
@@ -732,7 +732,8 @@
     /* Cell Phone & Small Screen Responsive Layout */
     @media (max-width: 668px) {
       body {
-        padding: 10px;
+        padding: 2px;
+        margin: 0px;
       }
 
       h1 {
@@ -879,6 +880,18 @@
         display: inline-block;
       }
     }
+
+    @media (max-width: 340px) {
+      #data-types-collapsed-view {
+        gap: 4px;
+        padding: 8px 4px 8px 4px;
+      }
+
+      #save-constraint-group {
+        display: flex;
+        flex-wrap: wrap;
+      }
+    }
   </style>
 </head>
 
@@ -907,12 +920,12 @@
     <div class="column-filter-header">
       <span style="font-size: 14px; font-weight: 500; color: #222;">Filter Records by Column Constraint:</span>
       <div id="save-constraint-group">
-        <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
-        <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)">
         <button type="button" class="btn btn-success" onclick="saveFilterView()"
           style="padding: 4px 12px; font-size: 13px; max-width: fit-content;">
           Save View
         </button>
+        <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+        <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)">
       </div>
     </div>
     <div class="constraint-bar" style="flex-wrap: wrap;">
@@ -941,14 +954,14 @@
       </button>
     </div>
   </div>
-  <div class="table-filter-container" style="justify-content: space-between">
+  <div class="table-filter-container" style="justify-content: space-between; padding: 7px">
     <div style="
           display: flex;
           flex-direction: column;
           gap: 4px;
           align-items: flex-start;
         ">
-      <div class="input-wrapper" style="width: 400px; max-width: 400px">
+      <div class="input-wrapper" style="max-width: 400px">
         <input type="text" id="table-filter" class="filter-input" oninput="
               applyClientFilter();
               toggleClearBtn('table-filter', 'clear-filter-btn');
@@ -1041,7 +1054,8 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
-        <label for="data-types-dropdown" style="font-size:1.0rem;font-weight:600;white-space:nowrap;opacity:0.75;">Data Type:</label>
+        <label for="data-types-dropdown" style="font-size:0.9rem;font-weight:600;white-space:nowrap;opacity:0.75;">Data
+          Type:</label>
         <select id="data-types-dropdown" onchange="selectDataTypeFromSidebar(this.value)"></select>
       </div>
       <div class="controls">

@@ -467,6 +467,16 @@
       background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23856404' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     }
 
+    #constraint-value-container {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+    }
+
+    #constraint-value {
+      max-width: 400px;
+    }
+
     /* Icon Button Styles */
     .icon-btn {
       background: transparent;
@@ -544,15 +554,14 @@
     /* Main Layout with Collapsible Data Types Sidebar */
     .main-table-wrapper {
       display: flex;
-      gap: 15px;
+      gap: 5px;
       align-items: flex-start;
       margin-top: 10px;
-      padding: 5px;
+      padding: 2px;
     }
 
     .data-types-sidebar {
-      width: 220px;
-      min-width: 220px;
+      width: fit-content;
       max-height: 70vh;
       background: #f8fafe;
       border: 1px solid #ddd;
@@ -602,7 +611,7 @@
     .data-types-list {
       overflow-y: auto;
       flex: 1;
-      padding: 6px 0;
+      padding: 3px 0;
     }
 
     .data-types-sidebar.collapsed .data-types-list {
@@ -716,6 +725,22 @@
       .constraint-bar button {
         flex: 1 1 100%;
         width: 100%;
+      }
+
+      #save-constraint-group {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      #save-filter-name {
+        flex: 1;
+        padding: 4px 8px;
+        font-size: 13px;
+        max-width: 400px;
       }
 
       .badge {
@@ -833,6 +858,14 @@
   <div id="constraint-filter-group" class="constraint-filter-group">
     <div class="column-filter-header">
       <span style="font-size: 14px; font-weight: 500; color: #222;">Filter Records by Column Constraint:</span>
+      <div id="save-constraint-group">
+        <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+        <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)">
+        <button type="button" class="btn btn-success" onclick="saveFilterView()"
+          style="padding: 4px 12px; font-size: 13px; max-width: fit-content;">
+          Save View
+        </button>
+      </div>
     </div>
     <div class="constraint-bar" style="flex-wrap: wrap;">
       <select id="constraint-field" style="max-width: fit-content;"
@@ -844,7 +877,7 @@
         <option value="is empty or null">is empty or null</option>
         <option value="is not empty or null">is not empty or null</option>
       </select>
-      <div id="constraint-value-container" style="flex: 1; min-width: 200px; display: flex;">
+      <div id="constraint-value-container">
         <div class="input-wrapper" style="flex: 1; width: 100%;">
           <input type="text" id="constraint-value" placeholder="Enter exact search string..."
             oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
@@ -857,13 +890,6 @@
       </div>
       <button type="button" class="btn btn-primary" onclick="applyConstraintFilter()" style="max-width: fit-content;">
         Filter
-      </button>
-    </div>
-    <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; display: flex; gap: 8px; align-items: center;">
-      <span style="font-size: 13px; font-weight: 500; color: #444;">Save current view:</span>
-      <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)" style="flex: 1; padding: 4px 8px; font-size: 13px;" />
-      <button type="button" class="btn btn-success" onclick="saveFilterView()" style="padding: 4px 12px; font-size: 13px; max-width: fit-content;">
-        Save View
       </button>
     </div>
   </div>
@@ -1685,10 +1711,10 @@
           const meta = getFieldMeta(activeType, header);
           if (meta && meta.type) {
             friendly = meta.type.startsWith("option.") ? "option set"
-              : meta.type === "boolean"                 ? "yes/no"
-              : meta.type === "number"                  ? "number"
-              : meta.type === "date"                    ? "date"
-              : "text";
+              : meta.type === "boolean" ? "yes/no"
+                : meta.type === "number" ? "number"
+                  : meta.type === "date" ? "date"
+                    : "text";
           } else {
             // No metadata — fall back to runtime value inspection
             const runtimeTypeMap = { string: "text", number: "number", boolean: "yes/no", object: "option set" };
@@ -1911,15 +1937,37 @@
       }
     }
 
-    // Operators that work without a value input
-    const NO_VALUE_OPERATORS = ["is empty or null", "is not empty or null", "is yes", "is no", "num is empty", "num is not empty"];
+    // Operators that do not use a value input
+    const NO_VALUE_OPERATORS = ["is empty or null", "is not empty or null", "is yes", "is no"];
 
     // Rebuild the operator dropdown based on column type
     function updateConstraintOperators(field) {
       const operatorEl = document.getElementById("constraint-operator");
       if (!operatorEl) return;
 
-      const type = field && field !== "any_field" ? getExpectedType(field) : "string";
+      // Resolve type using schema metadata first (same priority as populateConstraintFields),
+      const activeType = document.getElementById("data-type-selector")?.value || "";
+      let type = "string";
+      if (field && field !== "any_field") {
+        if (isBooleanField(activeType, field)) {
+          type = "boolean";
+        } else if (getOptionSetForField(activeType, field)) {
+          type = "option";
+        } else {
+          const meta = getFieldMeta(activeType, field);
+          if (meta && meta.type) {
+            type = meta.type.startsWith("option.") ? "option"
+              : meta.type === "boolean" ? "boolean"
+                : meta.type === "number" ? "number"
+                  : meta.type === "date" ? "date"
+                    : "string";
+          } else {
+            // No schema metadata — fall back to runtime typeof (won't detect dates,
+            // but correctly distinguishes number and boolean from string)
+            type = getExpectedType(field);
+          }
+        }
+      }
       operatorEl.innerHTML = "";
 
       let ops;
@@ -1929,23 +1977,33 @@
           { value: "is no", label: "is no" },
           { value: "is empty or null", label: "is empty or null" },
           { value: "is not empty or null", label: "is not empty or null" },
-
         ];
       } else if (type === "number") {
         ops = [
           { value: "num equals", label: "=" },
-          { value: "num not equal", label: "<>" },
-          { value: "num greater than", label: "greater than" },
-          { value: "num less than", label: "less than" },
-          { value: "num is empty", label: "is empty or null" },
-          { value: "num is not empty", label: "is not empty or null" },
+          { value: "num not equals", label: "<>" },
+          { value: "num greater than", label: ">" },
+          { value: "num greater than or equal", label: "≥" },
+          { value: "num less than", label: "<" },
+          { value: "num less than or equal", label: "≤" },
+          { value: "is empty or null", label: "is empty or null" },
+          { value: "is not empty or null", label: "is not empty or null" },
+        ];
+      } else if (type === "date") {
+        ops = [
+          { value: "equals", label: "=" },
+          { value: "not equals", label: "<>" },
+          { value: "date greater than", label: "after" },
+          { value: "date less than", label: "before" },
         ];
       } else {
         ops = [
           { value: "contains", label: "contains" },
           { value: "does not contain", label: "does not contain" },
-          { value: "text equals", label: "=" },
-          { value: "text not equals", label: "<>" },
+          { value: "contains case sensitive", label: "contains (case sensitive)" },
+          { value: "does not contain case sensitive", label: "does not contain (case sensitive)" },
+          { value: "equals", label: "=" },
+          { value: "not equals", label: "<>" },
           { value: "is empty or null", label: "is empty or null" },
           { value: "is not empty or null", label: "is not empty or null" },
         ];
@@ -2004,38 +2062,46 @@
         constraintType = "text contains";
       } else if (operator === "does not contain") {
         constraintType = "not text contains";
+      } else if (operator === "contains case sensitive") {
+        constraintType = "contains";
+      } else if (operator === "does not contain case sensitive") {
+        constraintType = "not contains";
       } else if (operator === "is empty or null") {
         constraintType = "is_empty";
       } else if (operator === "is not empty or null") {
         constraintType = "is_not_empty";
-      } else if (operator === "text equals") {
+      } else if (operator === "equals") {
         constraintType = "equals";
-      } else if (operator === "text not equals") {
+      } else if (operator === "not equals") {
         constraintType = "not equal";
       } else if (operator === "is yes") {
         constraintType = "equals";
-        constraintValue = "true";
+        constraintValue = true;
       } else if (operator === "is no") {
         constraintType = "equals";
-        constraintValue = "false";
+        constraintValue = false;
       } else if (operator === "num equals") {
         constraintType = "equals";
         constraintValue = parseFloat(value.trim());
-      } else if (operator === "num not equal") {
+      } else if (operator === "num not equals") {
         constraintType = "not equal";
         constraintValue = parseFloat(value.trim());
       } else if (operator === "num greater than") {
         constraintType = "greater than";
         constraintValue = parseFloat(value.trim());
+      } else if (operator === "num greater than or equal") {
+        constraintType = "greater than";
+        constraintValue = parseFloat(value.trim()) - 0.0000001;
       } else if (operator === "num less than") {
         constraintType = "less than";
         constraintValue = parseFloat(value.trim());
-      } else if (operator === "num is empty") {
-        constraintType = "is_empty";
-        constraintValue = null;
-      } else if (operator === "num is not empty") {
-        constraintType = "is_not_empty";
-        constraintValue = null;
+      } else if (operator === "num less than or equal") {
+        constraintType = "less than";
+        constraintValue = parseFloat(value.trim()) + 0.0000001;
+      } else if (operator === "date greater than") {
+        constraintType = "greater than";
+      } else if (operator === "date less than") {
+        constraintType = "less than";
       } else {
         // Fallback
         constraintType = "text contains";

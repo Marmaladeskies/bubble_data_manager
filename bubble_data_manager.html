@@ -442,6 +442,24 @@
       font-weight: 500;
     }
 
+    .remove-constraint-btn {
+      color: #dc3545;
+      background: none;
+      border: none;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s;
+    }
+
+    .remove-constraint-btn:hover {
+      color: #c82333;
+    }
+
     /* Version Indicator Dropdown Badge */
     select#version-selector {
       font-size: 20px;
@@ -905,7 +923,11 @@
   </div>
   <div id="constraint-filter-group" class="constraint-filter-group">
     <div class="column-filter-header">
-      <span style="font-size: 14px; font-weight: 500; color: #222;">Filter Records by Column Constraint:</span>
+      <div style="display: flex; align-items: center; gap: 15px;">
+        <span style="font-size: 14px; font-weight: 500; color: #222;">Filter Records by Column Constraint:</span>
+        <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
+          onclick="addConstraintRow()">+ Add Constraint</button>
+      </div>
       <div id="save-constraint-group">
         <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
         <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)">
@@ -915,29 +937,13 @@
         </button>
       </div>
     </div>
-    <div class="constraint-bar" style="flex-wrap: wrap;">
-      <select id="constraint-field" style="max-width: fit-content;"
-        onchange="updateConstraintOperators(this.value)"></select>
-      <select id="constraint-operator" style="max-width: fit-content;"
-        onchange="toggleConstraintValueInput(this.value)">
-        <option value="contains">contains</option>
-        <option value="does not contain">does not contain</option>
-        <option value="is empty or null">is empty or null</option>
-        <option value="is not empty or null">is not empty or null</option>
-      </select>
-      <div id="constraint-value-container">
-        <div class="input-wrapper" style="flex: 1; width: 100%;">
-          <input type="text" id="constraint-value" placeholder="Enter exact search string..."
-            oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
-            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
-          <button type="button" id="clear-constraint-btn" class="input-clear-btn" onclick="clearConstraintFilter()"
-            title="Clear constraint filter" style="display: none">
-            ×
-          </button>
-        </div>
-      </div>
+    <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+    <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
       <button type="button" class="btn btn-primary" onclick="applyConstraintFilter()" style="max-width: fit-content;">
-        Filter
+        Apply Filters
+      </button>
+      <button type="button" class="btn" onclick="clearConstraintFilter()" style="max-width: fit-content;">
+        Clear All
       </button>
     </div>
   </div>
@@ -1567,14 +1573,10 @@
       // 2. Reset Search Constraints
       currentConstraints = [];
       document.getElementById("table-filter").value = "";
-      const constraintValEl = document.getElementById("constraint-value");
-      if (constraintValEl) constraintValEl.value = "";
       toggleClearBtn("table-filter", "clear-filter-btn");
-      toggleClearBtn("constraint-value", "clear-constraint-btn");
+      syncConstraintsUI();
 
       // 3. Reset the Query Dropdown
-      const constraintFieldSelect = document.getElementById("constraint-field");
-      if (constraintFieldSelect) constraintFieldSelect.innerHTML = "";
       constraintFieldsPopulated = false;
 
       // 4. Clear Row Selections & Column Filters
@@ -1709,7 +1711,8 @@
         }
 
         // Dynamically populate drop-down fields strictly once
-        populateConstraintFields(detectedHeaders);
+        const constraintSelects = document.querySelectorAll("#constraints-list .constraint-field");
+        constraintSelects.forEach(select => populateConstraintFields(detectedHeaders, select));
         populateColumnFilterGroup(detectedHeaders);
 
         // Clear the local text input when turning pages/requerying, then render
@@ -1757,10 +1760,9 @@
       }
     }
 
-    function populateConstraintFields(headers) {
-      if (constraintFieldsPopulated) return;
-      const select = document.getElementById("constraint-field");
+    function populateConstraintFields(headers, select) {
       if (!select) return;
+      const currentValue = select.value;
       select.innerHTML = "";
 
       const allOption = document.createElement("option");
@@ -1814,9 +1816,11 @@
         select.appendChild(option);
       });
 
-      select.value = "any_field";
-      updateConstraintOperators("any_field"); // Make sure the input defaults to text
-      constraintFieldsPopulated = true;
+      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
+        select.value = currentValue;
+      } else {
+        select.value = "any_field";
+      }
     }
 
     function renderTable(records, headers, container) {
@@ -1957,8 +1961,8 @@
 
     // --- SERVER SIDE CONSTRAINT FILTER ACTIONS ---
 
-    function updateConstraintInput(field) {
-      const container = document.getElementById("constraint-value-container");
+    function updateConstraintInput(field, rowEl) {
+      const container = rowEl.querySelector(".constraint-value-container");
       if (!container) return;
 
       const currentType = document.getElementById("data-type-selector")?.value || "";
@@ -1971,7 +1975,7 @@
       if (isBool) {
         // Render a <select> dropdown for yes/no fields
         const select = document.createElement("select");
-        select.id = "constraint-value";
+        select.className = "constraint-value";
         select.style.width = "100%";
         select.style.boxSizing = "border-box";
         select.style.padding = "8px";
@@ -1991,7 +1995,7 @@
         container.appendChild(select);
       } else if (optionValues && optionValues.length > 0) {
         const select = document.createElement("select");
-        select.id = "constraint-value";
+        select.className = "constraint-value";
         select.style.width = "100%";
         select.style.boxSizing = "border-box";
         select.style.padding = "8px";
@@ -2013,10 +2017,10 @@
         // Restore original text input HTML
         container.innerHTML = `
         <div class="input-wrapper" style="flex: 1; width: 100%;">
-          <input type="text" id="constraint-value" placeholder="Enter exact search string..."
-            oninput="toggleClearBtn('constraint-value', 'clear-constraint-btn')"
+          <input type="text" class="constraint-value" placeholder="Enter exact search string..."
+            oninput="toggleClearBtnElement(this)"
             onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
-          <button type="button" id="clear-constraint-btn" class="input-clear-btn" onclick="clearConstraintFilter()"
+          <button type="button" class="input-clear-btn" onclick="clearConstraintRowValue(this)"
             title="Clear constraint filter" style="display: none">
             ×
           </button>
@@ -2027,9 +2031,131 @@
     // Operators that do not use a value input
     const NO_VALUE_OPERATORS = ["is empty or null", "is not empty or null", "is yes", "is no"];
 
+    function createConstraintRow(constraintData = null) {
+      const row = document.createElement("div");
+      row.className = "constraint-bar";
+      row.style.display = "flex";
+      row.style.gap = "8px";
+      row.style.alignItems = "center";
+      row.style.flexWrap = "wrap";
+
+      const fieldSelect = document.createElement("select");
+      fieldSelect.className = "constraint-field";
+      fieldSelect.style.maxWidth = "fit-content";
+      fieldSelect.onchange = () => updateConstraintOperators(fieldSelect.value, row);
+
+      const operatorSelect = document.createElement("select");
+      operatorSelect.className = "constraint-operator";
+      operatorSelect.style.maxWidth = "fit-content";
+      operatorSelect.onchange = () => toggleConstraintValueInput(operatorSelect.value, row);
+
+      const valueContainer = document.createElement("div");
+      valueContainer.className = "constraint-value-container";
+      valueContainer.style.flex = "1";
+      valueContainer.style.minWidth = "200px";
+      valueContainer.style.display = "flex";
+
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "remove-constraint-btn";
+      removeBtn.innerHTML = "×";
+      removeBtn.title = "Remove constraint";
+      removeBtn.onclick = () => removeConstraintRow(removeBtn);
+
+      row.appendChild(fieldSelect);
+      row.appendChild(operatorSelect);
+      row.appendChild(valueContainer);
+      row.appendChild(removeBtn);
+
+      // Initial population
+      populateConstraintFields(detectedHeaders, fieldSelect);
+
+      if (constraintData) {
+        fieldSelect.value = constraintData.key === "any field" ? "any_field" : constraintData.key;
+        updateConstraintOperators(fieldSelect.value, row);
+
+        // Map constraint_type and value back to operator value
+        const type = constraintData.constraint_type;
+        const val = constraintData.value;
+
+        if (type === "text contains") operatorSelect.value = "contains";
+        else if (type === "not text contains") operatorSelect.value = "does not contain";
+        else if (type === "contains") operatorSelect.value = "contains case sensitive";
+        else if (type === "not contains") operatorSelect.value = "does not contain case sensitive";
+        else if (type === "is_empty") operatorSelect.value = "is empty or null";
+        else if (type === "is_not_empty") operatorSelect.value = "is not empty or null";
+        else if (type === "not equal") operatorSelect.value = "not equals";
+        else if (type === "greater than") {
+          // Check if it was "greater than or equal" (by checking the offset we applied)
+          if (typeof val === "number" && String(val).includes("9999999")) {
+            operatorSelect.value = "num greater than or equal";
+          } else {
+            operatorSelect.value = "num greater than";
+          }
+        } else if (type === "less than") {
+          if (typeof val === "number" && String(val).includes("0000001")) {
+            operatorSelect.value = "num less than or equal";
+          } else {
+            operatorSelect.value = "num less than";
+          }
+        } else if (type === "equals") {
+          if (val === true) operatorSelect.value = "is yes";
+          else if (val === false) operatorSelect.value = "is no";
+          else operatorSelect.value = "equals";
+        } else {
+          operatorSelect.value = "contains";
+        }
+
+        // Re-sync after setting operator
+        toggleConstraintValueInput(operatorSelect.value, row);
+
+        const valueInput = row.querySelector(".constraint-value");
+        if (valueInput) {
+          valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+          if (valueInput.oninput) valueInput.oninput();
+        }
+      } else {
+        updateConstraintOperators(fieldSelect.value, row);
+      }
+
+      return row;
+    }
+
+    function addConstraintRow(constraintData = null) {
+      const list = document.getElementById("constraints-list");
+      if (!list) return;
+      const row = createConstraintRow(constraintData);
+      list.appendChild(row);
+    }
+
+    function removeConstraintRow(btn) {
+      const row = btn.closest(".constraint-bar");
+      if (row) {
+        row.remove();
+        // If it was the last row, maybe add an empty one?
+        // Decisions depend on if we want always at least one.
+        const list = document.getElementById("constraints-list");
+        if (list && list.children.length === 0) {
+          addConstraintRow();
+        }
+      }
+    }
+
+    function syncConstraintsUI() {
+      const list = document.getElementById("constraints-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      if (currentConstraints && currentConstraints.length > 0) {
+        currentConstraints.forEach(c => addConstraintRow(c));
+      } else {
+        addConstraintRow();
+      }
+    }
+
     // Rebuild the operator dropdown based on column type
-    function updateConstraintOperators(field) {
-      const operatorEl = document.getElementById("constraint-operator");
+    function updateConstraintOperators(field, rowEl) {
+      const operatorEl = rowEl.querySelector(".constraint-operator");
       if (!operatorEl) return;
 
       // Resolve type using schema metadata first (same priority as populateConstraintFields),
@@ -2104,15 +2230,15 @@
       });
 
       // Update the input field based on the selected field (option set, boolean, or text)
-      updateConstraintInput(field);
+      updateConstraintInput(field, rowEl);
 
       // Sync the value-input disabled state for the first option
-      toggleConstraintValueInput(operatorEl.value);
+      toggleConstraintValueInput(operatorEl.value, rowEl);
     }
 
-    function toggleConstraintValueInput(operator) {
-      const valueInput = document.getElementById("constraint-value");
-      const clearBtn = document.getElementById("clear-constraint-btn");
+    function toggleConstraintValueInput(operator, rowEl) {
+      const valueInput = rowEl.querySelector(".constraint-value");
+      const clearBtn = rowEl.querySelector(".input-clear-btn");
       const isDisabled = NO_VALUE_OPERATORS.includes(operator);
       if (valueInput) {
         valueInput.disabled = isDisabled;
@@ -2126,98 +2252,93 @@
     }
 
     function applyConstraintFilter() {
-      const field = document.getElementById("constraint-field").value;
-      const operator = document.getElementById("constraint-operator").value;
-      const value = document.getElementById("constraint-value").value;
+      const rows = document.querySelectorAll("#constraints-list .constraint-bar");
+      const newConstraints = [];
 
-      if (!field) {
-        alert("Please pick a target database field to execute a query.");
-        return;
-      }
+      rows.forEach(row => {
+        const field = row.querySelector(".constraint-field").value;
+        const operator = row.querySelector(".constraint-operator").value;
+        const valueEl = row.querySelector(".constraint-value");
+        const value = valueEl ? valueEl.value : "";
 
-      // Operators that require a non‑empty value
-      const needsValue = !NO_VALUE_OPERATORS.includes(operator);
-      if (needsValue && !value.trim()) {
-        clearConstraintFilter();
-        return;
-      }
+        // Skip rows without a field selected (though field should usually be "any_field" by default)
+        if (!field) return;
 
-      const key = field === "any_field" ? "any field" : field;
-      let constraintType;
-      let constraintValue = value.trim();
-      if (operator === "contains") {
-        constraintType = "text contains";
-      } else if (operator === "does not contain") {
-        constraintType = "not text contains";
-      } else if (operator === "contains case sensitive") {
-        constraintType = "contains";
-      } else if (operator === "does not contain case sensitive") {
-        constraintType = "not contains";
-      } else if (operator === "is empty or null") {
-        constraintType = "is_empty";
-      } else if (operator === "is not empty or null") {
-        constraintType = "is_not_empty";
-      } else if (operator === "equals") {
-        constraintType = "equals";
-      } else if (operator === "not equals") {
-        constraintType = "not equal";
-      } else if (operator === "is yes") {
-        constraintType = "equals";
-        constraintValue = true;
-      } else if (operator === "is no") {
-        constraintType = "equals";
-        constraintValue = false;
-      } else if (operator === "num equals") {
-        constraintType = "equals";
-        constraintValue = parseFloat(value.trim());
-      } else if (operator === "num not equals") {
-        constraintType = "not equal";
-        constraintValue = parseFloat(value.trim());
-      } else if (operator === "num greater than") {
-        constraintType = "greater than";
-        constraintValue = parseFloat(value.trim());
-      } else if (operator === "num greater than or equal") {
-        constraintType = "greater than";
-        constraintValue = parseFloat(value.trim()) - 0.0000001;
-      } else if (operator === "num less than") {
-        constraintType = "less than";
-        constraintValue = parseFloat(value.trim());
-      } else if (operator === "num less than or equal") {
-        constraintType = "less than";
-        constraintValue = parseFloat(value.trim()) + 0.0000001;
-      } else if (operator === "date greater than") {
-        constraintType = "greater than";
-      } else if (operator === "date less than") {
-        constraintType = "less than";
-      } else {
-        // Fallback
-        constraintType = "text contains";
-      }
+        // Operators that require a non‑empty value
+        const needsValue = !NO_VALUE_OPERATORS.includes(operator);
+        if (needsValue && !value.trim()) {
+          return; // Skip this constraint if it needs a value but none provided
+        }
 
-      currentConstraints = [{
-        key: key,
-        constraint_type: constraintType,
-        value: constraintValue,
-      }];
+        const key = field === "any_field" ? "any field" : field;
+        let constraintType;
+        let constraintValue = value.trim();
+        if (operator === "contains") {
+          constraintType = "text contains";
+        } else if (operator === "does not contain") {
+          constraintType = "not text contains";
+        } else if (operator === "contains case sensitive") {
+          constraintType = "contains";
+        } else if (operator === "does not contain case sensitive") {
+          constraintType = "not contains";
+        } else if (operator === "is empty or null") {
+          constraintType = "is_empty";
+        } else if (operator === "is not empty or null") {
+          constraintType = "is_not_empty";
+        } else if (operator === "equals") {
+          constraintType = "equals";
+        } else if (operator === "not equals") {
+          constraintType = "not equal";
+        } else if (operator === "is yes") {
+          constraintType = "equals";
+          constraintValue = true;
+        } else if (operator === "is no") {
+          constraintType = "equals";
+          constraintValue = false;
+        } else if (operator === "num equals") {
+          constraintType = "equals";
+          constraintValue = parseFloat(value.trim());
+        } else if (operator === "num not equals") {
+          constraintType = "not equal";
+          constraintValue = parseFloat(value.trim());
+        } else if (operator === "num greater than") {
+          constraintType = "greater than";
+          constraintValue = parseFloat(value.trim());
+        } else if (operator === "num greater than or equal") {
+          constraintType = "greater than";
+          constraintValue = parseFloat(value.trim()) - 0.0000001;
+        } else if (operator === "num less than") {
+          constraintType = "less than";
+          constraintValue = parseFloat(value.trim());
+        } else if (operator === "num less than or equal") {
+          constraintType = "less than";
+          constraintValue = parseFloat(value.trim()) + 0.0000001;
+        } else if (operator === "date greater than") {
+          constraintType = "greater than";
+        } else if (operator === "date less than") {
+          constraintType = "less than";
+        } else {
+          // Fallback
+          constraintType = "text contains";
+        }
 
+        newConstraints.push({
+          key: key,
+          constraint_type: constraintType,
+          value: constraintValue,
+        });
+      });
+
+      currentConstraints = newConstraints;
       currentCursor = 0;
       fetchAndRenderData();
     }
 
     function clearConstraintFilter() {
-      const valueEl = document.getElementById("constraint-value");
-      const fieldEl = document.getElementById("constraint-field");
-      if (valueEl) valueEl.value = "";
-      if (fieldEl) fieldEl.value = "any_field";
-
-      updateConstraintOperators("any_field"); // Reset operators and input type
-
-      toggleClearBtn("constraint-value", "clear-constraint-btn");
-      if (currentConstraints.length > 0) {
-        currentConstraints = [];
-        currentCursor = 0;
-        fetchAndRenderData();
-      }
+      currentConstraints = [];
+      currentCursor = 0;
+      syncConstraintsUI();
+      fetchAndRenderData();
     }
 
     function clearClientFilter() {
@@ -2231,6 +2352,23 @@
       const btn = document.getElementById(btnId);
       if (input && btn) {
         btn.style.display = input.value.length > 0 ? "flex" : "none";
+      }
+    }
+
+    function toggleClearBtnElement(inputEl) {
+      const wrapper = inputEl.closest(".input-wrapper");
+      const btn = wrapper ? wrapper.querySelector(".input-clear-btn") : null;
+      if (inputEl && btn) {
+        btn.style.display = inputEl.value.length > 0 ? "flex" : "none";
+      }
+    }
+
+    function clearConstraintRowValue(btn) {
+      const wrapper = btn.closest(".input-wrapper");
+      const input = wrapper ? wrapper.querySelector(".constraint-value") : null;
+      if (input) {
+        input.value = "";
+        btn.style.display = "none";
       }
     }
 
@@ -3166,6 +3304,9 @@
     // Initialize the script
     initApp();
 
+    // Initialize initial constraint row
+    syncConstraintsUI();
+
     // --- ENVIRONMENT SWITCHING ---
     async function handleVersionChange() {
       const selector = document.getElementById("version-selector");
@@ -3390,6 +3531,7 @@
           hiddenColumns = new Set(filter.hiddenColumns || []);
           currentConstraints = filter.constraints || [];
           currentFilterName = filterName;
+          syncConstraintsUI();
           fetchAndRenderData();
           renderDataTypeSidebar();
         }

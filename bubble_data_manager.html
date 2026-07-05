@@ -43,6 +43,7 @@
     }
 
     tbody td input[type="text"],
+    tbody td input[type="datetime-local"],
     tbody td select {
       padding: 2px 4px !important;
       margin: 0;
@@ -242,7 +243,8 @@
       align-items: center;
     }
 
-    .input-wrapper input[type="text"] {
+    .input-wrapper input[type="text"],
+    .input-wrapper input[type="datetime-local"] {
       width: 100%;
       padding-right: 30px;
     }
@@ -280,7 +282,8 @@
     }
 
     /* Form Controls */
-    input,
+    input[type="text"],
+    input[type="datetime-local"],
     select {
       padding: 8px;
       border: 1px solid #ccc;
@@ -853,6 +856,7 @@
 
       .constraint-bar select,
       .constraint-bar input[type="text"],
+      .constraint-bar input[type="datetime-local"],
       .constraint-bar .input-wrapper,
       .constraint-bar button {
         flex: 1 1 100%;
@@ -1359,6 +1363,36 @@
 
       // Fallback: check cachedRecords
       return getExpectedType(fieldDisplayName) === "boolean";
+    }
+
+    function isDateField(dataTypeSlug, fieldDisplayName) {
+      const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
+      if (fieldMeta) {
+        return fieldMeta.type === "date";
+      }
+
+      // Fallback: check cachedRecords for likely date string
+      const val = cachedRecords.length > 0 ? cachedRecords[0][fieldDisplayName] : null;
+      if (typeof val === "string" && !isNaN(Date.parse(val)) && (val.includes("T") || val.includes("-"))) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
+     */
+    function formatToDateTimeLocal(dateStr) {
+      if (!dateStr) return "";
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "";
+        const offset = date.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+        return localISOTime;
+      } catch (e) {
+        return "";
+      }
     }
 
     function optionSlugMatchesDisplayName(slug, displayName) {
@@ -2129,6 +2163,17 @@
         });
 
         container.appendChild(select);
+      } else if (isDateField(currentType, field)) {
+        container.innerHTML = `
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="datetime-local" class="constraint-value"
+            oninput="toggleClearBtnElement(this); markConstraintsDirty();"
+            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
+          <button type="button" class="input-clear-btn" onclick="clearConstraintRowValue(this)"
+            title="Clear constraint filter" style="display: none">
+            ×
+          </button>
+        </div>`;
       } else {
         // Restore original text input HTML
         container.innerHTML = `
@@ -2420,8 +2465,18 @@
           constraintType = "is_not_empty";
         } else if (operator === "equals") {
           constraintType = "equals";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "not equals") {
           constraintType = "not equal";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "is yes") {
           constraintType = "equals";
           constraintValue = true;
@@ -2448,8 +2503,18 @@
           constraintValue = parseFloat(value.trim()) + 0.0000001;
         } else if (operator === "date greater than") {
           constraintType = "greater than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else if (operator === "date less than") {
           constraintType = "less than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else {
           // Fallback
           constraintType = "text contains";
@@ -2582,6 +2647,16 @@
           });
 
           cell.appendChild(select);
+        } else if (isDateField(currentType, field)) {
+          // Render a datetime-local picker for date fields
+          const input = document.createElement("input");
+          input.type = "datetime-local";
+          input.value = formatToDateTimeLocal(currentValue);
+          input.style.width = "100%";
+          input.style.minWidth = "100px";
+          input.style.boxSizing = "border-box";
+          input.style.padding = "4px";
+          cell.appendChild(input);
         } else if (optionValues && optionValues.length > 0) {
           // Render a <select> dropdown for option set fields
           const select = document.createElement("select");
@@ -2679,6 +2754,7 @@
               document.getElementById("data-type-selector").value;
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
+            const isDate = isDateField(currentType, field);
 
             let origCompared = originalValue;
             if (isBool) {
@@ -2693,15 +2769,26 @@
               )
                 origCompared = "false";
               else origCompared = "";
+            } else if (isDate) {
+              origCompared = formatToDateTimeLocal(originalValue);
             }
 
-            if (val !== origCompared && (val !== originalValue || isBool)) {
+            if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
               // Handle boolean payload conversion
               if (isBool) {
                 if (val === "true" || val.toLowerCase() === "yes") val = true;
                 else if (val === "false" || val.toLowerCase() === "no")
                   val = false;
                 else if (val === "") val = null;
+              } else if (isDate) {
+                if (val === "") val = null;
+                else {
+                  try {
+                    val = new Date(val).toISOString();
+                  } catch (e) {
+                    val = null;
+                  }
+                }
               } else if (!isOptionSet) {
                 // Determine the expected type by looking at cachedRecords
                 let expectedType = getExpectedType(field);
@@ -2993,6 +3080,7 @@
                 document.getElementById("data-type-selector").value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
+              const isDate = isDateField(currentType, field);
 
               let origCompared = originalValue;
               if (isBool) {
@@ -3007,14 +3095,25 @@
                 )
                   origCompared = "false";
                 else origCompared = "";
+              } else if (isDate) {
+                origCompared = formatToDateTimeLocal(originalValue);
               }
 
-              if (val !== origCompared && (val !== originalValue || isBool)) {
+              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
                 if (isBool) {
                   if (val === "true" || val.toLowerCase() === "yes") val = true;
                   else if (val === "false" || val.toLowerCase() === "no")
                     val = false;
                   else if (val === "") val = null;
+                } else if (isDate) {
+                  if (val === "") val = null;
+                  else {
+                    try {
+                      val = new Date(val).toISOString();
+                    } catch (e) {
+                      val = null;
+                    }
+                  }
                 } else if (!isOptionSet) {
                   let expectedType = getExpectedType(field);
                   if (expectedType === "number") {
@@ -3291,6 +3390,14 @@
             });
 
             td.appendChild(select);
+          } else if (isDateField(currentType, header)) {
+            const input = document.createElement("input");
+            input.type = "datetime-local";
+            input.style.width = "100%";
+            input.style.minWidth = "100px";
+            input.style.boxSizing = "border-box";
+            input.style.padding = "4px";
+            td.appendChild(input);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
             const select = document.createElement("select");
@@ -3379,10 +3486,17 @@
           document.getElementById("data-type-selector").value;
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
+        const isDate = isDateField(currentType, field);
 
         if (isBool) {
           if (val === "true" || val.toLowerCase() === "yes") val = true;
           else if (val === "false" || val.toLowerCase() === "no") val = false;
+        } else if (isDate) {
+          try {
+            val = new Date(val).toISOString();
+          } catch (e) {
+            val = null;
+          }
         } else if (!isOptionSet) {
           // Determine the expected type by looking at cachedRecords
           let expectedType = getExpectedType(field);

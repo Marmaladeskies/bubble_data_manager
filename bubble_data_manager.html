@@ -1981,6 +1981,9 @@
 
       tableHTML += "</tr></thead><tbody>";
 
+      const currentType =
+        document.getElementById("data-type-selector")?.value || "";
+
       // Generate Data Rows
       records.forEach((record) => {
         const isSelected = selectedRowIds.has(record._id);
@@ -1997,8 +2000,6 @@
           let cellValue = record[header];
 
           // Convert boolean true/false to yes/no
-          const currentType =
-            document.getElementById("data-type-selector")?.value || "";
           if (
             typeof cellValue === "boolean" ||
             (isBooleanField(currentType, header) &&

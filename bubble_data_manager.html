@@ -1137,7 +1137,7 @@
 
     // Optional: store persisent data
     const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
-    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of APP_SETTINGS_TYPE field (text) where data will be saved 
+    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of APP_SETTINGS_TYPE field (text) where data will be saved
 
     // ---------------------
 
@@ -3195,12 +3195,13 @@
 
       const results = await Promise.all(deletePromises);
 
+      const successfullyDeletedIds = new Set();
       for (const { id, success } of results) {
         if (success) {
           successCount++;
+          successfullyDeletedIds.add(id);
 
-          // Remove from local cache
-          cachedRecords = cachedRecords.filter((r) => r._id !== id);
+          // Remove from local selection
           selectedRowIds.delete(id);
 
           // Remove the row from the DOM immediately
@@ -3209,6 +3210,11 @@
         } else {
           failCount++;
         }
+      }
+
+      // Update local cache outside the loop to improve performance (O(N) instead of O(N*M))
+      if (successfullyDeletedIds.size > 0) {
+        cachedRecords = cachedRecords.filter((r) => !successfullyDeletedIds.has(r._id));
       }
 
       // Update UI

@@ -1200,6 +1200,8 @@
     let cachedFieldMeta = {};
     // Maps data type slug -> array of all column headers found in /api/1.1/meta
     let cachedTypeColumns = {};
+    // Resolve option slug to display name using the cached option set return types from meta
+    let optionSlugToDisplayName = {};
 
     // Fetch available data types from Bubble's API meta endpoint
     async function fetchDataTypesFromBubble() {
@@ -1349,9 +1351,6 @@
       // Fallback: check cachedRecords
       return getExpectedType(fieldDisplayName) === "boolean";
     }
-
-    // Resolve option slug to display name using the cached option set return types from meta
-    let optionSlugToDisplayName = {};
 
     function optionSlugMatchesDisplayName(slug, displayName) {
       if (optionSlugToDisplayName[slug] === displayName) return true;

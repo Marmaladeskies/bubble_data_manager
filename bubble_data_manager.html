@@ -1862,7 +1862,7 @@
         }
       } catch (error) {
         console.error("Fetch error:", error);
-        container.innerHTML = `<div class="error">Failed to load data: ${error.message}</div>`;
+        container.innerHTML = `<div class="error">Failed to load data: ${escapeHTML(error.message)}</div>`;
         pageInfo.innerText = "Error";
       }
     }

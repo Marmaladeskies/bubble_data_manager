@@ -64,7 +64,9 @@ Custom column reordering and constraint filter views will not be persistent unle
 
 ### Load Option Sets:
 
-Loading your app's option sets requires one extra step. This is not strictly necessary, but it makes it easier to edit fields that use option sets. [Everything works without importing option sets, but if you choose not to add option sets, editing fields that use option sets requires typing out option names exactly correct (or else saving changes will fail with an error message).] All of your app's option sets are public data that bubble does not allow you to hide, but it is not available by API, and your browser will block this script from attempting to pull it from your app's URL...So you could run a python server to scrape them or... just create and maintain a backend workflow API endpoint for your option sets. Fortunately, creating endpoint for options is very simple to do:
+Loading your app's option sets requires one extra step. This is not strictly necessary, but it makes it easier to edit fields that use option sets. [Everything works without importing option sets, but if you choose not to add option sets, editing fields that use option sets requires typing out option names exactly correct (or else saving changes will fail with an error message).] 
+
+- All of your app's option sets are public data that bubble does not allow you to hide, but options are not available by API, and your browser will block this script from attempting to pull it from your app's URL... So you could run a python server to scrape them or... create and maintain a backend workflow API endpoint for your option sets. Fortunately, creating an endpoint for options is very simple to do:
   + Create a public GET backend API workflow. No authentication is necessary because all of your option sets are always public. It must be named 'get-options' (or modify bubble_data_manager.html to use a different name):
 
 ![Screenshot](screenshots/create_api.png)
@@ -73,4 +75,4 @@ Loading your app's option sets requires one extra step. This is not strictly nec
 ![Screenshot](screenshots/add_options_as_parameters.png)
 Even with a large number of option sets, this does not take very long. 
 That's it. Fields that use option sets will be detected and dropdowns will be provided to aid choosing options.
-New option sets will need to be added to the API, however, individual options in a set update automatically once a set has been added.
+New option sets will need to be added to the API, however, changes to any individual options in a set update automatically once a set has been added.

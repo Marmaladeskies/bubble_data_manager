@@ -1195,6 +1195,8 @@
     // --- OPTION SET STATE ---
     // Maps option set slug (e.g. 'dropdown_options') to an array of string values
     let cachedOptionSets = {};
+    // Maps optionSlug (e.g. 'dropdown_options') to the resolved option set values (for O(1) lookups)
+    let cachedOptionSetsBySlug = {};
     // Maps data type slug -> field display name -> field meta object (id, display, type)
     let cachedFieldMeta = {};
     // Maps data type slug -> array of all column headers found in /api/1.1/meta
@@ -1290,6 +1292,7 @@
 
         // Build a map from option slug -> array of values
         cachedOptionSets = {};
+        cachedOptionSetsBySlug = {}; // Clear slug cache
         Object.entries(resp).forEach(([displayName, values]) => {
           if (Array.isArray(values)) {
             cachedOptionSets[displayName] = values;
@@ -1330,11 +1333,18 @@
 
       const optionSlug = fieldType.replace("option.", ""); // e.g. 'dropdown_options', 'times'
 
+      if (cachedOptionSetsBySlug[optionSlug] !== undefined) {
+        return cachedOptionSetsBySlug[optionSlug];
+      }
+
       for (const [displayName, values] of Object.entries(cachedOptionSets)) {
         if (optionSlugMatchesDisplayName(optionSlug, displayName)) {
+          cachedOptionSetsBySlug[optionSlug] = values;
           return values;
         }
       }
+
+      cachedOptionSetsBySlug[optionSlug] = null;
       return null;
     }
 

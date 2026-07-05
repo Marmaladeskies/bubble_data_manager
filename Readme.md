@@ -9,11 +9,10 @@ _This improved database manager is a single .html file that can be opened in any
 
 ## Features:
 - Better UX for editing data than native bubble
-- Automatically detects your app's data types and fields
+- Automatically detects your app's data types and fields and requires very little setup
 - Columns can be reordered and their position can be saved permanently
 - Uses at least 10x less RAM than a bubble editor window in your browser
 - Responsive design with no horizontal scroll glitches or bugs
-- Basic Setup and connect to your database in less than 5 minutes
 - Preserve's Bubble's type safety and option sets can easily be loaded
 - And most importantly, you have all of this code, with no weird front-end limitations, so adding or making changes to this (with your favorite AI) is easier, faster, and more customizable than using bubble
 

@@ -1537,6 +1537,30 @@
       return expectedType;
     }
 
+    function castPayloadValue(val, isBool, isOptionSet, field) {
+      if (isBool) {
+        if (val === "true" || val.toLowerCase() === "yes") val = true;
+        else if (val === "false" || val.toLowerCase() === "no") val = false;
+        else if (val === "") val = null;
+      } else if (!isOptionSet) {
+        let expectedType = getExpectedType(field);
+        if (expectedType === "number") {
+          if (val.trim() !== "" && !isNaN(val)) val = Number(val);
+          else if (val.trim() === "") val = null;
+        } else if (expectedType === "boolean") {
+          if (val.toLowerCase() === "true") val = true;
+          else if (val.toLowerCase() === "false") val = false;
+        } else if (expectedType === "string") {
+        } else {
+          if (val.trim() !== "" && !isNaN(val)) val = Number(val);
+          else if (val.toLowerCase() === "true") val = true;
+          else if (val.toLowerCase() === "false") val = false;
+        }
+      }
+      if (isOptionSet && val === "") val = null;
+      return val;
+    }
+
     // --- COLUMN REORDERING STATE ---
     let isEditingColumns = false;
     let preEditHeadersBackup = [];
@@ -2696,44 +2720,7 @@
             }
 
             if (val !== origCompared && (val !== originalValue || isBool)) {
-              // Handle boolean payload conversion
-              if (isBool) {
-                if (val === "true" || val.toLowerCase() === "yes") val = true;
-                else if (val === "false" || val.toLowerCase() === "no")
-                  val = false;
-                else if (val === "") val = null;
-              } else if (!isOptionSet) {
-                // Determine the expected type by looking at cachedRecords
-                let expectedType = getExpectedType(field);
-
-                // Basic Data Type Casting to prevent 400 errors on Save
-                if (expectedType === "number") {
-                  if (val.trim() !== "" && !isNaN(val)) {
-                    val = Number(val);
-                  } else if (val.trim() === "") {
-                    val = null;
-                  }
-                } else if (expectedType === "boolean") {
-                  if (val.toLowerCase() === "true") val = true;
-                  else if (val.toLowerCase() === "false") val = false;
-                } else if (expectedType === "string") {
-                  // Leave as string to prevent "Expected a string, but got a number" errors
-                } else {
-                  // Fallback to basic guessing if type is unknown (e.g. whole column is null)
-                  if (val.trim() !== "" && !isNaN(val)) {
-                    val = Number(val);
-                  } else if (val.toLowerCase() === "true") {
-                    val = true;
-                  } else if (val.toLowerCase() === "false") {
-                    val = false;
-                  }
-                }
-              }
-
-              // For option set fields, send empty string as null to clear the value
-              if (isOptionSet && val === "") {
-                val = null;
-              }
+              val = castPayloadValue(val, isBool, isOptionSet, field);
 
               payload[field] = val;
               hasChanges = true;
@@ -3010,27 +2997,7 @@
               }
 
               if (val !== origCompared && (val !== originalValue || isBool)) {
-                if (isBool) {
-                  if (val === "true" || val.toLowerCase() === "yes") val = true;
-                  else if (val === "false" || val.toLowerCase() === "no")
-                    val = false;
-                  else if (val === "") val = null;
-                } else if (!isOptionSet) {
-                  let expectedType = getExpectedType(field);
-                  if (expectedType === "number") {
-                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
-                    else if (val.trim() === "") val = null;
-                  } else if (expectedType === "boolean") {
-                    if (val.toLowerCase() === "true") val = true;
-                    else if (val.toLowerCase() === "false") val = false;
-                  } else if (expectedType === "string") {
-                  } else {
-                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
-                    else if (val.toLowerCase() === "true") val = true;
-                    else if (val.toLowerCase() === "false") val = false;
-                  }
-                }
-                if (isOptionSet && val === "") val = null;
+                val = castPayloadValue(val, isBool, isOptionSet, field);
 
                 payload[field] = val;
                 hasChanges = true;
@@ -3380,21 +3347,7 @@
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
 
-        if (isBool) {
-          if (val === "true" || val.toLowerCase() === "yes") val = true;
-          else if (val === "false" || val.toLowerCase() === "no") val = false;
-        } else if (!isOptionSet) {
-          // Determine the expected type by looking at cachedRecords
-          let expectedType = getExpectedType(field);
-
-          // Basic data type casting
-          if (expectedType === "number") {
-            if (!isNaN(val)) val = Number(val);
-          } else if (expectedType === "boolean") {
-            if (val.toLowerCase() === "true") val = true;
-            else if (val.toLowerCase() === "false") val = false;
-          }
-        }
+        val = castPayloadValue(val, isBool, isOptionSet, field);
 
         payload[field] = val;
       });

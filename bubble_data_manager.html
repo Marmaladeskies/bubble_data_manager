@@ -35,12 +35,6 @@
       white-space: nowrap;
     }
 
-    th {
-      border: 1px solid #ddd;
-      padding: 7px 10px;
-      text-align: left;
-    }
-
     td {
       border: 1px solid #ddd;
       padding: 5px 8px;
@@ -57,10 +51,8 @@
     th {
       position: sticky;
       top: 0;
-      z-index: 10;
       /* Keeps the header above the scrolling data rows */
-      background-color: #e4f1ff;
-      /* Critical: prevents text from bleeding through */
+      z-index: 10;
       font-weight: 600;
       text-transform: capitalize;
       cursor: pointer;
@@ -68,6 +60,26 @@
       transition: background-color 0.2s;
       /* Adds a crisp border-like shadow to the bottom of the sticky header */
       box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.2);
+      border: 1px solid #ddd;
+      padding: 7px 10px;
+      text-align: left;
+    }
+
+    /* Version-aware header row colors */
+    body.version-live #table-container th {
+      background-color: #d0ffcf;
+    }
+
+    body.version-test #table-container th {
+      background-color: #fff3cd;
+    }
+
+    body.version-live #table-container th:hover {
+      background-color: #b8f5b7;
+    }
+
+    body.version-test #table-container th:hover {
+      background-color: #ffe89a;
     }
 
     th:hover {
@@ -101,6 +113,15 @@
       min-width: 16px !important;
       text-align: center;
       padding: 0px !important;
+    }
+
+    .select-links {
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      font-style: italic;
+      color: #007bff;
+
     }
 
     .select-cell input[type="checkbox"] {
@@ -155,15 +176,15 @@
 
     .column-filter-header {
       display: flex;
-      justify-content: space-between;
+      justify-content: left;
       align-items: center;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 20px;
     }
 
     .column-filter-actions {
       display: flex;
-      gap: 8px;
+      gap: 20px;
     }
 
     .column-filter-list {
@@ -306,6 +327,7 @@
       display: inline-flex;
       align-items: center;
       margin-top: 10px;
+      font-style: italic;
     }
 
     #edit-columns-link:hover {
@@ -385,6 +407,7 @@
     #selection-buttons {
       justify-content: space-between;
       display: none;
+      align-self: center;
     }
 
     #selection-bar.active #selection-buttons {
@@ -396,18 +419,18 @@
       align-items: center;
       gap: 22px;
       padding: 10px 15px;
-      background: #f4f6f8;
-      border: 1px solid #ddd;
       border-radius: 6px;
-      margin-top: 10px;
       font-size: 14px;
       font-weight: 500;
       justify-content: space-between;
+      justify-self: right;
     }
 
     .selection-bar.active {
       background: #fff3cd;
       border: 1px solid #ffc107;
+      width: 95%;
+      margin: 5px;
     }
 
     .selection-bar .btn {
@@ -494,6 +517,7 @@
       flex: 1;
       min-width: 200px;
       display: flex;
+      max-width: 500px;
     }
 
     #constraint-value {
@@ -606,10 +630,11 @@
       gap: 10px;
       margin-bottom: 10px;
       padding: 8px 12px;
-      background: #f8fafe;
+      background: #d0ffcf;
       border: 1px solid #ddd;
       border-radius: 6px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      width: fit-content;
     }
 
     .data-types-collapsed-view.active {
@@ -651,7 +676,6 @@
 
     .sidebar-header {
       padding: 12px;
-      background: #e4f1ff;
       border-bottom: 1px solid #ddd;
       display: flex;
       align-items: center;
@@ -955,10 +979,8 @@
     <div class="column-filter-header">
       <span style="font-size: 14px; font-weight: 500; color: #222;">Select Columns To Display:</span>
       <div class="column-filter-actions">
-        <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
-          onclick="selectAllColumnsFilter()">Select All</button>
-        <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
-          onclick="deselectAllColumnsFilter()">Deselect All</button>
+        <a href="#" class="select-links" onclick="selectAllColumnsFilter()">select all</a>
+        <a href="#" class="select-links" onclick="deselectAllColumnsFilter()">deselect all</a>
       </div>
     </div>
     <div id="column-filter-list" class="column-filter-list"></div>
@@ -970,7 +992,7 @@
       </div>
       <div id="save-constraint-group">
         <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
-        <input type="text" id="save-filter-name" placeholder="Filter Name (e.g. Active Users)">
+        <input type="text" id="save-filter-name" placeholder="Filter Name...">
       </div>
     </div>
     <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
@@ -978,16 +1000,14 @@
       onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
       Constraint</button>
     <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
-      <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()" style="max-width: fit-content;">
+      <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()"
+        style="max-width: fit-content;">
         Apply Constraints
       </button>
-      <button type="button" class="btn" onclick="clearConstraintFilter()" style="max-width: fit-content;">
-        Clear All
-      </button>
       <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
-          style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
-          Save Current View
-        </button>
+        style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
+        Save Current View
+      </button>
     </div>
   </div>
   <div class="table-filter-container" style="justify-content: space-between">
@@ -1594,13 +1614,17 @@
       // Sync the version selector UI with the configuration variable
       const versionSelector = document.getElementById("version-selector");
       versionSelector.value = VERSION;
-      const tableWrapper = document.querySelector(".main-table-wrapper");
+      const tableWrapper = document.querySelector(".sidebar-header");
       if (VERSION === "") {
         versionSelector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
+        document.body.classList.remove("version-test");
+        document.body.classList.add("version-live");
       } else {
         versionSelector.className = "badge-test";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
+        document.body.classList.remove("version-live");
+        document.body.classList.add("version-test");
       }
 
       if (window.innerWidth <= 668) {
@@ -2136,6 +2160,7 @@
       valueContainer.className = "constraint-value-container";
       valueContainer.style.flex = "1";
       valueContainer.style.minWidth = "200px";
+      valueContainer.style.maxWidth = "500px";
       valueContainer.style.display = "flex";
 
       const removeBtn = document.createElement("button");
@@ -2431,15 +2456,6 @@
       currentConstraints = newConstraints;
       currentCursor = 0;
       markConstraintsApplied();
-      fetchAndRenderData();
-    }
-
-    function clearConstraintFilter() {
-      resetFilterNameInput();
-      currentConstraints = [];
-      currentCursor = 0;
-      syncConstraintsUI();
-      markConstraintsDirty();
       fetchAndRenderData();
     }
 
@@ -3420,13 +3436,17 @@
       API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
 
       // 2. Update the visual color style of the dropdown badge
-      const tableWrapper = document.querySelector(".main-table-wrapper");
+      const tableWrapper = document.querySelector(".sidebar-header");
       if (VERSION === "") {
         selector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
+        document.body.classList.remove("version-test");
+        document.body.classList.add("version-live");
       } else {
         selector.className = "badge-test";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
+        document.body.classList.remove("version-live");
+        document.body.classList.add("version-test");
       }
 
       // 3. Re-fetch data types for the new version (types may differ between test/live)

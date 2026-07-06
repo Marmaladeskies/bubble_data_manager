@@ -3240,62 +3240,8 @@
               origCompared = formatToDateTimeLocal(originalValue);
             }
 
-            if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
-              // Handle boolean payload conversion
-              if (isBool) {
-                if (val === "true" || val.toLowerCase() === "yes") val = true;
-                else if (val === "false" || val.toLowerCase() === "no")
-                  val = false;
-                else if (val === "") val = null;
-              } else if (isDate) {
-                if (val === "") val = null;
-                else {
-                  try {
-                    val = new Date(val).toISOString();
-                  } catch (e) {
-                    val = null;
-                  }
-                }
-              } else if (!isOptionSet) {
-                // Determine the expected type by looking at cachedRecords
-                let expectedType = getExpectedType(field);
-
-                // Basic Data Type Casting to prevent 400 errors on Save
-                if (expectedType === "number") {
-                  if (val.trim() !== "" && !isNaN(val)) {
-                    val = Number(val);
-                  } else if (val.trim() === "") {
-                    val = null;
-                  }
-                } else if (expectedType === "boolean") {
-                  if (val.toLowerCase() === "true") val = true;
-                  else if (val.toLowerCase() === "false") val = false;
-                } else if (expectedType === "string") {
-                  // Leave as string to prevent "Expected a string, but got a number" errors
-                } else {
-                  // Fallback to basic guessing if type is unknown (e.g. whole column is null)
-                  if (val.trim() !== "" && !isNaN(val)) {
-                    val = Number(val);
-                  } else if (val.toLowerCase() === "true") {
-                    val = true;
-                  } else if (val.toLowerCase() === "false") {
-                    val = false;
-                  }
-                }
-              }
-
-              // For option set fields, send empty string as null to clear the value
-              if (isOptionSet && val === "") {
-                val = null;
-              }
-
-              if (isJSON) {
-                try {
-                  val = JSON.parse(val);
-                } catch (e) {
-                  console.error("Invalid JSON in saveRow:", e);
-                }
-              }
+            if (val !== origCompared && (val !== originalValue || isBool)) {
+              val = castPayloadValue(val, isBool, isOptionSet, field);
 
               payload[field] = val;
               hasChanges = true;
@@ -3582,45 +3528,8 @@
                 origCompared = formatToDateTimeLocal(originalValue);
               }
 
-              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
-                if (isBool) {
-                  if (val === "true" || val.toLowerCase() === "yes") val = true;
-                  else if (val === "false" || val.toLowerCase() === "no")
-                    val = false;
-                  else if (val === "") val = null;
-                } else if (isDate) {
-                  if (val === "") val = null;
-                  else {
-                    try {
-                      val = new Date(val).toISOString();
-                    } catch (e) {
-                      val = null;
-                    }
-                  }
-                } else if (!isOptionSet) {
-                  let expectedType = getExpectedType(field);
-                  if (expectedType === "number") {
-                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
-                    else if (val.trim() === "") val = null;
-                  } else if (expectedType === "boolean") {
-                    if (val.toLowerCase() === "true") val = true;
-                    else if (val.toLowerCase() === "false") val = false;
-                  } else if (expectedType === "string") {
-                  } else {
-                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
-                    else if (val.toLowerCase() === "true") val = true;
-                    else if (val.toLowerCase() === "false") val = false;
-                  }
-                }
-                if (isOptionSet && val === "") val = null;
-
-                if (isJSON) {
-                  try {
-                    val = JSON.parse(val);
-                  } catch (e) {
-                    console.error("Invalid JSON in saveSelectedRows:", e);
-                  }
-                }
+              if (val !== origCompared && (val !== originalValue || isBool)) {
+                val = castPayloadValue(val, isBool, isOptionSet, field);
 
                 payload[field] = val;
                 hasChanges = true;
@@ -4001,36 +3910,8 @@
         // Check if this is an option set or yes/no field
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
-        const isDate = isDateField(currentType, field);
-        const isJSON = hiddenInput && editEl.type === 'hidden';
 
-        if (isBool) {
-          if (val === "true" || val.toLowerCase() === "yes") val = true;
-          else if (val === "false" || val.toLowerCase() === "no") val = false;
-        } else if (isJSON) {
-          try {
-            val = JSON.parse(val);
-          } catch (e) {
-            console.error("Invalid JSON in saveNewRow:", e);
-          }
-        } else if (isDate) {
-          try {
-            val = new Date(val).toISOString();
-          } catch (e) {
-            val = null;
-          }
-        } else if (!isOptionSet) {
-          // Determine the expected type by looking at cachedRecords
-          let expectedType = getExpectedType(field);
-
-          // Basic data type casting
-          if (expectedType === "number") {
-            if (!isNaN(val)) val = Number(val);
-          } else if (expectedType === "boolean") {
-            if (val.toLowerCase() === "true") val = true;
-            else if (val.toLowerCase() === "false") val = false;
-          }
-        }
+        val = castPayloadValue(val, isBool, isOptionSet, field);
 
         payload[field] = val;
       });

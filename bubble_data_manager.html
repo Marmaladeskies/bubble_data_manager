@@ -185,7 +185,6 @@
       border: 1px solid #e2e8f0;
       border-radius: 6px;
       padding: 12px 16px;
-      margin-top: 20px;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -439,6 +438,7 @@
 
     .selection-bar {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 22px;
       padding: 10px 15px;
@@ -453,8 +453,9 @@
       background: #fff3cd;
       border: 1px solid #ffc107;
       width: 95%;
-      margin: 5px;
+      margin: 5px 0px;
     }
+
 
     #bulk-edit-container {
       display: none;
@@ -627,11 +628,11 @@
     #column-order-refresh-group {
       display: flex;
       flex-direction: column;
-      align-items: flex-end;
+      align-self: center;
       gap: 6px;
     }
 
-    .action-buttons {
+    .new-refresh-btns {
       display: flex;
       gap: 10px;
     }
@@ -957,6 +958,7 @@
 
       .selection-bar button {
         flex: 1 1 calc(50% - 5px);
+        min-width: fit-content;
       }
 
       #column-order-refresh-group {
@@ -967,7 +969,7 @@
         gap: 8px;
       }
 
-      .action-buttons {
+      .new-refresh-btns {
         width: 100%;
       }
 
@@ -1180,7 +1182,8 @@
       align-items: center;
       gap: 8px;
       max-width: 300px;
-      margin-right: 4px; /* small gap between items when inline */
+      margin-right: 4px;
+      /* small gap between items when inline */
     }
 
     .thumbnail-preview {
@@ -1205,14 +1208,15 @@
       z-index: 9999;
       pointer-events: none;
       background: #1a1a2e;
-      border: 1px solid rgba(255,255,255,0.15);
+      border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 10px;
       padding: 6px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
       transform: translateX(-50%) translateY(-100%);
       margin-top: -10px;
       max-width: 260px;
     }
+
     #img-hover-popup img {
       display: block;
       max-width: 240px;
@@ -1267,111 +1271,90 @@
     </select>
   </h1>
   <select id="data-type-selector" style="display: none;" onchange="handleDataTypeChange()"></select>
-  <div id="column-filter-group" class="column-filter-group">
-    <div class="column-filter-header">
-      <span style="font-size: 14px; font-weight: 500; color: #222;">Select Columns To Display:</span>
-      <div class="column-filter-actions">
-        <a href="#" class="select-links" onclick="selectAllColumnsFilter()">select all</a>
-        <a href="#" class="select-links" onclick="deselectAllColumnsFilter()">deselect all</a>
+  <div id="filters-container" style="border: 2px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 20px; background-color: #fafafa;">
+    <div id="column-filter-group" class="column-filter-group">
+      <div class="column-filter-header">
+        <span style="font-size: 14px; font-weight: 500; color: #222;">Select Columns To Display:</span>
+        <div class="column-filter-actions">
+          <a href="#" class="select-links" onclick="selectAllColumnsFilter()">select all</a>
+          <a href="#" class="select-links" onclick="deselectAllColumnsFilter()">deselect all</a>
+        </div>
       </div>
+      <div id="column-filter-list" class="column-filter-list"></div>
     </div>
-    <div id="column-filter-list" class="column-filter-list"></div>
-  </div>
-  <div id="constraint-filter-group" class="constraint-filter-group">
-    <div class="column-filter-header">
-      <div style="display: flex; align-items: center; gap: 15px;">
-        <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
+    <div id="constraint-filter-group" class="constraint-filter-group">
+      <div class="column-filter-header">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
+        </div>
+        <div id="save-constraint-group">
+          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+          <input type="text" id="save-filter-name" placeholder="Filter Name...">
+        </div>
       </div>
-      <div id="save-constraint-group">
-        <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
-        <input type="text" id="save-filter-name" placeholder="Filter Name...">
-      </div>
-    </div>
-    <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
-    <button type="button" class="btn" style="padding: 4px 10px; margin: 5px; font-size: 12px;"
-      onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
-      Constraint</button>
-    <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
-      <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()"
-        style="max-width: fit-content;">
-        Apply Constraints
-      </button>
-      <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
-        style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
-        Save Current View
-      </button>
-    </div>
-  </div>
-  <div class="table-filter-container" style="justify-content: space-between">
-    <div style="
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-          align-items: flex-start;
-        ">
-      <div class="input-wrapper" style="width: 400px; max-width: 400px">
-        <input type="text" id="table-filter" class="filter-input" oninput="
-              applyClientFilter();
-              toggleClearBtn('table-filter', 'clear-filter-btn');
-            " placeholder="Filter current view by keyword (all fields)..." />
-        <button type="button" id="clear-filter-btn" class="input-clear-btn" onclick="clearClientFilter()"
-          title="Clear filter" style="display: none">
-          ×
+      <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <button type="button" class="btn" style="padding: 4px 10px; margin: 5px; font-size: 12px;"
+        onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
+        Constraint</button>
+      <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
+        <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()"
+          style="max-width: fit-content;">
+          Apply Constraints
         </button>
-      </div>
-      <span style="font-size: 12px; color: #666">Filters this page of results only. This filter is not saved.</span>
-    </div>
-
-    <div id="column-order-refresh-group">
-      <a href="#" id="edit-columns-link" onclick="
-            event.preventDefault();
-            toggleColumnEditMode();
-          ">Edit Column Order</a>
-      <div id="column-edit-buttons">
-        <button type="button" id="save-columns-btn" class="btn btn-primary" onclick="toggleColumnEditMode()">
-          Save Column Order
-        </button>
-        <button type="button" id="cancel-columns-btn" class="btn" onclick="cancelColumnEditMode()">
-          Cancel
+        <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
+          style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
+          Save Current View
         </button>
       </div>
     </div>
   </div>
 
   <div id="selection-bar" class="selection-bar">
-    <div id="selection-buttons" class="selection-bar">
-      <span id="selection-count">0 rows selected</span>
+    <div id="edit-action-buttons" style="display: none; gap: 10px; align-items: center;">
       <button id="bulk-edit-btn" class="btn btn-primary" onclick="showBulkEdit()" disabled>
         Bulk Edit
       </button>
-      <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" style="display: none;">
-        Save
-      </button>
-      <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" style="display: none;">
-        Cancel
-      </button>
-      <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
-        Duplicate Row(s)
-      </button>
-      <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
-        Delete
-      </button>
-      <button id="clear-selection-btn" class="btn" onclick="clearSelection()" disabled>
-        Clear Selection
-      </button>
     </div>
-    <div id="bulk-edit-container" style="display: none; width: 100%; justify-content: space-between; gap: 12px;">
-      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+    <div id="bulk-edit-container" style="width: 100%; justify-content: space-between; gap: 12px; margin-top: 10px;">
+      <div id="bulk-edit-bar" style="display: none; align-items: center; gap: 8px; flex: 1;">
         <span style="white-space: nowrap; font-weight: 600;">Bulk Edit Field:</span>
         <select id="bulk-edit-field" onchange="updateBulkEditValueInput()" style="max-width: 200px;"></select>
         <div id="bulk-edit-value-container" style="flex: 1; min-width: 200px; display: flex;"></div>
       </div>
-      <div style="display: flex; gap: 8px;">
+      <div id="bulk-edit-actions" style="display: none; gap: 8px;">
         <button id="apply-bulk-edit-btn" class="btn btn-success" onclick="applyBulkEdit()">Apply</button>
         <button class="btn" onclick="hideBulkEdit()">Cancel</button>
       </div>
     </div>
-    <div id="action-buttons" class="action-buttons">
+  </div>
+  <div id="action-buttons" style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0px;">
+    <div id="dup-del-wrapper" style="display: none; gap: 10px; align-items: center;">
+      <button id="duplicate-selected-btn" class="btn btn-primary" style="min-width: fit-content"
+        onclick="duplicateSelectedRows()" disabled>
+        Duplicate Row(s)
+      </button>
+      <button id="delete-selected-btn" class="btn btn-danger" style="width: fit-content" onclick="deleteSelectedRows()"
+        disabled>
+        Delete
+      </button>
+    </div>
+    <div>
+        <span id="selection-count">0 rows selected</span>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
+        style="display: none;">
+        Save
+    <div style="margin-bottom: 0; justify-self: right;">
+      <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
+        style="display: none;">
+        Save
+      </button>
+      <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" disabled style="display: none;">
+        Cancel
+      </button>
+    </div>
+    <div id="new-refresh-btns" class="new-refresh-btns">
       <button id="add-row-btn" class="icon-btn btn-success" onclick="addNewRow()" title="Add New Row">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1389,7 +1372,6 @@
       </button>
     </div>
   </div>
-
   <div class="main-table-wrapper">
     <div id="data-types-sidebar" class="data-types-sidebar">
       <div class="sidebar-header" onclick="toggleDataTypeSidebar()" title="Click to toggle Data Types panel">
@@ -1441,6 +1423,41 @@
           Clear selection
         </a>
       </div>
+  <div class="table-filter-container" style="justify-content: space-between">
+    <div style="
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          align-items: flex-start;
+        ">
+      <div class="input-wrapper" style="width: 400px; max-width: 400px">
+        <input type="text" id="table-filter" class="filter-input" oninput="
+              applyClientFilter();
+              toggleClearBtn('table-filter', 'clear-filter-btn');
+            " placeholder="Filter current view by keyword (all fields)..." />
+        <button type="button" id="clear-filter-btn" class="input-clear-btn" onclick="clearClientFilter()"
+          title="Clear filter" style="display: none">
+          ×
+        </button>
+      </div>
+      <span style="font-size: 12px; color: #666">Filters this page of results only. This filter is not saved.</span>
+    </div>
+
+    <div id="column-order-refresh-group">
+      <a href="#" id="edit-columns-link" onclick="
+            event.preventDefault();
+            toggleColumnEditMode();
+          ">Edit Column Order</a>
+      <div id="column-edit-buttons">
+        <button type="button" id="save-columns-btn" class="btn btn-primary" onclick="toggleColumnEditMode()">
+          Save Column Order
+        </button>
+        <button type="button" id="cancel-columns-btn" class="btn" onclick="cancelColumnEditMode()">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
       <div id="table-container"></div>
       <div id="img-hover-popup"><img id="img-hover-popup-img" src="" alt="Preview"></div>
     </div>
@@ -1470,10 +1487,12 @@
     <div class="modal-container">
       <div class="modal-header">
         <h3 id="text-modal-title">Edit Text Field</h3>
-        <button type="button" class="icon-btn" onclick="closeTextEditor()" style="border:none; font-size: 24px;">×</button>
+        <button type="button" class="icon-btn" onclick="closeTextEditor()"
+          style="border:none; font-size: 24px;">×</button>
       </div>
       <div class="modal-body">
-        <textarea id="text-editor-textarea" style="width: 100%; height: 400px; font-family: inherit; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+        <textarea id="text-editor-textarea"
+          style="width: 100%; height: 400px; font-family: inherit; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeTextEditor()">Cancel</button>
@@ -1509,14 +1528,14 @@
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
 
-    const DOMAIN_NAME = "yourdomain.com";
-    let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
-    const API_TOKEN = "<your_private_API_key>";
-    const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
+        const DOMAIN_NAME = "yourdomain.com";
+        let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
+        const API_TOKEN = "<your_private_API_key>";
+        const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
 
-    // Optional: store persisent data
-    const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
-    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of APP_SETTINGS_TYPE field (text) where data will be saved
+        // Optional: store persisent data
+        const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
+        const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of APP_SETTINGS_TYPE field (text) where data will be saved
 
     // ---------------------
 
@@ -1535,7 +1554,6 @@
       field: null,
       isNewRow: false
     };
-    
     //Parse the BUBBLE_DATA_MANAGER_SETTINGS text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
       const raw = settingsRecord && settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS];
@@ -2002,6 +2020,8 @@
           const hiddenInput = cell.querySelector('input[type="hidden"]');
           if (hiddenInput) {
             hiddenInput.value = jsonStr;
+            row.classList.add('has-edits');
+            updateSelectionBar();
           }
         }
       }
@@ -2195,6 +2215,8 @@
             preview.innerText = textVal.length > 20 ? textVal.substring(0, 20) + '...' : textVal;
           }
           cell.setAttribute('title', textVal);
+          row.classList.add('has-edits');
+          updateSelectionBar();
         }
       }
 
@@ -2265,9 +2287,9 @@
       found = found || [];
       if (typeof val === 'string') {
         if (isImageFile(val)
-            || val.startsWith('//s3.amazonaws.com/')
-            || val.includes('.s3.amazonaws.com/')
-            || val.includes('.cdn.bubble.io/')) {
+          || val.startsWith('//s3.amazonaws.com/')
+          || val.includes('.s3.amazonaws.com/')
+          || val.includes('.cdn.bubble.io/')) {
           found.push(val);
         }
       } else if (Array.isArray(val)) {
@@ -2334,15 +2356,15 @@
         cell.setAttribute('data-json', jsonValue);
         // Detect image URLs nested inside the JSON
         let parsedJson = null;
-        try { parsedJson = JSON.parse(jsonValue); } catch (_) {}
+        try { parsedJson = JSON.parse(jsonValue); } catch (_) { }
         const imgUrls = parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
         const uniqueImgUrls = [...new Set(imgUrls)];
 
         // If the JSON is a pure flat array of file/image URLs (a Bubble "list of files" field),
         // render each entry through renderFilePreview — the same proven path as single-file cells.
         if (Array.isArray(parsedJson)
-            && parsedJson.length > 0
-            && parsedJson.every(function (item) { return typeof item === 'string' && isBubbleFile(item); })) {
+          && parsedJson.length > 0
+          && parsedJson.every(function (item) { return typeof item === 'string' && isBubbleFile(item); })) {
           const hideFileName = parsedJson.length > 1;
           cell.innerHTML = parsedJson.slice(0, 5).map(function (url) { return renderFilePreview(url, hideFileName); }).join('');
         } else {
@@ -3478,7 +3500,7 @@
     }
 
     // --- CLIENT SIDE ROW EDITING ---
-        function editRow(recordId) {
+    function editRow(recordId) {
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
@@ -3623,6 +3645,7 @@
       const row = document.getElementById(`row-${recordId}`);
       if (!row) return;
       row.classList.remove("editing-row");
+      row.classList.remove("has-edits");
       const cells = row.querySelectorAll("td[data-field]");
 
       // Revert inputs back to plain text
@@ -3898,12 +3921,15 @@
     function showBulkEdit() {
       const bar = document.getElementById("selection-bar");
       const container = document.getElementById("bulk-edit-container");
-      const buttons = document.getElementById("selection-buttons");
       const fieldSelect = document.getElementById("bulk-edit-field");
 
-      if (!container || !buttons || !fieldSelect) return;
+      if (!container || !fieldSelect) return;
 
       bar.classList.add("bulk-editing");
+
+      document.getElementById("bulk-edit-btn").style.display = "none";
+      document.getElementById("bulk-edit-bar").style.display = "flex";
+      document.getElementById("bulk-edit-actions").style.display = "flex";
 
       // Populate field selector
       const currentType = document.getElementById("data-type-selector")?.value || "";
@@ -3926,11 +3952,14 @@
     function hideBulkEdit() {
       const bar = document.getElementById("selection-bar");
       const container = document.getElementById("bulk-edit-container");
-      const buttons = document.getElementById("selection-buttons");
 
-      if (!container || !buttons) return;
+      if (!container) return;
 
       bar.classList.remove("bulk-editing");
+
+      document.getElementById("bulk-edit-btn").style.display = "inline-block";
+      document.getElementById("bulk-edit-bar").style.display = "none";
+      document.getElementById("bulk-edit-actions").style.display = "none";
     }
 
     function updateBulkEditValueInput() {
@@ -4115,58 +4144,60 @@
       const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
+      const newrefreshBtns = document.getElementById("new-refresh-btns");
+      const editActionBtns = document.getElementById("edit-action-buttons");
+      const dupDelWrapper = document.getElementById("dup-del-wrapper");
 
       const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
       const isEditing = Array.from(selectedRows.keys()).some((id) => {
         const r = document.getElementById(`row-${id}`);
         return r && r.classList.contains("editing-row");
       });
+      const hasEdits = Array.from(selectedRows.keys()).some((id) => {
+        const r = document.getElementById(`row-${id}`);
+        return r && r.classList.contains("editing-row") && r.classList.contains("has-edits");
+      });
 
       if (count > 0) {
-        bar.classList.add("active");
+        if (isEditing && count > 1) {
+          bar.classList.add("active");
+        } else {
+          bar.classList.remove("active");
+        }
         countSpan.textContent = `${count} row${count !== 1 ? "s" : ""} selected`;
 
+        if (bulkEditBtn) bulkEditBtn.disabled = false;
+
         if (isEditing) {
-          if (bulkEditBtn) bulkEditBtn.style.display = "none";
-          if (duplicateBtn) duplicateBtn.style.display = "none";
-          if (deleteBtn) deleteBtn.style.display = "none";
-          if (saveBtn) saveBtn.style.display = "inline-block";
-          if (cancelBtn) cancelBtn.style.display = "inline-block";
+          if (dupDelWrapper) dupDelWrapper.style.display = "flex";
+          if (duplicateBtn) duplicateBtn.disabled = false;
+          if (deleteBtn) deleteBtn.disabled = selectAllMatching;
+          if (saveBtn) { saveBtn.style.display = "inline-block"; saveBtn.disabled = !hasEdits; }
+          if (cancelBtn) { cancelBtn.style.display = "inline-block"; cancelBtn.disabled = !hasEdits; }
+          if (editActionBtns) editActionBtns.style.display = "flex";
+          if (newrefreshBtns) newrefreshBtns.style.display = "none";
         } else {
-          if (duplicateBtn) {
-            duplicateBtn.style.display = "inline-block";
-            duplicateBtn.disabled = false;
-          }
-          if (bulkEditBtn) {
-            bulkEditBtn.style.display = "inline-block";
-            bulkEditBtn.disabled = false;
-          }
-          if (deleteBtn) {
-            deleteBtn.style.display = "inline-block";
-            deleteBtn.disabled = selectAllMatching;
-          }
-          if (saveBtn) saveBtn.style.display = "none";
-          if (cancelBtn) cancelBtn.style.display = "none";
+          if (dupDelWrapper) dupDelWrapper.style.display = "none";
+          if (duplicateBtn) duplicateBtn.disabled = true;
+          if (deleteBtn) deleteBtn.disabled = true;
+          if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
+          if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
+          if (editActionBtns) editActionBtns.style.display = "none";
+          if (newrefreshBtns) newrefreshBtns.style.display = "flex";
         }
         if (clearBtn) clearBtn.disabled = false;
       } else {
         bar.classList.remove("active");
         countSpan.textContent = "0 rows selected";
-        if (bulkEditBtn) {
-          bulkEditBtn.style.display = "inline-block";
-          bulkEditBtn.disabled = true;
-        }
-        if (duplicateBtn) {
-          duplicateBtn.style.display = "inline-block";
-          duplicateBtn.disabled = true;
-        }
-        if (deleteBtn) {
-          deleteBtn.style.display = "inline-block";
-          deleteBtn.disabled = true;
-        }
-        if (saveBtn) saveBtn.style.display = "none";
-        if (cancelBtn) cancelBtn.style.display = "none";
+        if (bulkEditBtn) bulkEditBtn.disabled = true;
+        if (dupDelWrapper) dupDelWrapper.style.display = "none";
+        if (duplicateBtn) duplicateBtn.disabled = true;
+        if (deleteBtn) deleteBtn.disabled = true;
+        if (editActionBtns) editActionBtns.style.display = "none";
+        if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
+        if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
         if (clearBtn) clearBtn.disabled = true;
+        if (newrefreshBtns) newrefreshBtns.style.display = "flex";
       }
     }
 
@@ -4329,6 +4360,7 @@
           });
 
           row.classList.remove("editing-row");
+          row.classList.remove("has-edits");
           const actionCell = row.querySelector(".action-cell");
           if (actionCell) actionCell.remove();
 
@@ -5137,7 +5169,7 @@
       function positionPopup(x, y) {
         // Place popup centered above the cursor
         popup.style.left = x + 'px';
-        popup.style.top  = (y - 10) + 'px';
+        popup.style.top = (y - 10) + 'px';
       }
 
       document.getElementById('table-container').addEventListener('mouseover', function (e) {
@@ -5161,6 +5193,24 @@
           popup.style.display = 'none';
           popupImg.src = '';
         }, 80);
+      });
+
+      document.getElementById('table-container').addEventListener('input', function (e) {
+        if (e.target.closest('.select-cell')) return;
+        const row = e.target.closest('.editing-row');
+        if (row) {
+          row.classList.add('has-edits');
+          updateSelectionBar();
+        }
+      });
+
+      document.getElementById('table-container').addEventListener('change', function (e) {
+        if (e.target.closest('.select-cell')) return;
+        const row = e.target.closest('.editing-row');
+        if (row) {
+          row.classList.add('has-edits');
+          updateSelectionBar();
+        }
       });
     })();
 

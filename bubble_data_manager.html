@@ -1068,7 +1068,7 @@
     <div id="selection-buttons" class="selection-bar">
       <span id="selection-count">0 rows selected</span>
       <button id="edit-selected-btn" class="btn btn-primary" onclick="editSelectedRows()" disabled>
-        Edit
+        Edit Selected
       </button>
       <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" style="display: none;">
         Save Changes
@@ -1077,10 +1077,10 @@
         Cancel Edits
       </button>
       <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
-        Duplicate
+        Duplicate Selected
       </button>
       <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
-        Delete
+        Delete Selected
       </button>
       <button id="clear-selection-btn" class="btn" onclick="clearSelection()" disabled>
         Clear Selection
@@ -1547,14 +1547,14 @@
     }
 
     // --- GLOBAL STATE ---
-    var currentCursor = 0;
+    let currentCursor = 0;
     const LIMIT = 100;
-    var currentConstraints = [];
-    var constraintFieldsPopulated = false;
-    var cachedRecords = []; // Holds raw server results for local filtering
-    var columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
-    var detectedHeaders = []; // Holds absolute unique columns
-    var settingsRecord = null; // Holds your centralized backend database constants layout settings
+    let currentConstraints = [];
+    let constraintFieldsPopulated = false;
+    let cachedRecords = []; // Holds raw server results for local filtering
+    let columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
+    let detectedHeaders = []; // Holds absolute unique columns
+    let settingsRecord = null; // Holds your centralized backend database constants layout settings
 
     function getExpectedType(field) {
       if (columnTypeCache[field]) return columnTypeCache[field];
@@ -1640,8 +1640,8 @@
 
     // --- SELECTION STATE ---
     let selectedRows = new Map();
-    var selectAllMatching = false;
-    var totalMatchingCount = 0;
+    let selectAllMatching = false;
+    let totalMatchingCount = 0;
 
     // --- INITIALIZATION ---
     async function initApp() {
@@ -1736,7 +1736,7 @@
 
       // 4. Clear Row Selections & Column Filters
       hiddenColumns.clear();
-      selectedRowIds.clear();
+      selectedRows.clear();
       selectAllMatching = false;
       document.getElementById("all-matching-notice").style.display = "none";
       document.getElementById("all-matching-selected-notice").style.display = "none";
@@ -1985,7 +1985,7 @@
 
       // Add Select-All Checkbox Header
       const allChecked =
-        records.length > 0 && records.every((r) => selectedRowIds.has(r._id));
+        records.length > 0 && records.every((r) => selectedRows.has(r._id));
       tableHTML += `<th class="select-cell">
                             <input type="checkbox" title="Select all rows" ${allChecked ? "checked" : ""}
                                    onchange="toggleSelectAll(this.checked)">
@@ -2034,7 +2034,7 @@
 
       // Generate Data Rows
       records.forEach((record) => {
-        const isSelected = selectedRowIds.has(record._id);
+        const isSelected = selectedRows.has(record._id);
         // Attach the _id to the tr element so we can target the whole row
         tableHTML += `<tr id="row-${record._id}" class="${isSelected ? "row-selected" : ""}">`;
 
@@ -2948,15 +2948,27 @@
         'thead .select-cell input[type="checkbox"]',
       );
       if (!selectAllCb) return;
-      const rows = document.querySelectorAll("tbody tr");
-      if (rows.length === 0) {
+
+      const filterValue = document
+        .getElementById("table-filter")
+        .value.trim()
+        .toLowerCase();
+      const visibleRecords = filterValue
+        ? cachedRecords.filter((record) =>
+          Object.values(record).some((val) => {
+            if (val === null || val === undefined) return false;
+            const s =
+              typeof val === "object" ? JSON.stringify(val) : String(val);
+            return s.toLowerCase().includes(filterValue);
+          }),
+        )
+        : cachedRecords;
+
+      if (visibleRecords.length === 0) {
         selectAllCb.checked = false;
         return;
       }
-      const allChecked = Array.from(rows).every((row) => {
-        const cb = row.querySelector('.select-cell input[type="checkbox"]');
-        return cb && cb.checked;
-      });
+      const allChecked = visibleRecords.every((r) => selectedRows.has(r._id));
       selectAllCb.checked = allChecked;
     }
 
@@ -3830,7 +3842,7 @@
       } else {
         // Reset state for current type if we're just loading a different filter
         currentCursor = 0;
-        selectedRowIds.clear();
+        selectedRows.clear();
         updateSelectionBar();
       }
 

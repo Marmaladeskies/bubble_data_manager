@@ -433,6 +433,24 @@
       margin: 5px;
     }
 
+    .selection-notice {
+      display: none;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    .selection-notice a {
+      color: #007bff;
+      text-decoration: underline;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
     .selection-bar .btn {
       max-width: none;
       width: 140px;
@@ -1058,6 +1076,9 @@
       <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" style="display: none;">
         Cancel Edits
       </button>
+      <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
+        Duplicate Selected
+      </button>
       <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
         Delete Selected
       </button>
@@ -1122,6 +1143,18 @@
         <button id="next-btn" class="btn" onclick="nextPage()" disabled style="display: none">
           Next
         </button>
+      </div>
+      <div id="all-matching-notice" class="selection-notice">
+        All <span id="current-page-count">0</span> rows on this page are selected.
+        <a href="#" onclick="event.preventDefault(); selectAllMatchingRecords();">
+          Select all <span id="total-matching-count-notice">0</span> records that match this filter
+        </a>
+      </div>
+      <div id="all-matching-selected-notice" class="selection-notice">
+        All <span id="total-matching-selected-count">0</span> records that match this filter are selected.
+        <a href="#" onclick="event.preventDefault(); clearSelection();">
+          Clear selection
+        </a>
       </div>
       <div id="table-container"></div>
     </div>
@@ -1514,14 +1547,14 @@
     }
 
     // --- GLOBAL STATE ---
-    let currentCursor = 0;
+    var currentCursor = 0;
     const LIMIT = 100;
-    let currentConstraints = [];
-    let constraintFieldsPopulated = false;
-    let cachedRecords = []; // Holds raw server results for local filtering
-    let columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
-    let detectedHeaders = []; // Holds absolute unique columns
-    let settingsRecord = null; // Holds your centralized backend database constants layout settings
+    var currentConstraints = [];
+    var constraintFieldsPopulated = false;
+    var cachedRecords = []; // Holds raw server results for local filtering
+    var columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
+    var detectedHeaders = []; // Holds absolute unique columns
+    var settingsRecord = null; // Holds your centralized backend database constants layout settings
 
     function getExpectedType(field) {
       if (columnTypeCache[field]) return columnTypeCache[field];
@@ -1606,7 +1639,9 @@
     }
 
     // --- SELECTION STATE ---
-    let selectedRowIds = new Set();
+    let selectedRows = new Map();
+    var selectAllMatching = false;
+    var totalMatchingCount = 0;
 
     // --- INITIALIZATION ---
     async function initApp() {
@@ -1702,6 +1737,9 @@
       // 4. Clear Row Selections & Column Filters
       hiddenColumns.clear();
       selectedRowIds.clear();
+      selectAllMatching = false;
+      document.getElementById("all-matching-notice").style.display = "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       updateSelectionBar();
 
       // Clear layout cache so it re-fetches for the new configuration
@@ -1778,6 +1816,7 @@
         columnTypeCache = {}; // Reset cache when new records are fetched
         const remaining = data.response.remaining;
         const count = data.response.count;
+        totalMatchingCount = (currentCursor || 0) + count + (remaining || 0);
 
         // Determine all structural columns across the batch from API meta
         const metaHeaders = cachedTypeColumns[currentType] || [];
@@ -2524,7 +2563,7 @@
 
     // --- CLIENT SIDE ROW EDITING ---
     function editSelectedRows() {
-      selectedRowIds.forEach((recordId) => {
+      selectedRows.forEach((record, recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         if (row && !row.classList.contains("editing-row")) {
           editRow(recordId);
@@ -2830,9 +2869,14 @@
     // --- ROW SELECTION & DELETION ---
     function toggleRowSelection(recordId, isChecked) {
       if (isChecked) {
-        selectedRowIds.add(recordId);
+        const record = cachedRecords.find(r => r._id === recordId);
+        if (record) selectedRows.set(recordId, record);
       } else {
-        selectedRowIds.delete(recordId);
+        selectedRows.delete(recordId);
+        if (selectAllMatching) {
+          selectAllMatching = false;
+          document.getElementById("all-matching-selected-notice").style.display = "none";
+        }
       }
       // Update row highlight without full re-render
       const row = document.getElementById(`row-${recordId}`);
@@ -2862,9 +2906,9 @@
 
       visibleRecords.forEach((record) => {
         if (isChecked) {
-          selectedRowIds.add(record._id);
+          selectedRows.set(record._id, record);
         } else {
-          selectedRowIds.delete(record._id);
+          selectedRows.delete(record._id);
         }
         const row = document.getElementById(`row-${record._id}`);
         if (row) {
@@ -2873,6 +2917,29 @@
           if (cb) cb.checked = isChecked;
         }
       });
+
+      const allMatchingNotice = document.getElementById("all-matching-notice");
+      const allMatchingSelectedNotice = document.getElementById("all-matching-selected-notice");
+
+      if (isChecked && totalMatchingCount > visibleRecords.length) {
+        allMatchingNotice.style.display = "block";
+        document.getElementById("current-page-count").textContent = visibleRecords.length;
+        document.getElementById("total-matching-count-notice").textContent = totalMatchingCount;
+      } else {
+        allMatchingNotice.style.display = "none";
+        allMatchingSelectedNotice.style.display = "none";
+        selectAllMatching = false;
+      }
+
+      updateSelectionBar();
+    }
+
+    function selectAllMatchingRecords() {
+      selectAllMatching = true;
+      document.getElementById("all-matching-notice").style.display = "none";
+      const selectedNotice = document.getElementById("all-matching-selected-notice");
+      selectedNotice.style.display = "block";
+      document.getElementById("total-matching-selected-count").textContent = totalMatchingCount;
       updateSelectionBar();
     }
 
@@ -2899,11 +2966,12 @@
       const editBtn = document.getElementById("edit-selected-btn");
       const saveBtn = document.getElementById("save-selected-btn");
       const cancelBtn = document.getElementById("cancel-selected-btn");
+      const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
 
-      const count = selectedRowIds.size;
-      const isEditing = Array.from(selectedRowIds).some((id) => {
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
+      const isEditing = Array.from(selectedRows.keys()).some((id) => {
         const r = document.getElementById(`row-${id}`);
         return r && r.classList.contains("editing-row");
       });
@@ -2914,17 +2982,22 @@
 
         if (isEditing) {
           if (editBtn) editBtn.style.display = "none";
+          if (duplicateBtn) duplicateBtn.style.display = "none";
           if (deleteBtn) deleteBtn.style.display = "none";
           if (saveBtn) saveBtn.style.display = "inline-block";
           if (cancelBtn) cancelBtn.style.display = "inline-block";
         } else {
           if (editBtn) {
             editBtn.style.display = "inline-block";
-            editBtn.disabled = false;
+            editBtn.disabled = selectAllMatching; // Bulk editing not supported
+          }
+          if (duplicateBtn) {
+            duplicateBtn.style.display = "inline-block";
+            duplicateBtn.disabled = false;
           }
           if (deleteBtn) {
             deleteBtn.style.display = "inline-block";
-            deleteBtn.disabled = false;
+            deleteBtn.disabled = selectAllMatching;
           }
           if (saveBtn) saveBtn.style.display = "none";
           if (cancelBtn) cancelBtn.style.display = "none";
@@ -2937,6 +3010,10 @@
           editBtn.style.display = "inline-block";
           editBtn.disabled = true;
         }
+        if (duplicateBtn) {
+          duplicateBtn.style.display = "inline-block";
+          duplicateBtn.disabled = true;
+        }
         if (deleteBtn) {
           deleteBtn.style.display = "inline-block";
           deleteBtn.disabled = true;
@@ -2948,7 +3025,7 @@
     }
 
     async function saveSelectedRows() {
-      const editingIds = Array.from(selectedRowIds).filter((recordId) => {
+      const editingIds = Array.from(selectedRows.keys()).filter((recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         return row && row.classList.contains("editing-row");
       });
@@ -3130,7 +3207,7 @@
     }
 
     function cancelSelectedRows() {
-      selectedRowIds.forEach((recordId) => {
+      selectedRows.forEach((record, recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         if (row && row.classList.contains("editing-row")) {
           cancelEditRow(recordId);
@@ -3144,7 +3221,10 @@
         const id = row.id.replace("row-", "");
         cancelEditRow(id);
       });
-      selectedRowIds.clear();
+      selectedRows.clear();
+      selectAllMatching = false;
+      document.getElementById("all-matching-notice").style.display = "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       // Uncheck all visible checkboxes and remove highlights
       document.querySelectorAll("tbody tr").forEach((row) => {
         row.classList.remove("row-selected");
@@ -3155,8 +3235,107 @@
       updateSelectionBar();
     }
 
+    async function fetchAllMatchingRows() {
+      const currentType = document.getElementById("data-type-selector").value;
+      let allRecords = [];
+      let cursor = 0;
+      let remaining = 1;
+
+      while (remaining > 0) {
+        let fetchUrl = `${API_BASE_URL}${currentType}?cursor=${cursor}`;
+        if (currentConstraints.length > 0) {
+          fetchUrl += `&constraints=${encodeURIComponent(JSON.stringify(currentConstraints))}`;
+        }
+        if (sortField) {
+          fetchUrl += `&sort_field=${encodeURIComponent(sortField)}&descending=${sortDescending}`;
+        }
+
+        const response = await fetch(fetchUrl, {
+          headers: { Authorization: `Bearer ${API_TOKEN}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status} fetching matching rows`);
+
+        const data = await response.json();
+        const results = data.response.results || [];
+        allRecords = allRecords.concat(results);
+        remaining = data.response.remaining;
+        cursor += results.length;
+      }
+
+      return allRecords;
+    }
+
+    async function duplicateSelectedRows() {
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
+      if (count === 0) return;
+
+      const confirmed = window.confirm(
+        `Are you sure you want to duplicate ${count} row${count !== 1 ? "s" : ""}?`
+      );
+      if (!confirmed) return;
+
+      const currentType = document.getElementById("data-type-selector").value;
+      const countSpan = document.getElementById("selection-count");
+      const duplicateBtn = document.getElementById("duplicate-selected-btn");
+      const originalText = duplicateBtn.textContent;
+
+      duplicateBtn.disabled = true;
+      duplicateBtn.textContent = "Duplicating...";
+
+      try {
+        let rowsToDuplicate = [];
+        if (selectAllMatching) {
+          countSpan.textContent = `Fetching all ${totalMatchingCount} matching rows...`;
+          rowsToDuplicate = await fetchAllMatchingRows();
+        } else {
+          rowsToDuplicate = Array.from(selectedRows.values());
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < rowsToDuplicate.length; i++) {
+          const original = rowsToDuplicate[i];
+          countSpan.textContent = `Duplicating ${i + 1} of ${rowsToDuplicate.length}...`;
+
+          // Prepare payload: strip protected fields
+          const payload = { ...original };
+          PROTECTED_FIELDS.forEach(f => delete payload[f]);
+
+          try {
+            const response = await fetch(`${API_BASE_URL}${currentType}`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${API_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            successCount++;
+          } catch (err) {
+            console.error(`Failed to duplicate row ${original._id}:`, err);
+            failCount++;
+          }
+        }
+
+        alert(`Successfully duplicated ${successCount} row${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` Failed to duplicate ${failCount} row(s).` : ""}`);
+        clearSelection();
+        fetchAndRenderData();
+      } catch (error) {
+        console.error("Duplication error:", error);
+        alert(`An error occurred during duplication: ${error.message}`);
+      } finally {
+        duplicateBtn.disabled = false;
+        duplicateBtn.textContent = originalText;
+        updateSelectionBar();
+      }
+    }
+
     async function deleteSelectedRows() {
-      const count = selectedRowIds.size;
+      const count = selectedRows.size;
       if (count === 0) return;
 
       const confirmed = window.confirm(
@@ -3167,7 +3346,7 @@
       const currentType = document.getElementById("data-type-selector").value;
       const bar = document.getElementById("selection-bar");
       const countSpan = document.getElementById("selection-count");
-      const idsToDelete = Array.from(selectedRowIds);
+      const idsToDelete = Array.from(selectedRows.keys());
 
       let successCount = 0;
       let failCount = 0;
@@ -3202,7 +3381,7 @@
           successfullyDeletedIds.add(id);
 
           // Remove from local selection
-          selectedRowIds.delete(id);
+          selectedRows.delete(id);
 
           // Remove the row from the DOM immediately
           const row = document.getElementById(`row-${id}`);

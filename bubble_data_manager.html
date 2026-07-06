@@ -498,6 +498,13 @@
       background: #0056b3;
     }
 
+    .btn-applied, .btn-applied:hover {
+      background: #e9ecef !important;
+      color: #6c757d !important;
+      border-color: #dee2e6 !important;
+      cursor: not-allowed !important;
+    }
+
     #page-info {
       font-weight: 500;
       font-size: 14px;
@@ -1287,24 +1294,24 @@
         <div style="display: flex; align-items: center; gap: 15px;">
           <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
         </div>
-        <div id="save-constraint-group">
-          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
-          <input type="text" id="save-filter-name" placeholder="Filter Name...">
-        </div>
       </div>
       <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
       <button type="button" class="btn" style="padding: 4px 10px; margin: 5px; font-size: 12px;"
         onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
         Constraint</button>
-      <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
+      <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; align-items: center;">
         <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()"
           style="max-width: fit-content;">
-          Apply Constraints
+          Apply
         </button>
-        <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
-          style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
-          Save Current View
-        </button>
+        <div id="save-constraint-group" style="display: none; align-items: center; gap: 10px;">
+          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+          <input type="text" id="save-filter-name" placeholder="Filter Name...">
+          <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
+            style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
+            Save Current View
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3003,11 +3010,13 @@
           opt.text = val;
           select.appendChild(opt);
         });
+        select.onchange = () => markConstraintsDirty();
 
         container.appendChild(select);
       } else if (optionValues && optionValues.length > 0) {
         const select = document.createElement("select");
         select.className = "constraint-value";
+        select.onchange = () => markConstraintsDirty();
         select.style.width = "100%";
         select.style.boxSizing = "border-box";
         select.style.padding = "8px";
@@ -3317,15 +3326,27 @@
     function markConstraintsDirty() {
       const applyBtn = document.getElementById("apply-constraints-btn");
       const saveBtn = document.getElementById("save-view-btn");
-      if (applyBtn) { applyBtn.disabled = false; applyBtn.classList.remove("btn-applied"); }
+      const saveGroup = document.getElementById("save-constraint-group");
+      if (applyBtn) {
+        applyBtn.disabled = false;
+        applyBtn.classList.remove("btn-applied");
+        applyBtn.innerText = "Apply";
+      }
       if (saveBtn) saveBtn.disabled = true;
+      if (saveGroup) saveGroup.style.display = "none";
     }
 
     function markConstraintsApplied() {
       const applyBtn = document.getElementById("apply-constraints-btn");
       const saveBtn = document.getElementById("save-view-btn");
-      if (applyBtn) { applyBtn.disabled = true; applyBtn.classList.add("btn-applied"); }
+      const saveGroup = document.getElementById("save-constraint-group");
+      if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.classList.add("btn-applied");
+        applyBtn.innerText = "Apply";
+      }
       if (saveBtn) saveBtn.disabled = false;
+      if (saveGroup) saveGroup.style.display = "flex";
     }
 
     function applyConstraintFilter() {
@@ -3473,6 +3494,7 @@
       if (input) {
         input.value = "";
         btn.style.display = "none";
+        markConstraintsDirty();
       }
     }
 
@@ -5012,6 +5034,8 @@
         settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettings;
         nameInput.value = "";
         currentFilterName = name;
+        const saveGroup = document.getElementById("save-constraint-group");
+        if (saveGroup) saveGroup.style.display = "none";
         renderDataTypeSidebar();
         alert(`View "${name}" saved successfully.`);
       } catch (error) {
@@ -5050,6 +5074,7 @@
           currentConstraints = filter.constraints || [];
           currentFilterName = filterName;
           syncConstraintsUI();
+          markConstraintsApplied();
           fetchAndRenderData();
           renderDataTypeSidebar();
           // Populate the filter name input with the loaded filter's name

@@ -43,6 +43,7 @@
     }
 
     tbody td input[type="text"],
+    tbody td input[type="datetime-local"],
     tbody td select {
       padding: 2px 4px !important;
       margin: 0;
@@ -242,7 +243,8 @@
       align-items: center;
     }
 
-    .input-wrapper input[type="text"] {
+    .input-wrapper input[type="text"],
+    .input-wrapper input[type="datetime-local"] {
       width: 100%;
       padding-right: 30px;
     }
@@ -280,7 +282,8 @@
     }
 
     /* Form Controls */
-    input,
+    input[type="text"],
+    input[type="datetime-local"],
     select {
       padding: 8px;
       border: 1px solid #ccc;
@@ -853,6 +856,7 @@
 
       .constraint-bar select,
       .constraint-bar input[type="text"],
+      .constraint-bar input[type="datetime-local"],
       .constraint-bar .input-wrapper,
       .constraint-bar button {
         flex: 1 1 100%;
@@ -1491,6 +1495,36 @@
 
       // Fallback: check cachedRecords
       return getExpectedType(fieldDisplayName) === "boolean";
+    }
+
+    function isDateField(dataTypeSlug, fieldDisplayName) {
+      const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
+      if (fieldMeta) {
+        return fieldMeta.type === "date";
+      }
+
+      // Fallback: check cachedRecords for likely date string
+      const val = cachedRecords.length > 0 ? cachedRecords[0][fieldDisplayName] : null;
+      if (typeof val === "string" && !isNaN(Date.parse(val)) && (val.includes("T") || val.includes("-"))) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
+     */
+    function formatToDateTimeLocal(dateStr) {
+      if (!dateStr) return "";
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "";
+        const offset = date.getTimezoneOffset() * 60000;
+        const localISOTime = new Date(date.getTime() - offset).toISOString().slice(0, 16);
+        return localISOTime;
+      } catch (e) {
+        return "";
+      }
     }
 
     function optionSlugMatchesDisplayName(slug, displayName) {
@@ -2291,6 +2325,17 @@
         });
 
         container.appendChild(select);
+      } else if (isDateField(currentType, field)) {
+        container.innerHTML = `
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="datetime-local" class="constraint-value"
+            oninput="toggleClearBtnElement(this); markConstraintsDirty();"
+            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
+          <button type="button" class="input-clear-btn" onclick="clearConstraintRowValue(this)"
+            title="Clear constraint filter" style="display: none">
+            ×
+          </button>
+        </div>`;
       } else {
         // Restore original text input HTML
         container.innerHTML = `
@@ -2582,8 +2627,18 @@
           constraintType = "is_not_empty";
         } else if (operator === "equals") {
           constraintType = "equals";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "not equals") {
           constraintType = "not equal";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "is yes") {
           constraintType = "equals";
           constraintValue = true;
@@ -2610,8 +2665,18 @@
           constraintValue = parseFloat(value.trim()) + 0.0000001;
         } else if (operator === "date greater than") {
           constraintType = "greater than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else if (operator === "date less than") {
           constraintType = "less than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else {
           // Fallback
           constraintType = "text contains";
@@ -2699,6 +2764,9 @@
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
 
@@ -2709,8 +2777,6 @@
         cell.setAttribute("data-original", currentValue); // Store for cancellation
 
         // Check if this field uses an option set or yes/no type
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const optionValues = getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
 
@@ -2760,6 +2826,16 @@
           });
 
           cell.appendChild(select);
+        } else if (isDateField(currentType, field)) {
+          // Render a datetime-local picker for date fields
+          const input = document.createElement("input");
+          input.type = "datetime-local";
+          input.value = formatToDateTimeLocal(currentValue);
+          input.style.width = "100%";
+          input.style.minWidth = "100px";
+          input.style.boxSizing = "border-box";
+          input.style.padding = "4px";
+          cell.appendChild(input);
         } else if (optionValues && optionValues.length > 0) {
           // Render a <select> dropdown for option set fields
           const select = document.createElement("select");
@@ -2841,6 +2917,9 @@
       let payload = {};
       let hasChanges = false;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       // 2. Loop through row, compare original values to input/select values, and build payload
       cells.forEach((cell) => {
         if (cell.hasAttribute("data-original")) {
@@ -2854,11 +2933,10 @@
           if (editEl) {
             let val = editEl.value;
 
-            const currentType =
-              document.getElementById("data-type-selector").value;
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
             const isJSON = !!hiddenInput;
+            const isDate = isDateField(currentType, field);
 
             let origCompared = originalValue;
             if (isBool) {
@@ -2873,6 +2951,8 @@
               )
                 origCompared = "false";
               else origCompared = "";
+            } else if (isDate) {
+              origCompared = formatToDateTimeLocal(originalValue);
             }
 
             if (val !== origCompared && (val !== originalValue || isBool || isJSON)) {
@@ -2880,6 +2960,53 @@
                   try { val = JSON.parse(val); } catch(e) {}
               } else {
                   val = castPayloadValue(val, isBool, isOptionSet, field);
+            if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+              // Handle boolean payload conversion
+              if (isBool) {
+                if (val === "true" || val.toLowerCase() === "yes") val = true;
+                else if (val === "false" || val.toLowerCase() === "no")
+                  val = false;
+                else if (val === "") val = null;
+              } else if (isDate) {
+                if (val === "") val = null;
+                else {
+                  try {
+                    val = new Date(val).toISOString();
+                  } catch (e) {
+                    val = null;
+                  }
+                }
+              } else if (!isOptionSet) {
+                // Determine the expected type by looking at cachedRecords
+                let expectedType = getExpectedType(field);
+
+                // Basic Data Type Casting to prevent 400 errors on Save
+                if (expectedType === "number") {
+                  if (val.trim() !== "" && !isNaN(val)) {
+                    val = Number(val);
+                  } else if (val.trim() === "") {
+                    val = null;
+                  }
+                } else if (expectedType === "boolean") {
+                  if (val.toLowerCase() === "true") val = true;
+                  else if (val.toLowerCase() === "false") val = false;
+                } else if (expectedType === "string") {
+                  // Leave as string to prevent "Expected a string, but got a number" errors
+                } else {
+                  // Fallback to basic guessing if type is unknown (e.g. whole column is null)
+                  if (val.trim() !== "" && !isNaN(val)) {
+                    val = Number(val);
+                  } else if (val.toLowerCase() === "true") {
+                    val = true;
+                  } else if (val.toLowerCase() === "false") {
+                    val = false;
+                  }
+                }
+              }
+
+              // For option set fields, send empty string as null to clear the value
+              if (isOptionSet && val === "") {
+                val = null;
               }
 
               payload[field] = val;
@@ -2895,7 +3022,6 @@
         return;
       }
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
       const actionCell = row.querySelector(".action-cell");
@@ -2929,8 +3055,6 @@
             const editEl = input || select;
             if (editEl) {
               const field = cell.getAttribute("data-field");
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isBool = isBooleanField(currentType, field);
 
               let newValue = editEl.value;
@@ -3118,6 +3242,9 @@
       let successCount = 0;
       let failCount = 0;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       for (const recordId of editingIds) {
         const row = document.getElementById(`row-${recordId}`);
         if (!row) continue;
@@ -3137,11 +3264,10 @@
 
             if (editEl) {
               let val = editEl.value;
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
               const isJSON = !!hiddenInput;
+              const isDate = isDateField(currentType, field);
 
               let origCompared = originalValue;
               if (isBool) {
@@ -3156,6 +3282,8 @@
                 )
                   origCompared = "false";
                 else origCompared = "";
+              } else if (isDate) {
+                origCompared = formatToDateTimeLocal(originalValue);
               }
 
               if (val !== origCompared && (val !== originalValue || isBool || isJSON)) {
@@ -3164,6 +3292,37 @@
                 } else {
                     val = castPayloadValue(val, isBool, isOptionSet, field);
                 }
+              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+                if (isBool) {
+                  if (val === "true" || val.toLowerCase() === "yes") val = true;
+                  else if (val === "false" || val.toLowerCase() === "no")
+                    val = false;
+                  else if (val === "") val = null;
+                } else if (isDate) {
+                  if (val === "") val = null;
+                  else {
+                    try {
+                      val = new Date(val).toISOString();
+                    } catch (e) {
+                      val = null;
+                    }
+                  }
+                } else if (!isOptionSet) {
+                  let expectedType = getExpectedType(field);
+                  if (expectedType === "number") {
+                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
+                    else if (val.trim() === "") val = null;
+                  } else if (expectedType === "boolean") {
+                    if (val.toLowerCase() === "true") val = true;
+                    else if (val.toLowerCase() === "false") val = false;
+                  } else if (expectedType === "string") {
+                  } else {
+                    if (val.trim() !== "" && !isNaN(val)) val = Number(val);
+                    else if (val.toLowerCase() === "true") val = true;
+                    else if (val.toLowerCase() === "false") val = false;
+                  }
+                }
+                if (isOptionSet && val === "") val = null;
 
                 payload[field] = val;
                 hasChanges = true;
@@ -3178,7 +3337,6 @@
           continue;
         }
 
-        const currentType = document.getElementById("data-type-selector").value;
         const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
         try {
@@ -3205,8 +3363,6 @@
               const editEl = input || select;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
-                const currentType =
-                  document.getElementById("data-type-selector").value;
                 const isBool = isBooleanField(currentType, field);
 
                 let newValue = editEl.value;
@@ -3426,6 +3582,14 @@
             });
 
             td.appendChild(select);
+          } else if (isDateField(currentType, header)) {
+            const input = document.createElement("input");
+            input.type = "datetime-local";
+            input.style.width = "100%";
+            input.style.minWidth = "100px";
+            input.style.boxSizing = "border-box";
+            input.style.padding = "4px";
+            td.appendChild(input);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
             const select = document.createElement("select");
@@ -3503,6 +3667,9 @@
       const cells = newRow.querySelectorAll("td[data-field]");
       let payload = {};
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
         // Skip system-managed fields
@@ -3518,8 +3685,6 @@
         if (val.trim() === "" && !hiddenInput) return; // Don't send empty fields
 
         // Check if this is an option set or yes/no field
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
         const isJSON = !!hiddenInput;
@@ -3528,12 +3693,33 @@
             try { val = JSON.parse(val); } catch(e) {}
         } else {
             val = castPayloadValue(val, isBool, isOptionSet, field);
+        const isDate = isDateField(currentType, field);
+
+        if (isBool) {
+          if (val === "true" || val.toLowerCase() === "yes") val = true;
+          else if (val === "false" || val.toLowerCase() === "no") val = false;
+        } else if (isDate) {
+          try {
+            val = new Date(val).toISOString();
+          } catch (e) {
+            val = null;
+          }
+        } else if (!isOptionSet) {
+          // Determine the expected type by looking at cachedRecords
+          let expectedType = getExpectedType(field);
+
+          // Basic data type casting
+          if (expectedType === "number") {
+            if (!isNaN(val)) val = Number(val);
+          } else if (expectedType === "boolean") {
+            if (val.toLowerCase() === "true") val = true;
+            else if (val.toLowerCase() === "false") val = false;
+          }
         }
 
         payload[field] = val;
       });
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
       const actionCell = newRow.querySelector(".action-cell");

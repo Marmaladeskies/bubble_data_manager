@@ -40,6 +40,10 @@
       padding: 5px 8px;
       text-align: left;
       line-height: 1.3;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     tbody td input[type="text"],
@@ -64,6 +68,10 @@
       border: 1px solid #ddd;
       padding: 7px 10px;
       text-align: left;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Version-aware header row colors */
@@ -1160,10 +1168,11 @@
 
     /* File Preview Styles */
     .file-preview-wrapper {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 8px;
       max-width: 300px;
+      margin-right: 4px; /* small gap between items when inline */
     }
 
     .thumbnail-preview {
@@ -1173,15 +1182,41 @@
       border-radius: 4px;
       border: 1px solid #ddd;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: box-shadow 0.2s ease;
       background-color: #f0f0f0;
     }
 
     .thumbnail-preview:hover {
-      transform: scale(3);
-      z-index: 100;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      position: relative;
+      box-shadow: 0 0 0 2px #4f8ef7;
+    }
+
+    /* Floating image preview popup */
+    #img-hover-popup {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      background: #1a1a2e;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 6px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.3);
+      transform: translateX(-50%) translateY(-100%);
+      margin-top: -10px;
+      max-width: 260px;
+    }
+    #img-hover-popup img {
+      display: block;
+      max-width: 240px;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 3px;
+    }
+
+    /* Thumbnails embedded inside JSON cells */
+    .json-img-thumb {
+      margin-left: 4px;
+      vertical-align: middle;
     }
 
     .file-icon-link {
@@ -1299,22 +1334,22 @@
     <div id="selection-buttons" class="selection-bar">
       <span id="selection-count">0 rows selected</span>
       <button id="edit-selected-btn" class="btn btn-primary" onclick="editSelectedRows()" disabled>
-        Edit Selected
+        Edit
       </button>
       <button id="bulk-edit-btn" class="btn btn-primary" onclick="showBulkEdit()" disabled>
         Bulk Edit
       </button>
       <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" style="display: none;">
-        Save Changes
+        Save
       </button>
       <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" style="display: none;">
-        Cancel Edits
+        Cancel
       </button>
       <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
-        Duplicate Selected
+        Duplicate Row(s)
       </button>
       <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
-        Delete Selected
+        Delete
       </button>
       <button id="clear-selection-btn" class="btn" onclick="clearSelection()" disabled>
         Clear Selection
@@ -1402,6 +1437,26 @@
         </a>
       </div>
       <div id="table-container"></div>
+      <div id="img-hover-popup"><img id="img-hover-popup-img" src="" alt="Preview"></div>
+    </div>
+  </div>
+
+  <!-- Text Editor Modal -->
+  <div id="text-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeTextEditor()">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="text-modal-title">Edit Text Field</h3>
+        <button type="button" class="icon-btn" onclick="closeTextEditor()"
+          style="border:none; font-size: 24px;">×</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="text-editor-textarea"
+          style="width: 100%; height: 400px; font-family: inherit; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeTextEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveTextEditor()">Save Text</button>
+      </div>
     </div>
   </div>
 
@@ -1410,7 +1465,8 @@
     <div class="modal-container">
       <div class="modal-header">
         <h3 id="json-modal-title">Edit JSON Field</h3>
-        <button type="button" class="icon-btn" onclick="closeJSONEditor()" style="border:none; font-size: 24px;">×</button>
+        <button type="button" class="icon-btn" onclick="closeJSONEditor()"
+          style="border:none; font-size: 24px;">×</button>
       </div>
       <div class="modal-tabs">
         <div id="tab-nested" class="modal-tab active" onclick="switchJSONTab('nested')">Nested View</div>
@@ -1436,6 +1492,12 @@
       isNewRow: false,
       data: null
     };
+    let currentlyEditingText = {
+      recordId: null,
+      field: null,
+      isNewRow: false
+    };
+
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
     const API_TOKEN = "<your_private_API_key>";
@@ -1977,7 +2039,7 @@
                 else if (newVal === 'false') newVal = false;
                 else if (newVal === 'null') newVal = null;
                 else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
-              } catch (err) {}
+              } catch (err) { }
               data[key] = newVal;
               syncNestedToRaw();
             };
@@ -2035,12 +2097,12 @@
         input.className = 'json-value-input';
         input.value = JSON.stringify(data);
         input.onchange = (e) => {
-           try {
-             currentlyEditingJSON.data = JSON.parse(e.target.value);
-             syncNestedToRaw();
-           } catch(err) {
-             alert("Invalid JSON primitive");
-           }
+          try {
+            currentlyEditingJSON.data = JSON.parse(e.target.value);
+            syncNestedToRaw();
+          } catch (err) {
+            alert("Invalid JSON primitive");
+          }
         };
         container.appendChild(input);
       }
@@ -2062,6 +2124,47 @@
           // Keep old data if invalid JSON
         }
       }
+    }
+
+    // --- TEXT EDITOR FUNCTIONS ---
+
+    function openTextEditor(recordId, field, initialValue, isNewRow = false) {
+      currentlyEditingText = {
+        recordId,
+        field,
+        isNewRow
+      };
+
+      document.getElementById('text-modal-title').innerText = `Edit Text: ${field}`;
+      document.getElementById('text-editor-textarea').value = initialValue || "";
+
+      document.getElementById('text-editor-modal').style.display = 'flex';
+    }
+
+    function closeTextEditor() {
+      document.getElementById('text-editor-modal').style.display = 'none';
+    }
+
+    function saveTextEditor() {
+      const textVal = document.getElementById('text-editor-textarea').value;
+      const rowId = currentlyEditingText.isNewRow ? 'row-new' : `row-${currentlyEditingText.recordId}`;
+      const row = document.getElementById(rowId);
+      if (row) {
+        const cell = row.querySelector(`td[data-field="${currentlyEditingText.field}"]`);
+        if (cell) {
+          const hiddenInput = cell.querySelector('input[type="hidden"]');
+          const preview = cell.querySelector('.text-preview');
+          if (hiddenInput) {
+            hiddenInput.value = textVal;
+          }
+          if (preview) {
+            preview.innerText = textVal.length > 20 ? textVal.substring(0, 20) + '...' : textVal;
+          }
+          cell.setAttribute('title', textVal);
+        }
+      }
+
+      closeTextEditor();
     }
 
     // --- UTILITY ---
@@ -2086,10 +2189,13 @@
 
     function isBubbleFile(val) {
       if (typeof val !== 'string') return false;
-      return val.startsWith('//s3.amazonaws.com/') || val.includes('.s3.amazonaws.com/') || isImageFile(val);
+      return val.startsWith('//s3.amazonaws.com/')
+        || val.includes('.s3.amazonaws.com/')
+        || val.includes('.cdn.bubble.io/')
+        || isImageFile(val);
     }
 
-    function renderFilePreview(url) {
+    function renderFilePreview(url, hideFileName = false) {
       if (!url) return '';
       const fullUrl = url.startsWith('//') ? 'https:' + url : url;
       const fileName = url.split('/').pop().split('?')[0];
@@ -2101,7 +2207,7 @@
             <a href="${safeUrl}" target="_blank" title="Open image in new tab">
               <img src="${safeUrl}" class="thumbnail-preview" alt="Thumbnail">
             </a>
-            <span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>
+            ${hideFileName ? '' : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
           </div>`;
       } else {
         return `
@@ -2112,9 +2218,30 @@
                 <polyline points="13 2 13 9 20 9"></polyline>
               </svg>
             </a>
-            <span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>
+            ${hideFileName ? '' : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
           </div>`;
       }
+    }
+
+    /**
+     * Recursively walk any parsed JSON value and collect all string values
+     * that look like image URLs.
+     */
+    function extractImgUrlsFromJson(val, found) {
+      found = found || [];
+      if (typeof val === 'string') {
+        if (isImageFile(val)
+            || val.startsWith('//s3.amazonaws.com/')
+            || val.includes('.s3.amazonaws.com/')
+            || val.includes('.cdn.bubble.io/')) {
+          found.push(val);
+        }
+      } else if (Array.isArray(val)) {
+        val.forEach(function (item) { extractImgUrlsFromJson(item, found); });
+      } else if (val !== null && typeof val === 'object') {
+        Object.values(val).forEach(function (v) { extractImgUrlsFromJson(v, found); });
+      }
+      return found;
     }
 
     /**
@@ -2150,7 +2277,20 @@
         jsonValue = JSON.stringify(value);
         displayValue = jsonValue;
       }
-      // Handle File URLs
+      // Handle string values that Bubble returns as a pre-serialized JSON array/object
+      // (e.g. multi-image list fields stored as text in the API response).
+      // Must come BEFORE isBubbleFile to prevent substring matches like .cdn.bubble.io/
+      // inside a JSON string from being passed to renderFilePreview.
+      else if (typeof value === 'string' && (value.trim().startsWith('[') || value.trim().startsWith('{'))) {
+        const trimmed = value.trim();
+        try {
+          JSON.parse(trimmed); // validate only — we keep the original trimmed string
+          isJSON = true;
+          jsonValue = trimmed;
+          displayValue = trimmed;
+        } catch (_) { /* not valid JSON — fall through to isBubbleFile / plain text */ }
+      }
+      // Handle File URLs (single file/image)
       else if (isBubbleFile(value)) {
         isFile = true;
         displayValue = renderFilePreview(value);
@@ -2158,7 +2298,28 @@
 
       if (isJSON) {
         cell.setAttribute('data-json', jsonValue);
-        cell.innerHTML = `<span class="json-badge" onclick="openJSONEditor('${recordId}', '${field}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${escapeHTML(jsonValue.substring(0, 30))}${jsonValue.length > 30 ? '...' : ''}</span>`;
+        // Detect image URLs nested inside the JSON
+        let parsedJson = null;
+        try { parsedJson = JSON.parse(jsonValue); } catch (_) {}
+        const imgUrls = parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
+        const uniqueImgUrls = [...new Set(imgUrls)];
+
+        // If the JSON is a pure flat array of file/image URLs (a Bubble "list of files" field),
+        // render each entry through renderFilePreview — the same proven path as single-file cells.
+        if (Array.isArray(parsedJson)
+            && parsedJson.length > 0
+            && parsedJson.every(function (item) { return typeof item === 'string' && isBubbleFile(item); })) {
+          const hideFileName = parsedJson.length > 1;
+          cell.innerHTML = parsedJson.slice(0, 5).map(function (url) { return renderFilePreview(url, hideFileName); }).join('');
+        } else {
+          // Mixed / complex JSON: show JSON badge + any detected image thumbnails alongside
+          const thumbsHtml = uniqueImgUrls.slice(0, 5).map(function (url) {
+            const fullUrl = url.startsWith('//') ? 'https:' + url : url;
+            const safe = escapeHTML(fullUrl);
+            return `<a href="${safe}" target="_blank" title="Open image in new tab" style="display:inline-block;vertical-align:middle;"><img src="${safe}" class="thumbnail-preview json-img-thumb" alt="JSON image"></a>`;
+          }).join(' ');
+          cell.innerHTML = `<span class="json-badge" onclick="openJSONEditor('${recordId}', '${field}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${escapeHTML(jsonValue.substring(0, 30))}${jsonValue.length > 30 ? '...' : ''}</span>${thumbsHtml ? ' ' + thumbsHtml : ''}`;
+        }
       } else if (isFile) {
         cell.setAttribute('data-raw-value', value);
         cell.innerHTML = displayValue;
@@ -3408,14 +3569,26 @@
           preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue;
           cell.appendChild(preview);
         } else {
-          // Default: render a text input for non-option-set fields
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = currentValue;
-          input.style.width = "100%";
-          input.style.minWidth = "100px";
-          input.style.boxSizing = "border-box";
-          cell.appendChild(input);
+          // Default: render a text input with multi-line modal support
+          const hiddenInput = document.createElement("input");
+          hiddenInput.type = "hidden";
+          hiddenInput.value = currentValue;
+          cell.appendChild(hiddenInput);
+
+          const editBtn = document.createElement("button");
+          editBtn.className = "json-badge";
+          editBtn.innerText = "Text";
+          editBtn.onclick = () => openTextEditor(recordId, field, hiddenInput.value);
+          cell.appendChild(editBtn);
+
+          const preview = document.createElement("span");
+          preview.className = "text-preview";
+          preview.style.fontSize = "11px";
+          preview.style.color = "#666";
+          preview.style.marginLeft = "5px";
+          preview.style.fontFamily = "monospace";
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + "..." : currentValue;
+          cell.appendChild(preview);
         }
       });
 
@@ -3548,28 +3721,36 @@
               const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let newValue = editEl.value;
-              let castedValue = newValue;
+              let displayValue = newValue;
               if (isBool) {
                 if (newValue === "true") {
-                  castedValue = true;
+                  newValue = true;
+                  displayValue = "yes";
                 } else if (newValue === "false") {
-                  castedValue = false;
+                  newValue = false;
+                  displayValue = "no";
                 } else {
-                  castedValue = null;
+                  newValue = null;
+                  displayValue = "";
                 }
               } else if (isJSON) {
                 try {
-                  castedValue = JSON.parse(newValue);
-                } catch (e) {}
+                  newValue = JSON.parse(newValue);
+                  displayValue = JSON.stringify(newValue);
+                  cell.setAttribute('data-json', displayValue);
+                } catch (e) { }
               } else if (isDate) {
                 if (newValue) {
-                  castedValue = new Date(newValue).toISOString();
+                  newValue = new Date(newValue).toISOString();
+                  displayValue = newValue;
                 } else {
-                  castedValue = null;
+                  newValue = null;
+                  displayValue = "";
                 }
               }
 
-              setCellContent(cell, castedValue, field, recordId, currentType);
+              setCellContent(cell, newValue, field, recordId, currentType);
+              cell.setAttribute('title', displayValue);
               cell.removeAttribute("data-original");
 
               // Keep the local Javascript array in sync so client-side searching works
@@ -3577,7 +3758,7 @@
                 (r) => r._id === recordId,
               );
               if (recordIndex > -1) {
-                cachedRecords[recordIndex][field] = castedValue;
+                cachedRecords[recordIndex][field] = newValue;
               }
             }
           }
@@ -4073,35 +4254,43 @@
                 const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
                 let newValue = editEl.value;
-                let castedValue = newValue;
+                let displayValue = newValue;
                 if (isBool) {
                   if (newValue === "true") {
-                    castedValue = true;
+                    newValue = true;
+                    displayValue = "yes";
                   } else if (newValue === "false") {
-                    castedValue = false;
+                    newValue = false;
+                    displayValue = "no";
                   } else {
-                    castedValue = null;
+                    newValue = null;
+                    displayValue = "";
                   }
                 } else if (isJSON) {
                   try {
-                    castedValue = JSON.parse(newValue);
-                  } catch (e) {}
+                    newValue = JSON.parse(newValue);
+                    displayValue = JSON.stringify(newValue);
+                    cell.setAttribute('data-json', displayValue);
+                  } catch (e) { }
                 } else if (isDate) {
                   if (newValue) {
-                    castedValue = new Date(newValue).toISOString();
+                    newValue = new Date(newValue).toISOString();
+                    displayValue = newValue;
                   } else {
-                    castedValue = null;
+                    newValue = null;
+                    displayValue = "";
                   }
                 }
 
-                setCellContent(cell, castedValue, field, recordId, currentType);
+                setCellContent(cell, newValue, field, recordId, currentType);
+                cell.setAttribute('title', displayValue);
                 cell.removeAttribute("data-original");
 
                 const recordIndex = cachedRecords.findIndex(
                   (r) => r._id === recordId,
                 );
                 if (recordIndex > -1) {
-                  cachedRecords[recordIndex][field] = castedValue;
+                  cachedRecords[recordIndex][field] = newValue;
                 }
               }
             }
@@ -4442,15 +4631,26 @@
               editBtn.innerText = 'Edit JSON';
               editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
               td.appendChild(editBtn);
-          } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = "";
-            input.placeholder = header.replace(/_/g, " ");
-            input.style.width = "100%";
-            input.style.minWidth = "100px";
-            input.style.boxSizing = "border-box";
-            td.appendChild(input);
+            } else {
+              const hiddenInput = document.createElement("input");
+              hiddenInput.type = "hidden";
+              hiddenInput.value = "";
+              td.appendChild(hiddenInput);
+
+              const editBtn = document.createElement("button");
+              editBtn.className = "json-badge";
+              editBtn.innerText = "Text";
+              editBtn.onclick = () => openTextEditor("new", header, hiddenInput.value, true);
+              td.appendChild(editBtn);
+
+              const preview = document.createElement("span");
+              preview.className = "text-preview";
+              preview.style.fontSize = "11px";
+              preview.style.color = "#666";
+              preview.style.marginLeft = "5px";
+              preview.style.fontFamily = "monospace";
+              preview.innerText = "...";
+              td.appendChild(preview);
             }
           }
         }
@@ -4895,6 +5095,42 @@
         alert(`Failed to save layout to Bubble: ${error.message}`);
       }
     }
+
+    // --- Image Hover Popup ---
+    (function () {
+      const popup = document.getElementById('img-hover-popup');
+      const popupImg = document.getElementById('img-hover-popup-img');
+      let hideTimer = null;
+
+      function positionPopup(x, y) {
+        // Place popup centered above the cursor
+        popup.style.left = x + 'px';
+        popup.style.top  = (y - 10) + 'px';
+      }
+
+      document.getElementById('table-container').addEventListener('mouseover', function (e) {
+        const thumb = e.target.closest('.thumbnail-preview');
+        if (!thumb) return;
+        clearTimeout(hideTimer);
+        const src = thumb.src;
+        if (!src) return;
+        popupImg.src = src;
+        const rect = thumb.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top;
+        popup.style.display = 'block';
+        positionPopup(cx, cy);
+      });
+
+      document.getElementById('table-container').addEventListener('mouseout', function (e) {
+        const thumb = e.target.closest('.thumbnail-preview');
+        if (!thumb) return;
+        hideTimer = setTimeout(function () {
+          popup.style.display = 'none';
+          popupImg.src = '';
+        }, 80);
+      });
+    })();
 
   </script>
 </body>

@@ -1341,9 +1341,6 @@
   <div id="selection-bar" class="selection-bar">
     <div id="selection-buttons" class="selection-bar">
       <span id="selection-count">0 rows selected</span>
-      <button id="edit-selected-btn" class="btn btn-primary" onclick="editSelectedRows()" disabled>
-        Edit
-      </button>
       <button id="bulk-edit-btn" class="btn btn-primary" onclick="showBulkEdit()" disabled>
         Bulk Edit
       </button>
@@ -1511,17 +1508,6 @@
   <script>
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
-    let currentlyEditingJSON = {
-      recordId: null,
-      field: null,
-      isNewRow: false,
-      data: null
-    };
-    let currentlyEditingText = {
-      recordId: null,
-      field: null,
-      isNewRow: false
-    };
 
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
@@ -1537,6 +1523,19 @@
     // Named keys within the BUBBLE_DATA_MANAGER_SETTINGS JSON object:
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
+
+    let currentlyEditingJSON = {
+      recordId: null,
+      field: null,
+      isNewRow: false,
+      data: null
+    };
+    let currentlyEditingText = {
+      recordId: null,
+      field: null,
+      isNewRow: false
+    };
+    
     //Parse the BUBBLE_DATA_MANAGER_SETTINGS text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
       const raw = settingsRecord && settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS];
@@ -1931,6 +1930,16 @@
     // --- JSON EDITOR FUNCTIONS ---
 
     function openJSONEditor(recordId, field, initialValue, isNewRow = false) {
+      if (!isNewRow) {
+        const row = document.getElementById(`row-${recordId}`);
+        if (row && !row.classList.contains("editing-row")) {
+          // Check the row's checkbox and toggle selection to enter edit mode
+          const cb = row.querySelector('.select-cell input[type="checkbox"]');
+          if (cb) cb.checked = true;
+          toggleRowSelection(recordId, true);
+        }
+      }
+
       currentlyEditingJSON = {
         recordId,
         field,
@@ -3469,17 +3478,7 @@
     }
 
     // --- CLIENT SIDE ROW EDITING ---
-    function editSelectedRows() {
-      selectedRows.forEach((record, recordId) => {
-        const row = document.getElementById(`row-${recordId}`);
-        if (row && !row.classList.contains("editing-row")) {
-          editRow(recordId);
-        }
-      });
-      updateSelectionBar();
-    }
-
-    function editRow(recordId) {
+        function editRow(recordId) {
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
@@ -3806,11 +3805,23 @@
       if (isChecked) {
         const record = cachedRecords.find(r => r._id === recordId);
         if (record) selectedRows.set(recordId, record);
+
+        // Auto-enter edit mode when selected
+        const row = document.getElementById(`row-${recordId}`);
+        if (row && !row.classList.contains("editing-row")) {
+          editRow(recordId);
+        }
       } else {
         selectedRows.delete(recordId);
         if (selectAllMatching) {
           selectAllMatching = false;
           document.getElementById("all-matching-selected-notice").style.display = "none";
+        }
+
+        // Auto-cancel edit mode when deselected
+        const row = document.getElementById(`row-${recordId}`);
+        if (row && row.classList.contains("editing-row")) {
+          cancelEditRow(recordId);
         }
       }
       // Update row highlight without full re-render
@@ -3840,12 +3851,18 @@
         : cachedRecords;
 
       visibleRecords.forEach((record) => {
+        const row = document.getElementById(`row-${record._id}`);
         if (isChecked) {
           selectedRows.set(record._id, record);
+          if (row && !row.classList.contains("editing-row")) {
+            editRow(record._id);
+          }
         } else {
           selectedRows.delete(record._id);
+          if (row && row.classList.contains("editing-row")) {
+            cancelEditRow(record._id);
+          }
         }
-        const row = document.getElementById(`row-${record._id}`);
         if (row) {
           row.classList.toggle("row-selected", isChecked);
           const cb = row.querySelector('.select-cell input[type="checkbox"]');
@@ -4092,7 +4109,6 @@
     function updateSelectionBar() {
       const bar = document.getElementById("selection-bar");
       const countSpan = document.getElementById("selection-count");
-      const editBtn = document.getElementById("edit-selected-btn");
       const bulkEditBtn = document.getElementById("bulk-edit-btn");
       const saveBtn = document.getElementById("save-selected-btn");
       const cancelBtn = document.getElementById("cancel-selected-btn");
@@ -4111,17 +4127,12 @@
         countSpan.textContent = `${count} row${count !== 1 ? "s" : ""} selected`;
 
         if (isEditing) {
-          if (editBtn) editBtn.style.display = "none";
           if (bulkEditBtn) bulkEditBtn.style.display = "none";
           if (duplicateBtn) duplicateBtn.style.display = "none";
           if (deleteBtn) deleteBtn.style.display = "none";
           if (saveBtn) saveBtn.style.display = "inline-block";
           if (cancelBtn) cancelBtn.style.display = "inline-block";
         } else {
-          if (editBtn) {
-            editBtn.style.display = "inline-block";
-            editBtn.disabled = selectAllMatching; // Bulk editing not supported
-          }
           if (duplicateBtn) {
             duplicateBtn.style.display = "inline-block";
             duplicateBtn.disabled = false;
@@ -4141,10 +4152,6 @@
       } else {
         bar.classList.remove("active");
         countSpan.textContent = "0 rows selected";
-        if (editBtn) {
-          editBtn.style.display = "inline-block";
-          editBtn.disabled = true;
-        }
         if (bulkEditBtn) {
           bulkEditBtn.style.display = "inline-block";
           bulkEditBtn.disabled = true;

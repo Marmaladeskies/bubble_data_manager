@@ -967,6 +967,166 @@
         display: inline-block;
       }
     }
+
+    /* JSON Editor Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-container {
+      background: white;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      background: #f8f9fa;
+    }
+
+    .modal-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-right: 1px solid #ddd;
+      font-weight: 500;
+      color: #666;
+    }
+
+    .modal-tab.active {
+      background: white;
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      margin-bottom: -1px;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Nested View Styles */
+    .json-tree-node {
+      margin-left: 20px;
+      margin-top: 5px;
+      font-family: monospace;
+    }
+
+    .json-key-val {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .json-key {
+      color: #881391;
+      font-weight: bold;
+    }
+
+    .json-value-input {
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 2px 5px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .json-toggle {
+      cursor: pointer;
+      user-select: none;
+      width: 12px;
+      display: inline-block;
+      text-align: center;
+      color: #666;
+    }
+
+    .json-add-btn,
+    .json-remove-btn {
+      cursor: pointer;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 0 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .json-add-btn:hover,
+    .json-remove-btn:hover {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .json-remove-btn {
+      color: #dc3545;
+    }
+
+    /* JSON Badge */
+    .json-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #e9ecef;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #495057;
+      cursor: pointer;
+      font-family: sans-serif;
+    }
+
+    .json-badge:hover {
+      background: #dee2e6;
+    }
+
+    #json-raw-editor {
+      width: 100%;
+      height: 400px;
+      font-family: monospace;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
   </style>
 </head>
 
@@ -1131,9 +1291,37 @@
     </div>
   </div>
 
+  <!-- JSON Editor Modal -->
+  <div id="json-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeJSONEditor()">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="json-modal-title">Edit JSON Field</h3>
+        <button type="button" class="icon-btn" onclick="closeJSONEditor()" style="border:none; font-size: 24px;">×</button>
+      </div>
+      <div class="modal-tabs">
+        <div id="tab-nested" class="modal-tab active" onclick="switchJSONTab('nested')">Nested View</div>
+        <div id="tab-raw" class="modal-tab" onclick="switchJSONTab('raw')">Raw Source</div>
+      </div>
+      <div class="modal-body">
+        <div id="json-nested-container"></div>
+        <textarea id="json-raw-editor" style="display: none;" oninput="syncRawToNested()"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeJSONEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveJSONEditor()">Save JSON</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
+    let currentlyEditingJSON = {
+      recordId: null,
+      field: null,
+      isNewRow: false,
+      data: null
+    };
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
     const API_TOKEN = "<your_private_API_key>";
@@ -1533,6 +1721,229 @@
         icon.innerHTML = isCollapsed
           ? '<polyline points="9 18 15 12 9 6"></polyline>'
           : '<polyline points="15 18 9 12 15 6"></polyline>';
+      }
+    }
+
+    // --- JSON EDITOR FUNCTIONS ---
+
+    function openJSONEditor(recordId, field, initialValue, isNewRow = false) {
+      currentlyEditingJSON = {
+        recordId,
+        field,
+        isNewRow,
+        data: null
+      };
+
+      try {
+        currentlyEditingJSON.data = initialValue ? (typeof initialValue === 'string' ? JSON.parse(initialValue) : initialValue) : {};
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+        currentlyEditingJSON.data = {};
+      }
+
+      document.getElementById('json-modal-title').innerText = `Edit JSON: ${field}`;
+      document.getElementById('json-raw-editor').value = JSON.stringify(currentlyEditingJSON.data, null, 2);
+
+      switchJSONTab('nested');
+      document.getElementById('json-editor-modal').style.display = 'flex';
+    }
+
+    function closeJSONEditor() {
+      document.getElementById('json-editor-modal').style.display = 'none';
+    }
+
+    function switchJSONTab(tab) {
+      const nestedTab = document.getElementById('tab-nested');
+      const rawTab = document.getElementById('tab-raw');
+      const nestedContainer = document.getElementById('json-nested-container');
+      const rawEditor = document.getElementById('json-raw-editor');
+
+      if (tab === 'nested') {
+        nestedTab.classList.add('active');
+        rawTab.classList.remove('active');
+        nestedContainer.style.display = 'block';
+        rawEditor.style.display = 'none';
+        renderNestedView(currentlyEditingJSON.data, nestedContainer);
+      } else {
+        nestedTab.classList.remove('active');
+        rawTab.classList.add('active');
+        nestedContainer.style.display = 'none';
+        rawEditor.style.display = 'block';
+      }
+    }
+
+    function saveJSONEditor() {
+      const isRawView = document.getElementById('tab-raw').classList.contains('active');
+      if (isRawView) {
+        syncRawToNested();
+      } else {
+        syncNestedToRaw();
+      }
+
+      const jsonStr = JSON.stringify(currentlyEditingJSON.data);
+      const rowId = currentlyEditingJSON.isNewRow ? 'row-new' : `row-${currentlyEditingJSON.recordId}`;
+      const row = document.getElementById(rowId);
+      if (row) {
+        const cell = row.querySelector(`td[data-field="${currentlyEditingJSON.field}"]`);
+        if (cell) {
+          const hiddenInput = cell.querySelector('input[type="hidden"]');
+          if (hiddenInput) {
+            hiddenInput.value = jsonStr;
+          }
+        }
+      }
+
+      closeJSONEditor();
+    }
+
+    function renderNestedView(data, container) {
+      container.innerHTML = '';
+      if (data === null || data === undefined) {
+        container.innerHTML = '<em>null</em>';
+        return;
+      }
+
+      const isArray = Array.isArray(data);
+      const isObject = typeof data === 'object' && data !== null;
+
+      if (isArray || isObject) {
+        const rootNode = document.createElement('div');
+        rootNode.className = 'json-tree-node';
+
+        const openChar = isArray ? '[' : '{';
+        const closeChar = isArray ? ']' : '}';
+
+        const header = document.createElement('div');
+        header.innerHTML = `<span class="json-toggle">▼</span> ${openChar}`;
+        header.querySelector('.json-toggle').onclick = (e) => {
+          const content = header.nextElementSibling;
+          if (content.style.display === 'none') {
+            content.style.display = 'block';
+            e.target.innerText = '▼';
+          } else {
+            content.style.display = 'none';
+            e.target.innerText = '▶';
+          }
+        };
+        rootNode.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.paddingLeft = '15px';
+
+        const keys = Object.keys(data);
+        keys.forEach(key => {
+          const row = document.createElement('div');
+          row.className = 'json-key-val';
+
+          if (!isArray) {
+            const keySpan = document.createElement('span');
+            keySpan.className = 'json-key';
+            keySpan.innerText = `"${key}": `;
+            row.appendChild(keySpan);
+          }
+
+          const val = data[key];
+          if (typeof val === 'object' && val !== null) {
+            const subContainer = document.createElement('div');
+            row.appendChild(subContainer);
+            renderNestedView(val, subContainer);
+          } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'json-value-input';
+            input.value = typeof val === 'string' ? val : JSON.stringify(val);
+            input.onchange = (e) => {
+              let newVal = e.target.value;
+              try {
+                // Try to parse as JSON for numbers/booleans/objects, otherwise keep as string
+                if (newVal === 'true') newVal = true;
+                else if (newVal === 'false') newVal = false;
+                else if (newVal === 'null') newVal = null;
+                else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
+              } catch (err) {}
+              data[key] = newVal;
+              syncNestedToRaw();
+            };
+            row.appendChild(input);
+          }
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'json-remove-btn';
+          removeBtn.innerText = '×';
+          removeBtn.onclick = () => {
+            if (isArray) {
+              data.splice(key, 1);
+            } else {
+              delete data[key];
+            }
+            renderNestedView(data, container);
+            syncNestedToRaw();
+          };
+          row.appendChild(removeBtn);
+
+          content.appendChild(row);
+        });
+
+        const addRow = document.createElement('div');
+        addRow.style.marginTop = '5px';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'json-add-btn';
+        addBtn.innerText = isArray ? '+ Add Item' : '+ Add Property';
+        addBtn.onclick = () => {
+          if (isArray) {
+            data.push("");
+          } else {
+            const newKey = prompt("Enter property name:");
+            if (newKey && !data.hasOwnProperty(newKey)) {
+              data[newKey] = "";
+            }
+          }
+          renderNestedView(data, container);
+          syncNestedToRaw();
+        };
+        addRow.appendChild(addBtn);
+        content.appendChild(addRow);
+
+        rootNode.appendChild(content);
+
+        const footer = document.createElement('div');
+        footer.innerText = closeChar;
+        rootNode.appendChild(footer);
+
+        container.appendChild(rootNode);
+      } else {
+        // Primitive
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'json-value-input';
+        input.value = JSON.stringify(data);
+        input.onchange = (e) => {
+           try {
+             currentlyEditingJSON.data = JSON.parse(e.target.value);
+             syncNestedToRaw();
+           } catch(err) {
+             alert("Invalid JSON primitive");
+           }
+        };
+        container.appendChild(input);
+      }
+    }
+
+    function syncNestedToRaw() {
+      const rawEditor = document.getElementById('json-raw-editor');
+      if (rawEditor) {
+        rawEditor.value = JSON.stringify(currentlyEditingJSON.data, null, 2);
+      }
+    }
+
+    function syncRawToNested() {
+      const rawEditor = document.getElementById('json-raw-editor');
+      if (rawEditor) {
+        try {
+          currentlyEditingJSON.data = JSON.parse(rawEditor.value);
+        } catch (e) {
+          // Keep old data if invalid JSON
+        }
       }
     }
 
@@ -2065,6 +2476,8 @@
 
         visibleHeaders.forEach((header) => {
           let cellValue = record[header];
+          let isJSON = false;
+          let jsonValue = "";
 
           // Convert boolean true/false to yes/no
           if (
@@ -2081,14 +2494,20 @@
           }
           // Bubble often returns linked data or geographic addresses as objects/arrays
           else if (typeof cellValue === "object") {
-            cellValue = JSON.stringify(cellValue);
+            isJSON = true;
+            jsonValue = JSON.stringify(cellValue);
+            cellValue = jsonValue;
           }
 
           // Escape output to prevent XSS
-          const safeValue = escapeHTML(cellValue);
+          let safeValue = escapeHTML(cellValue);
+
+          if (isJSON) {
+            safeValue = `<span class="json-badge" onclick="openJSONEditor('${record._id}', '${header}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${safeValue.substring(0, 30)}${safeValue.length > 30 ? '...' : ''}</span>`;
+          }
 
           // Assign data-field so we can map inputs back to Bubble's database schema
-          tableHTML += `<td data-field="${header}">${safeValue}</td>`;
+          tableHTML += `<td data-field="${header}" ${isJSON ? `data-json="${escapeHTML(jsonValue)}"` : ""}>${safeValue}</td>`;
         });
         tableHTML += "</tr>";
       });
@@ -2714,6 +3133,27 @@
           }
 
           cell.appendChild(select);
+        } else if (cell.hasAttribute('data-json')) {
+          // Render JSON edit UI
+          const jsonVal = cell.getAttribute('data-json');
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.value = jsonVal;
+          cell.appendChild(hiddenInput);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'json-badge';
+          editBtn.innerText = 'Edit JSON';
+          editBtn.onclick = () => openJSONEditor(recordId, field, hiddenInput.value);
+          cell.appendChild(editBtn);
+
+          const preview = document.createElement('span');
+          preview.style.fontSize = '11px';
+          preview.style.color = '#666';
+          preview.style.marginLeft = '5px';
+          preview.style.fontFamily = 'monospace';
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue;
+          cell.appendChild(preview);
         } else {
           // Default: render a text input for non-option-set fields
           const input = document.createElement("input");
@@ -2781,6 +3221,7 @@
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
             const isDate = isDateField(currentType, field);
+            const isJSON = editEl.type === 'hidden' && cell.hasAttribute('data-json');
 
             let origCompared = originalValue;
             if (isBool) {
@@ -2848,6 +3289,14 @@
                 val = null;
               }
 
+              if (isJSON) {
+                try {
+                  val = JSON.parse(val);
+                } catch (e) {
+                  console.error("Invalid JSON in saveRow:", e);
+                }
+              }
+
               payload[field] = val;
               hasChanges = true;
             }
@@ -2889,12 +3338,14 @@
         // 4. Success! Update the UI with new values
         cells.forEach((cell) => {
           if (cell.hasAttribute("data-original")) {
-            const input = cell.querySelector("input");
+            const input = cell.querySelector('input:not([type="hidden"])');
+            const hiddenInput = cell.querySelector('input[type="hidden"]');
             const select = cell.querySelector("select");
-            const editEl = input || select;
+            const editEl = input || select || hiddenInput;
             if (editEl) {
               const field = cell.getAttribute("data-field");
               const isBool = isBooleanField(currentType, field);
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let newValue = editEl.value;
               let displayValue = newValue;
@@ -2909,6 +3360,12 @@
                   newValue = null;
                   displayValue = "";
                 }
+              } else if (isJSON) {
+                try {
+                  newValue = JSON.parse(newValue);
+                  displayValue = JSON.stringify(newValue);
+                  cell.setAttribute('data-json', displayValue);
+                } catch (e) {}
               }
 
               cell.innerText = displayValue;
@@ -3096,15 +3553,17 @@
           if (cell.hasAttribute("data-original")) {
             const field = cell.getAttribute("data-field");
             const originalValue = cell.getAttribute("data-original");
-            const input = cell.querySelector("input");
+            const input = cell.querySelector('input:not([type="hidden"])');
+            const hiddenInput = cell.querySelector('input[type="hidden"]');
             const select = cell.querySelector("select");
-            const editEl = input || select;
+            const editEl = input || select || hiddenInput;
 
             if (editEl) {
               let val = editEl.value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
               const isDate = isDateField(currentType, field);
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let origCompared = originalValue;
               if (isBool) {
@@ -3155,6 +3614,14 @@
                 }
                 if (isOptionSet && val === "") val = null;
 
+                if (isJSON) {
+                  try {
+                    val = JSON.parse(val);
+                  } catch (e) {
+                    console.error("Invalid JSON in saveSelectedRows:", e);
+                  }
+                }
+
                 payload[field] = val;
                 hasChanges = true;
               }
@@ -3189,12 +3656,14 @@
 
           cells.forEach((cell) => {
             if (cell.hasAttribute("data-original")) {
-              const input = cell.querySelector("input");
+              const input = cell.querySelector('input:not([type="hidden"])');
+              const hiddenInput = cell.querySelector('input[type="hidden"]');
               const select = cell.querySelector("select");
-              const editEl = input || select;
+              const editEl = input || select || hiddenInput;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
                 const isBool = isBooleanField(currentType, field);
+                const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
                 let newValue = editEl.value;
                 let displayValue = newValue;
@@ -3209,6 +3678,12 @@
                     newValue = null;
                     displayValue = "";
                   }
+                } else if (isJSON) {
+                  try {
+                    newValue = JSON.parse(newValue);
+                    displayValue = JSON.stringify(newValue);
+                    cell.setAttribute('data-json', displayValue);
+                  } catch (e) {}
                 }
 
                 cell.innerText = displayValue;
@@ -3441,14 +3916,31 @@
 
             td.appendChild(select);
           } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = "";
-            input.placeholder = header.replace(/_/g, " ");
-            input.style.width = "100%";
-            input.style.minWidth = "100px";
-            input.style.boxSizing = "border-box";
-            td.appendChild(input);
+            // Check if this might be a JSON field by looking at cachedRecords metadata/values
+            const exampleVal = cachedRecords.length > 0 ? cachedRecords[0][header] : null;
+            const isLikelyJSON = exampleVal && typeof exampleVal === 'object';
+
+            if (isLikelyJSON) {
+              const hiddenInput = document.createElement('input');
+              hiddenInput.type = 'hidden';
+              hiddenInput.value = Array.isArray(exampleVal) ? "[]" : "{}";
+              td.appendChild(hiddenInput);
+
+              const editBtn = document.createElement('button');
+              editBtn.className = 'json-badge';
+              editBtn.innerText = 'Edit JSON';
+              editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
+              td.appendChild(editBtn);
+            } else {
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = "";
+              input.placeholder = header.replace(/_/g, " ");
+              input.style.width = "100%";
+              input.style.minWidth = "100px";
+              input.style.boxSizing = "border-box";
+              td.appendChild(input);
+            }
           }
         }
         newRow.appendChild(td);
@@ -3497,22 +3989,30 @@
         // Skip system-managed fields
         if (PROTECTED_FIELDS.includes(field)) return;
 
-        const input = cell.querySelector("input");
+        const input = cell.querySelector('input:not([type="hidden"])');
+        const hiddenInput = cell.querySelector('input[type="hidden"]');
         const select = cell.querySelector("select");
-        const editEl = input || select;
+        const editEl = input || select || hiddenInput;
         if (!editEl) return;
 
         let val = editEl.value;
-        if (val.trim() === "") return; // Don't send empty fields
+        if (val.trim() === "" && editEl.type !== 'hidden') return; // Don't send empty fields (unless it's hidden JSON)
 
         // Check if this is an option set or yes/no field
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
         const isDate = isDateField(currentType, field);
+        const isJSON = hiddenInput && editEl.type === 'hidden';
 
         if (isBool) {
           if (val === "true" || val.toLowerCase() === "yes") val = true;
           else if (val === "false" || val.toLowerCase() === "no") val = false;
+        } else if (isJSON) {
+          try {
+            val = JSON.parse(val);
+          } catch (e) {
+            console.error("Invalid JSON in saveNewRow:", e);
+          }
         } else if (isDate) {
           try {
             val = new Date(val).toISOString();

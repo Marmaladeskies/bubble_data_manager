@@ -446,6 +446,8 @@
       gap: 12px;
       width: 100%;
       justify-content: space-between;
+    }
+
     .selection-notice {
       display: none;
       background: #fff3cd;
@@ -3667,7 +3669,7 @@
 
       const field = fieldSelect.value;
       let value = valueEl.value;
-      const count = selectedRowIds.size;
+      const count = selectedRows.size;
 
       if (!field) {
         alert("Please select a field to edit.");
@@ -3695,7 +3697,7 @@
       let successCount = 0;
       let failCount = 0;
 
-      const idsToUpdate = Array.from(selectedRowIds);
+      const idsToUpdate = Array.from(selectedRows.keys());
 
       for (const recordId of idsToUpdate) {
         const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
@@ -3830,6 +3832,7 @@
         if (bulkEditBtn) {
           bulkEditBtn.style.display = "inline-block";
           bulkEditBtn.disabled = true;
+        }
         if (duplicateBtn) {
           duplicateBtn.style.display = "inline-block";
           duplicateBtn.disabled = true;

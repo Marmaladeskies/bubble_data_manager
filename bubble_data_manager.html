@@ -2537,6 +2537,9 @@
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
 
@@ -2547,8 +2550,6 @@
         cell.setAttribute("data-original", currentValue); // Store for cancellation
 
         // Check if this field uses an option set or yes/no type
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const optionValues = getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
 
@@ -2663,6 +2664,9 @@
       let payload = {};
       let hasChanges = false;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       // 2. Loop through row, compare original values to input/select values, and build payload
       cells.forEach((cell) => {
         if (cell.hasAttribute("data-original")) {
@@ -2675,8 +2679,6 @@
           if (editEl) {
             let val = editEl.value;
 
-            const currentType =
-              document.getElementById("data-type-selector").value;
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
 
@@ -2748,7 +2750,6 @@
         return;
       }
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
       const actionCell = row.querySelector(".action-cell");
@@ -2782,8 +2783,6 @@
             const editEl = input || select;
             if (editEl) {
               const field = cell.getAttribute("data-field");
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isBool = isBooleanField(currentType, field);
 
               let newValue = editEl.value;
@@ -2971,6 +2970,9 @@
       let successCount = 0;
       let failCount = 0;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       for (const recordId of editingIds) {
         const row = document.getElementById(`row-${recordId}`);
         if (!row) continue;
@@ -2989,8 +2991,6 @@
 
             if (editEl) {
               let val = editEl.value;
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
 
@@ -3045,7 +3045,6 @@
           continue;
         }
 
-        const currentType = document.getElementById("data-type-selector").value;
         const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
         try {
@@ -3072,8 +3071,6 @@
               const editEl = input || select;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
-                const currentType =
-                  document.getElementById("data-type-selector").value;
                 const isBool = isBooleanField(currentType, field);
 
                 let newValue = editEl.value;
@@ -3361,6 +3358,9 @@
       const cells = newRow.querySelectorAll("td[data-field]");
       let payload = {};
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
         // Skip system-managed fields
@@ -3375,8 +3375,6 @@
         if (val.trim() === "") return; // Don't send empty fields
 
         // Check if this is an option set or yes/no field
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
 
@@ -3399,7 +3397,6 @@
         payload[field] = val;
       });
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
       const actionCell = newRow.querySelector(".action-cell");

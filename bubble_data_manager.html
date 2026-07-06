@@ -32,7 +32,6 @@
       border-collapse: collapse;
       margin-top: 3px;
       font-size: 14px;
-      white-space: nowrap;
     }
 
     td {
@@ -40,12 +39,56 @@
       padding: 5px 8px;
       text-align: left;
       line-height: 1.3;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     tbody td input[type="text"],
-    tbody td select {
+    tbody td select,
+    tbody td textarea {
       padding: 2px 4px !important;
       margin: 0;
+    }
+
+    textarea {
+      width: 100%;
+      min-width: 100px;
+      min-height: 36px;
+      box-sizing: border-box;
+      padding: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: inherit;
+      resize: vertical;
+      display: block;
+      overflow-y: hidden;
+    }
+
+    .edit-input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .toggle-multiline-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      color: #888;
+      display: flex;
+      align-items: center;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+
+    .toggle-multiline-btn:hover {
+      opacity: 1;
+      color: #007bff;
     }
 
     th {
@@ -63,6 +106,7 @@
       border: 1px solid #ddd;
       padding: 7px 10px;
       text-align: left;
+      white-space: nowrap;
     }
 
     /* Version-aware header row colors */
@@ -2547,6 +2591,62 @@
     }
 
     // --- CLIENT SIDE ROW EDITING ---
+
+    function autoExpand(el) {
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight) + 'px';
+    }
+
+    function renderEditableTextField(container, value, placeholder = "") {
+      const wrapper = document.createElement("div");
+      wrapper.className = "edit-input-wrapper";
+      wrapper.style.width = "100%";
+
+      const isLong = value.length > 100 || value.includes("\n");
+
+      const createInput = (val) => {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.value = val;
+        input.placeholder = placeholder;
+        input.style.width = "100%";
+        input.style.minWidth = "100px";
+        return input;
+      };
+
+      const createTextarea = (val) => {
+        const textarea = document.createElement("textarea");
+        textarea.value = val;
+        textarea.placeholder = placeholder;
+        textarea.oninput = function () { autoExpand(this); };
+        // Initial expand after a short delay to ensure it's in the DOM
+        setTimeout(() => autoExpand(textarea), 0);
+        return textarea;
+      };
+
+      let currentElement = isLong ? createTextarea(value) : createInput(value);
+      wrapper.appendChild(currentElement);
+
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "toggle-multiline-btn";
+      toggleBtn.title = "Toggle multi-line";
+      toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 13l5 5 5-5M7 6l5 5 5-5"/></svg>`;
+
+      toggleBtn.onclick = function () {
+        const newVal = currentElement.value;
+        const isCurrentlyTextarea = currentElement.tagName.toLowerCase() === "textarea";
+        const nextElement = isCurrentlyTextarea ? createInput(newVal) : createTextarea(newVal);
+
+        wrapper.replaceChild(nextElement, currentElement);
+        currentElement = nextElement;
+        currentElement.focus();
+      };
+
+      wrapper.appendChild(toggleBtn);
+      container.appendChild(wrapper);
+    }
+
     function editSelectedRows() {
       selectedRowIds.forEach((recordId) => {
         const row = document.getElementById(`row-${recordId}`);
@@ -2639,14 +2739,8 @@
 
           cell.appendChild(select);
         } else {
-          // Default: render a text input for non-option-set fields
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = currentValue;
-          input.style.width = "100%";
-          input.style.minWidth = "100px";
-          input.style.boxSizing = "border-box";
-          cell.appendChild(input);
+          // Default: render a text input or textarea for non-option-set fields
+          renderEditableTextField(cell, currentValue);
         }
       });
 
@@ -2693,8 +2787,9 @@
           const field = cell.getAttribute("data-field");
           const originalValue = cell.getAttribute("data-original");
           const input = cell.querySelector("input");
+          const textarea = cell.querySelector("textarea");
           const select = cell.querySelector("select");
-          const editEl = input || select; // Whichever edit element exists
+          const editEl = input || textarea || select; // Whichever edit element exists
 
           if (editEl) {
             let val = editEl.value;
@@ -2765,8 +2860,9 @@
         cells.forEach((cell) => {
           if (cell.hasAttribute("data-original")) {
             const input = cell.querySelector("input");
+            const textarea = cell.querySelector("textarea");
             const select = cell.querySelector("select");
-            const editEl = input || select;
+            const editEl = input || textarea || select;
             if (editEl) {
               const field = cell.getAttribute("data-field");
               const currentType =
@@ -2971,8 +3067,9 @@
             const field = cell.getAttribute("data-field");
             const originalValue = cell.getAttribute("data-original");
             const input = cell.querySelector("input");
+            const textarea = cell.querySelector("textarea");
             const select = cell.querySelector("select");
-            const editEl = input || select;
+            const editEl = input || textarea || select;
 
             if (editEl) {
               let val = editEl.value;
@@ -3035,8 +3132,9 @@
           cells.forEach((cell) => {
             if (cell.hasAttribute("data-original")) {
               const input = cell.querySelector("input");
+              const textarea = cell.querySelector("textarea");
               const select = cell.querySelector("select");
-              const editEl = input || select;
+              const editEl = input || textarea || select;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
                 const currentType =
@@ -3280,14 +3378,7 @@
 
             td.appendChild(select);
           } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = "";
-            input.placeholder = header.replace(/_/g, " ");
-            input.style.width = "100%";
-            input.style.minWidth = "100px";
-            input.style.boxSizing = "border-box";
-            td.appendChild(input);
+            renderEditableTextField(td, "", header.replace(/_/g, " "));
           }
         }
         newRow.appendChild(td);
@@ -3334,8 +3425,9 @@
         if (PROTECTED_FIELDS.includes(field)) return;
 
         const input = cell.querySelector("input");
+        const textarea = cell.querySelector("textarea");
         const select = cell.querySelector("select");
-        const editEl = input || select;
+        const editEl = input || textarea || select;
         if (!editEl) return;
 
         let val = editEl.value;

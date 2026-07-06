@@ -1157,6 +1157,61 @@
       box-sizing: border-box;
       resize: vertical;
     }
+
+    /* File Preview Styles */
+    .file-preview-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 300px;
+    }
+
+    .thumbnail-preview {
+      width: 32px;
+      height: 32px;
+      object-fit: cover;
+      border-radius: 4px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      background-color: #f0f0f0;
+    }
+
+    .thumbnail-preview:hover {
+      transform: scale(3);
+      z-index: 100;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+
+    .file-icon-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 4px;
+      color: #6c757d;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .file-icon-link:hover {
+      background: #e9ecef;
+      color: #007bff;
+      border-color: #007bff;
+    }
+
+    .file-url-text {
+      font-size: 11px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      flex: 1;
+    }
   </style>
 </head>
 
@@ -2020,6 +2075,98 @@
         .replace(/'/g, "&#039;");
     }
 
+    // --- FILE PREVIEW HELPERS ---
+    function isImageFile(val) {
+      if (typeof val !== 'string') return false;
+      // Also check full URL in case extension is in query params
+      const low = val.toLowerCase();
+      const hasImgExt = (s) => s.endsWith('.jpg') || s.endsWith('.jpeg') || s.endsWith('.png') || s.endsWith('.gif') || s.endsWith('.webp') || s.endsWith('.svg');
+      return hasImgExt(val.split('?')[0]) || hasImgExt(val.split('#')[0]) || low.includes('.jpg?') || low.includes('.jpeg?') || low.includes('.png?') || low.includes('.gif?') || low.includes('.webp?') || low.includes('.svg?');
+    }
+
+    function isBubbleFile(val) {
+      if (typeof val !== 'string') return false;
+      return val.startsWith('//s3.amazonaws.com/') || val.includes('.s3.amazonaws.com/') || isImageFile(val);
+    }
+
+    function renderFilePreview(url) {
+      if (!url) return '';
+      const fullUrl = url.startsWith('//') ? 'https:' + url : url;
+      const fileName = url.split('/').pop().split('?')[0];
+      const safeUrl = escapeHTML(fullUrl);
+
+      if (isImageFile(url)) {
+        return `
+          <div class="file-preview-wrapper">
+            <a href="${safeUrl}" target="_blank" title="Open image in new tab">
+              <img src="${safeUrl}" class="thumbnail-preview" alt="Thumbnail">
+            </a>
+            <span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>
+          </div>`;
+      } else {
+        return `
+          <div class="file-preview-wrapper">
+            <a href="${safeUrl}" target="_blank" class="file-icon-link" title="Open file in new tab">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+            </a>
+            <span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>
+          </div>`;
+      }
+    }
+
+    /**
+     * Updates a cell's innerHTML and data attributes based on its value and type.
+     */
+    function setCellContent(cell, value, field, recordId, currentType) {
+      cell.setAttribute('data-field', field);
+
+      // Clean up previous attributes
+      cell.removeAttribute('data-json');
+      cell.removeAttribute('data-raw-value');
+
+      let displayValue = value;
+      let isJSON = false;
+      let jsonValue = "";
+      let isFile = false;
+
+      // Convert boolean true/false to yes/no
+      if (
+        typeof value === "boolean" ||
+        (isBooleanField(currentType, field) &&
+          (value === "true" || value === "false"))
+      ) {
+        displayValue = (value === true || value === "true") ? "yes" : "no";
+      }
+      // Handle missing values cleanly
+      else if (value === null || value === undefined) {
+        displayValue = "";
+      }
+      // Bubble often returns linked data or geographic addresses as objects/arrays
+      else if (typeof value === "object") {
+        isJSON = true;
+        jsonValue = JSON.stringify(value);
+        displayValue = jsonValue;
+      }
+      // Handle File URLs
+      else if (isBubbleFile(value)) {
+        isFile = true;
+        displayValue = renderFilePreview(value);
+      }
+
+      if (isJSON) {
+        cell.setAttribute('data-json', jsonValue);
+        cell.innerHTML = `<span class="json-badge" onclick="openJSONEditor('${recordId}', '${field}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${escapeHTML(jsonValue.substring(0, 30))}${jsonValue.length > 30 ? '...' : ''}</span>`;
+      } else if (isFile) {
+        cell.setAttribute('data-raw-value', value);
+        cell.innerHTML = displayValue;
+      } else {
+        cell.innerText = displayValue;
+      }
+    }
+
     // --- GLOBAL STATE ---
     let currentCursor = 0;
     const LIMIT = 100;
@@ -2550,39 +2697,9 @@
                               </td>`;
 
         visibleHeaders.forEach((header) => {
-          let cellValue = record[header];
-          let isJSON = false;
-          let jsonValue = "";
-
-          // Convert boolean true/false to yes/no
-          if (
-            typeof cellValue === "boolean" ||
-            (isBooleanField(currentType, header) &&
-              (cellValue === "true" || cellValue === "false"))
-          ) {
-            cellValue =
-              cellValue === true || cellValue === "true" ? "yes" : "no";
-          }
-          // Handle missing values cleanly
-          else if (cellValue === null || cellValue === undefined) {
-            cellValue = "";
-          }
-          // Bubble often returns linked data or geographic addresses as objects/arrays
-          else if (typeof cellValue === "object") {
-            isJSON = true;
-            jsonValue = JSON.stringify(cellValue);
-            cellValue = jsonValue;
-          }
-
-          // Escape output to prevent XSS
-          let safeValue = escapeHTML(cellValue);
-
-          if (isJSON) {
-            safeValue = `<span class="json-badge" onclick="openJSONEditor('${record._id}', '${header}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${safeValue.substring(0, 30)}${safeValue.length > 30 ? '...' : ''}</span>`;
-          }
-
-          // Assign data-field so we can map inputs back to Bubble's database schema
-          tableHTML += `<td data-field="${header}" ${isJSON ? `data-json="${escapeHTML(jsonValue)}"` : ""}>${safeValue}</td>`;
+          const tempTd = document.createElement('td');
+          setCellContent(tempTd, record[header], header, record._id, currentType);
+          tableHTML += tempTd.outerHTML;
         });
         tableHTML += "</tr>";
       });
@@ -3189,7 +3306,7 @@
         // Prevent editing of Bubble's protected system IDs
         if (PROTECTED_FIELDS.includes(field)) return;
 
-        const currentValue = cell.innerText;
+        const currentValue = cell.hasAttribute('data-raw-value') ? cell.getAttribute('data-raw-value') : (cell.hasAttribute('data-json') ? cell.getAttribute('data-json') : cell.innerText);
         cell.setAttribute("data-original", currentValue); // Store for cancellation
 
         // Check if this field uses an option set or yes/no type
@@ -3431,35 +3548,28 @@
               const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let newValue = editEl.value;
-              let displayValue = newValue;
+              let castedValue = newValue;
               if (isBool) {
                 if (newValue === "true") {
-                  newValue = true;
-                  displayValue = "yes";
+                  castedValue = true;
                 } else if (newValue === "false") {
-                  newValue = false;
-                  displayValue = "no";
+                  castedValue = false;
                 } else {
-                  newValue = null;
-                  displayValue = "";
+                  castedValue = null;
                 }
               } else if (isJSON) {
                 try {
-                  newValue = JSON.parse(newValue);
-                  displayValue = JSON.stringify(newValue);
-                  cell.setAttribute('data-json', displayValue);
+                  castedValue = JSON.parse(newValue);
                 } catch (e) {}
               } else if (isDate) {
                 if (newValue) {
-                  newValue = new Date(newValue).toISOString();
-                  displayValue = newValue;
+                  castedValue = new Date(newValue).toISOString();
                 } else {
-                  newValue = null;
-                  displayValue = "";
+                  castedValue = null;
                 }
               }
 
-              cell.innerText = displayValue;
+              setCellContent(cell, castedValue, field, recordId, currentType);
               cell.removeAttribute("data-original");
 
               // Keep the local Javascript array in sync so client-side searching works
@@ -3467,7 +3577,7 @@
                 (r) => r._id === recordId,
               );
               if (recordIndex > -1) {
-                cachedRecords[recordIndex][field] = newValue;
+                cachedRecords[recordIndex][field] = castedValue;
               }
             }
           }
@@ -3963,42 +4073,35 @@
                 const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
                 let newValue = editEl.value;
-                let displayValue = newValue;
+                let castedValue = newValue;
                 if (isBool) {
                   if (newValue === "true") {
-                    newValue = true;
-                    displayValue = "yes";
+                    castedValue = true;
                   } else if (newValue === "false") {
-                    newValue = false;
-                    displayValue = "no";
+                    castedValue = false;
                   } else {
-                    newValue = null;
-                    displayValue = "";
+                    castedValue = null;
                   }
-                                } else if (isJSON) {
+                } else if (isJSON) {
                   try {
-                    newValue = JSON.parse(newValue);
-                    displayValue = JSON.stringify(newValue);
-                    cell.setAttribute('data-json', displayValue);
+                    castedValue = JSON.parse(newValue);
                   } catch (e) {}
                 } else if (isDate) {
                   if (newValue) {
-                    newValue = new Date(newValue).toISOString();
-                    displayValue = newValue;
+                    castedValue = new Date(newValue).toISOString();
                   } else {
-                    newValue = null;
-                    displayValue = "";
+                    castedValue = null;
                   }
                 }
 
-                cell.innerText = displayValue;
+                setCellContent(cell, castedValue, field, recordId, currentType);
                 cell.removeAttribute("data-original");
 
                 const recordIndex = cachedRecords.findIndex(
                   (r) => r._id === recordId,
                 );
                 if (recordIndex > -1) {
-                  cachedRecords[recordIndex][field] = newValue;
+                  cachedRecords[recordIndex][field] = castedValue;
                 }
               }
             }

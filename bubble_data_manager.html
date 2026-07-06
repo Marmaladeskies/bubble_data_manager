@@ -3660,8 +3660,6 @@
               const editEl = input || select || hiddenInput;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
-                const currentType =
-                  document.getElementById("data-type-selector").value;
                 const isBool = isBooleanField(currentType, field);
                 const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
@@ -4033,15 +4031,15 @@
               editBtn.innerText = 'Edit JSON';
               editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
               td.appendChild(editBtn);
-          } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = "";
-            input.placeholder = header.replace(/_/g, " ");
-            input.style.width = "100%";
-            input.style.minWidth = "100px";
-            input.style.boxSizing = "border-box";
-            td.appendChild(input);
+            } else {
+              const input = document.createElement("input");
+              input.type = "text";
+              input.value = "";
+              input.placeholder = header.replace(/_/g, " ");
+              input.style.width = "100%";
+              input.style.minWidth = "100px";
+              input.style.boxSizing = "border-box";
+              td.appendChild(input);
             }
           }
         }

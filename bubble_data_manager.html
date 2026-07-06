@@ -1361,6 +1361,28 @@
       return getExpectedType(fieldDisplayName) === "boolean";
     }
 
+    function isDateField(dataTypeSlug, fieldDisplayName) {
+      const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
+      if (fieldMeta) {
+        return fieldMeta.type === "date";
+      }
+      return false;
+    }
+
+    function formatToDateTimeLocal(dateStr) {
+      if (!dateStr) return "";
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return "";
+
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      const hours = String(date.getHours()).padStart(2, "0");
+      const minutes = String(date.getMinutes()).padStart(2, "0");
+
+      return `${year}-${month}-${day}T${hours}:${minutes}`;
+    }
+
     function optionSlugMatchesDisplayName(slug, displayName) {
       if (optionSlugToDisplayName[slug] === displayName) return true;
       if (slug.toLowerCase() === displayName.toLowerCase()) return true;
@@ -1537,11 +1559,14 @@
       return expectedType;
     }
 
-    function castPayloadValue(val, isBool, isOptionSet, field) {
+    function castPayloadValue(val, isBool, isOptionSet, field, isDate = false) {
       if (isBool) {
         if (val === "true" || val.toLowerCase() === "yes") val = true;
         else if (val === "false" || val.toLowerCase() === "no") val = false;
         else if (val === "") val = null;
+      } else if (isDate) {
+        if (val === "") val = null;
+        else val = new Date(val).toISOString();
       } else if (!isOptionSet) {
         let expectedType = getExpectedType(field);
         if (expectedType === "number") {
@@ -1779,7 +1804,14 @@
 
         // Append Constraints
         if (currentConstraints.length > 0) {
-          const constraintsJson = JSON.stringify(currentConstraints);
+          // Resolve dynamic constraints like "current date/time" to static values just before fetching
+          const resolvedConstraints = currentConstraints.map(c => {
+            if (c.value === "current date/time") {
+              return { ...c, value: new Date().toISOString() };
+            }
+            return c;
+          });
+          const constraintsJson = JSON.stringify(resolvedConstraints);
           // encodeURIComponent ensures special characters like brackets and quotes don't break the URL
           fetchUrl += `&constraints=${encodeURIComponent(constraintsJson)}`;
         }
@@ -2101,6 +2133,14 @@
 
     // --- SERVER SIDE CONSTRAINT FILTER ACTIONS ---
 
+    function toggleConstraintDateInput(selectEl) {
+      const container = selectEl.closest(".constraint-value-container");
+      const datePicker = container.querySelector(".constraint-date-picker");
+      if (datePicker) {
+        datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
+      }
+    }
+
     function updateConstraintInput(field, rowEl) {
       const container = rowEl.querySelector(".constraint-value-container");
       if (!container) return;
@@ -2108,9 +2148,11 @@
       const currentType = document.getElementById("data-type-selector")?.value || "";
       const optionValues = getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
+      const isDate = isDateField(currentType, field);
 
       // Clear current contents
       container.innerHTML = "";
+      container.style.flexDirection = isDate ? "column" : "row";
 
       if (isBool) {
         // Render a <select> dropdown for yes/no fields
@@ -2153,6 +2195,32 @@
         });
 
         container.appendChild(select);
+      } else if (isDate) {
+        const select = document.createElement("select");
+        select.className = "constraint-value constraint-date-selector";
+        select.style.width = "100%";
+        select.onchange = () => { toggleConstraintDateInput(select); markConstraintsDirty(); };
+
+        const currentOpt = document.createElement("option");
+        currentOpt.value = "current date/time";
+        currentOpt.text = "Current Date/Time";
+        select.appendChild(currentOpt);
+
+        const specificOpt = document.createElement("option");
+        specificOpt.value = "specific date";
+        specificOpt.text = "Specific Date...";
+        select.appendChild(specificOpt);
+
+        container.appendChild(select);
+
+        const dateInput = document.createElement("input");
+        dateInput.type = "datetime-local";
+        dateInput.className = "constraint-date-picker";
+        dateInput.style.display = "none";
+        dateInput.style.width = "100%";
+        dateInput.style.marginTop = "5px";
+        dateInput.oninput = () => markConstraintsDirty();
+        container.appendChild(dateInput);
       } else {
         // Restore original text input HTML
         container.innerHTML = `
@@ -2252,7 +2320,20 @@
 
         const valueInput = row.querySelector(".constraint-value");
         if (valueInput) {
-          valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+          if (valueInput.classList.contains("constraint-date-selector")) {
+            if (constraintData.value === "current date/time") {
+              valueInput.value = "current date/time";
+            } else {
+              valueInput.value = "specific date";
+              const datePicker = row.querySelector(".constraint-date-picker");
+              if (datePicker) {
+                datePicker.value = formatToDateTimeLocal(constraintData.value);
+                datePicker.style.display = "block";
+              }
+            }
+          } else {
+            valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+          }
           if (valueInput.oninput) valueInput.oninput();
         }
       } else {
@@ -2416,7 +2497,20 @@
         const field = row.querySelector(".constraint-field").value;
         const operator = row.querySelector(".constraint-operator").value;
         const valueEl = row.querySelector(".constraint-value");
-        const value = valueEl ? valueEl.value : "";
+        let value = valueEl ? valueEl.value : "";
+
+        // Handle date specific logic for constraints
+        if (valueEl && valueEl.classList.contains("constraint-date-selector")) {
+          if (value === "specific date") {
+            const datePicker = row.querySelector(".constraint-date-picker");
+            if (datePicker && datePicker.value) {
+              value = new Date(datePicker.value).toISOString();
+            } else {
+              value = ""; // No date picked yet
+            }
+          }
+          // if value is "current date/time", we keep it as is and resolve in fetchAndRenderData
+        }
 
         // Skip rows without a field selected (though field should usually be "any_field" by default)
         if (!field) return;
@@ -2429,7 +2523,7 @@
 
         const key = field === "any_field" ? "any field" : field;
         let constraintType;
-        let constraintValue = value.trim();
+        let constraintValue = typeof value === "string" ? value.trim() : value;
         if (operator === "contains") {
           constraintType = "text contains";
         } else if (operator === "does not contain") {
@@ -2575,6 +2669,7 @@
           document.getElementById("data-type-selector").value;
         const optionValues = getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
+        const isDate = isDateField(currentType, field);
 
         cell.innerHTML = "";
 
@@ -2638,6 +2733,14 @@
           }
 
           cell.appendChild(select);
+        } else if (isDate) {
+          const input = document.createElement("input");
+          input.type = "datetime-local";
+          input.value = formatToDateTimeLocal(currentValue);
+          input.style.width = "100%";
+          input.style.minWidth = "100px";
+          input.style.boxSizing = "border-box";
+          cell.appendChild(input);
         } else {
           // Default: render a text input for non-option-set fields
           const input = document.createElement("input");
@@ -2703,6 +2806,7 @@
               document.getElementById("data-type-selector").value;
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
+            const isDate = isDateField(currentType, field);
 
             let origCompared = originalValue;
             if (isBool) {
@@ -2719,8 +2823,8 @@
               else origCompared = "";
             }
 
-            if (val !== origCompared && (val !== originalValue || isBool)) {
-              val = castPayloadValue(val, isBool, isOptionSet, field);
+            if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+              val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
               payload[field] = val;
               hasChanges = true;
@@ -2772,6 +2876,7 @@
               const currentType =
                 document.getElementById("data-type-selector").value;
               const isBool = isBooleanField(currentType, field);
+              const isDate = isDateField(currentType, field);
 
               let newValue = editEl.value;
               let displayValue = newValue;
@@ -2782,6 +2887,14 @@
                 } else if (newValue === "false") {
                   newValue = false;
                   displayValue = "no";
+                } else {
+                  newValue = null;
+                  displayValue = "";
+                }
+              } else if (isDate) {
+                if (newValue) {
+                  newValue = new Date(newValue).toISOString();
+                  displayValue = newValue;
                 } else {
                   newValue = null;
                   displayValue = "";
@@ -2980,6 +3093,7 @@
                 document.getElementById("data-type-selector").value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
+              const isDate = isDateField(currentType, field);
 
               let origCompared = originalValue;
               if (isBool) {
@@ -2996,8 +3110,8 @@
                 else origCompared = "";
               }
 
-              if (val !== origCompared && (val !== originalValue || isBool)) {
-                val = castPayloadValue(val, isBool, isOptionSet, field);
+              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+                val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
                 payload[field] = val;
                 hasChanges = true;
@@ -3042,6 +3156,7 @@
                 const currentType =
                   document.getElementById("data-type-selector").value;
                 const isBool = isBooleanField(currentType, field);
+                const isDate = isDateField(currentType, field);
 
                 let newValue = editEl.value;
                 let displayValue = newValue;
@@ -3052,6 +3167,14 @@
                   } else if (newValue === "false") {
                     newValue = false;
                     displayValue = "no";
+                  } else {
+                    newValue = null;
+                    displayValue = "";
+                  }
+                } else if (isDate) {
+                  if (newValue) {
+                    newValue = new Date(newValue).toISOString();
+                    displayValue = newValue;
                   } else {
                     newValue = null;
                     displayValue = "";
@@ -3237,6 +3360,7 @@
           // Check if this field uses an option set or yes/no type
           const optionValues = getOptionSetForField(currentType, header);
           const isBool = isBooleanField(currentType, header);
+          const isDate = isDateField(currentType, header);
 
           if (isBool) {
             const select = document.createElement("select");
@@ -3279,6 +3403,14 @@
             });
 
             td.appendChild(select);
+          } else if (isDate) {
+            const input = document.createElement("input");
+            input.type = "datetime-local";
+            input.value = "";
+            input.style.width = "100%";
+            input.style.minWidth = "100px";
+            input.style.boxSizing = "border-box";
+            td.appendChild(input);
           } else {
             const input = document.createElement("input");
             input.type = "text";
@@ -3346,8 +3478,9 @@
           document.getElementById("data-type-selector").value;
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
+        const isDate = isDateField(currentType, field);
 
-        val = castPayloadValue(val, isBool, isOptionSet, field);
+        val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
         payload[field] = val;
       });

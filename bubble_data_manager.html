@@ -44,6 +44,7 @@
     }
 
     tbody td input[type="text"],
+    tbody td input[type="datetime-local"],
     tbody td select,
     tbody td textarea {
       padding: 2px 4px !important;
@@ -286,7 +287,8 @@
       align-items: center;
     }
 
-    .input-wrapper input[type="text"] {
+    .input-wrapper input[type="text"],
+    .input-wrapper input[type="datetime-local"] {
       width: 100%;
       padding-right: 30px;
     }
@@ -324,7 +326,8 @@
     }
 
     /* Form Controls */
-    input,
+    input[type="text"],
+    input[type="datetime-local"],
     select {
       padding: 8px;
       border: 1px solid #ccc;
@@ -454,8 +457,12 @@
       align-self: center;
     }
 
-    #selection-bar.active #selection-buttons {
+    #selection-bar.active:not(.bulk-editing) #selection-buttons {
       display: flex;
+    }
+
+    #selection-bar.bulk-editing #bulk-edit-container {
+      display: flex !important;
     }
 
     .selection-bar {
@@ -475,6 +482,32 @@
       border: 1px solid #ffc107;
       width: 95%;
       margin: 5px;
+    }
+
+    #bulk-edit-container {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      justify-content: space-between;
+    }
+
+    .selection-notice {
+      display: none;
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 10px;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    .selection-notice a {
+      color: #007bff;
+      text-decoration: underline;
+      font-weight: 600;
+      cursor: pointer;
     }
 
     .selection-bar .btn {
@@ -897,6 +930,7 @@
 
       .constraint-bar select,
       .constraint-bar input[type="text"],
+      .constraint-bar input[type="datetime-local"],
       .constraint-bar .input-wrapper,
       .constraint-bar button {
         flex: 1 1 100%;
@@ -1007,6 +1041,166 @@
         display: inline-block;
       }
     }
+
+    /* JSON Editor Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-container {
+      background: white;
+      border-radius: 8px;
+      width: 80%;
+      max-width: 800px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .modal-header {
+      padding: 15px 20px;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .modal-tabs {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      background: #f8f9fa;
+    }
+
+    .modal-tab {
+      padding: 10px 20px;
+      cursor: pointer;
+      border-right: 1px solid #ddd;
+      font-weight: 500;
+      color: #666;
+    }
+
+    .modal-tab.active {
+      background: white;
+      color: #007bff;
+      border-bottom: 2px solid #007bff;
+      margin-bottom: -1px;
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Nested View Styles */
+    .json-tree-node {
+      margin-left: 20px;
+      margin-top: 5px;
+      font-family: monospace;
+    }
+
+    .json-key-val {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .json-key {
+      color: #881391;
+      font-weight: bold;
+    }
+
+    .json-value-input {
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 2px 5px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .json-toggle {
+      cursor: pointer;
+      user-select: none;
+      width: 12px;
+      display: inline-block;
+      text-align: center;
+      color: #666;
+    }
+
+    .json-add-btn,
+    .json-remove-btn {
+      cursor: pointer;
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      padding: 0 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .json-add-btn:hover,
+    .json-remove-btn:hover {
+      background: #e0e0e0;
+      color: #333;
+    }
+
+    .json-remove-btn {
+      color: #dc3545;
+    }
+
+    /* JSON Badge */
+    .json-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      background: #e9ecef;
+      border: 1px solid #ced4da;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #495057;
+      cursor: pointer;
+      font-family: sans-serif;
+    }
+
+    .json-badge:hover {
+      background: #dee2e6;
+    }
+
+    #json-raw-editor {
+      width: 100%;
+      height: 400px;
+      font-family: monospace;
+      font-size: 13px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
   </style>
 </head>
 
@@ -1096,11 +1290,17 @@
       <button id="edit-selected-btn" class="btn btn-primary" onclick="editSelectedRows()" disabled>
         Edit Selected
       </button>
+      <button id="bulk-edit-btn" class="btn btn-primary" onclick="showBulkEdit()" disabled>
+        Bulk Edit
+      </button>
       <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" style="display: none;">
         Save Changes
       </button>
       <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" style="display: none;">
         Cancel Edits
+      </button>
+      <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
+        Duplicate Selected
       </button>
       <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
         Delete Selected
@@ -1108,6 +1308,17 @@
       <button id="clear-selection-btn" class="btn" onclick="clearSelection()" disabled>
         Clear Selection
       </button>
+    </div>
+    <div id="bulk-edit-container" style="display: none; width: 100%; justify-content: space-between; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+        <span style="white-space: nowrap; font-weight: 600;">Bulk Edit Field:</span>
+        <select id="bulk-edit-field" onchange="updateBulkEditValueInput()" style="max-width: 200px;"></select>
+        <div id="bulk-edit-value-container" style="flex: 1; min-width: 200px; display: flex;"></div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button id="apply-bulk-edit-btn" class="btn btn-success" onclick="applyBulkEdit()">Apply</button>
+        <button class="btn" onclick="hideBulkEdit()">Cancel</button>
+      </div>
     </div>
     <div id="action-buttons" class="action-buttons">
       <button id="add-row-btn" class="icon-btn btn-success" onclick="addNewRow()" title="Add New Row">
@@ -1167,13 +1378,53 @@
           Next
         </button>
       </div>
+      <div id="all-matching-notice" class="selection-notice">
+        All <span id="current-page-count">0</span> rows on this page are selected.
+        <a href="#" onclick="event.preventDefault(); selectAllMatchingRecords();">
+          Select all <span id="total-matching-count-notice">0</span> records that match this filter
+        </a>
+      </div>
+      <div id="all-matching-selected-notice" class="selection-notice">
+        All <span id="total-matching-selected-count">0</span> records that match this filter are selected.
+        <a href="#" onclick="event.preventDefault(); clearSelection();">
+          Clear selection
+        </a>
+      </div>
       <div id="table-container"></div>
+    </div>
+  </div>
+
+  <!-- JSON Editor Modal -->
+  <div id="json-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeJSONEditor()">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="json-modal-title">Edit JSON Field</h3>
+        <button type="button" class="icon-btn" onclick="closeJSONEditor()" style="border:none; font-size: 24px;">×</button>
+      </div>
+      <div class="modal-tabs">
+        <div id="tab-nested" class="modal-tab active" onclick="switchJSONTab('nested')">Nested View</div>
+        <div id="tab-raw" class="modal-tab" onclick="switchJSONTab('raw')">Raw Source</div>
+      </div>
+      <div class="modal-body">
+        <div id="json-nested-container"></div>
+        <textarea id="json-raw-editor" style="display: none;" oninput="syncRawToNested()"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeJSONEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveJSONEditor()">Save JSON</button>
+      </div>
     </div>
   </div>
 
   <script>
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
+    let currentlyEditingJSON = {
+      recordId: null,
+      field: null,
+      isNewRow: false,
+      data: null
+    };
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
     const API_TOKEN = "<your_private_API_key>";
@@ -1405,6 +1656,39 @@
       return getExpectedType(fieldDisplayName) === "boolean";
     }
 
+    function isDateField(dataTypeSlug, fieldDisplayName) {
+      const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
+      if (fieldMeta) {
+        return fieldMeta.type === "date";
+      }
+
+      // Fallback: check cachedRecords for likely date string
+      const val = cachedRecords.length > 0 ? cachedRecords[0][fieldDisplayName] : null;
+      if (typeof val === "string" && !isNaN(Date.parse(val)) && (val.includes("T") || val.includes("-"))) {
+        return true;
+      }
+      return false;
+    }
+
+    /**
+     * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
+     */
+    function formatToDateTimeLocal(dateStr) {
+      if (!dateStr) return "";
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return "";
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        const hours = String(date.getHours()).padStart(2, "0");
+        const minutes = String(date.getMinutes()).padStart(2, "0");
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      } catch (e) {
+        return "";
+      }
+    }
+
     function optionSlugMatchesDisplayName(slug, displayName) {
       if (optionSlugToDisplayName[slug] === displayName) return true;
       if (slug.toLowerCase() === displayName.toLowerCase()) return true;
@@ -1546,6 +1830,229 @@
       }
     }
 
+    // --- JSON EDITOR FUNCTIONS ---
+
+    function openJSONEditor(recordId, field, initialValue, isNewRow = false) {
+      currentlyEditingJSON = {
+        recordId,
+        field,
+        isNewRow,
+        data: null
+      };
+
+      try {
+        currentlyEditingJSON.data = initialValue ? (typeof initialValue === 'string' ? JSON.parse(initialValue) : initialValue) : {};
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+        currentlyEditingJSON.data = {};
+      }
+
+      document.getElementById('json-modal-title').innerText = `Edit JSON: ${field}`;
+      document.getElementById('json-raw-editor').value = JSON.stringify(currentlyEditingJSON.data, null, 2);
+
+      switchJSONTab('nested');
+      document.getElementById('json-editor-modal').style.display = 'flex';
+    }
+
+    function closeJSONEditor() {
+      document.getElementById('json-editor-modal').style.display = 'none';
+    }
+
+    function switchJSONTab(tab) {
+      const nestedTab = document.getElementById('tab-nested');
+      const rawTab = document.getElementById('tab-raw');
+      const nestedContainer = document.getElementById('json-nested-container');
+      const rawEditor = document.getElementById('json-raw-editor');
+
+      if (tab === 'nested') {
+        nestedTab.classList.add('active');
+        rawTab.classList.remove('active');
+        nestedContainer.style.display = 'block';
+        rawEditor.style.display = 'none';
+        renderNestedView(currentlyEditingJSON.data, nestedContainer);
+      } else {
+        nestedTab.classList.remove('active');
+        rawTab.classList.add('active');
+        nestedContainer.style.display = 'none';
+        rawEditor.style.display = 'block';
+      }
+    }
+
+    function saveJSONEditor() {
+      const isRawView = document.getElementById('tab-raw').classList.contains('active');
+      if (isRawView) {
+        syncRawToNested();
+      } else {
+        syncNestedToRaw();
+      }
+
+      const jsonStr = JSON.stringify(currentlyEditingJSON.data);
+      const rowId = currentlyEditingJSON.isNewRow ? 'row-new' : `row-${currentlyEditingJSON.recordId}`;
+      const row = document.getElementById(rowId);
+      if (row) {
+        const cell = row.querySelector(`td[data-field="${currentlyEditingJSON.field}"]`);
+        if (cell) {
+          const hiddenInput = cell.querySelector('input[type="hidden"]');
+          if (hiddenInput) {
+            hiddenInput.value = jsonStr;
+          }
+        }
+      }
+
+      closeJSONEditor();
+    }
+
+    function renderNestedView(data, container) {
+      container.innerHTML = '';
+      if (data === null || data === undefined) {
+        container.innerHTML = '<em>null</em>';
+        return;
+      }
+
+      const isArray = Array.isArray(data);
+      const isObject = typeof data === 'object' && data !== null;
+
+      if (isArray || isObject) {
+        const rootNode = document.createElement('div');
+        rootNode.className = 'json-tree-node';
+
+        const openChar = isArray ? '[' : '{';
+        const closeChar = isArray ? ']' : '}';
+
+        const header = document.createElement('div');
+        header.innerHTML = `<span class="json-toggle">▼</span> ${openChar}`;
+        header.querySelector('.json-toggle').onclick = (e) => {
+          const content = header.nextElementSibling;
+          if (content.style.display === 'none') {
+            content.style.display = 'block';
+            e.target.innerText = '▼';
+          } else {
+            content.style.display = 'none';
+            e.target.innerText = '▶';
+          }
+        };
+        rootNode.appendChild(header);
+
+        const content = document.createElement('div');
+        content.style.paddingLeft = '15px';
+
+        const keys = Object.keys(data);
+        keys.forEach(key => {
+          const row = document.createElement('div');
+          row.className = 'json-key-val';
+
+          if (!isArray) {
+            const keySpan = document.createElement('span');
+            keySpan.className = 'json-key';
+            keySpan.innerText = `"${key}": `;
+            row.appendChild(keySpan);
+          }
+
+          const val = data[key];
+          if (typeof val === 'object' && val !== null) {
+            const subContainer = document.createElement('div');
+            row.appendChild(subContainer);
+            renderNestedView(val, subContainer);
+          } else {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'json-value-input';
+            input.value = typeof val === 'string' ? val : JSON.stringify(val);
+            input.onchange = (e) => {
+              let newVal = e.target.value;
+              try {
+                // Try to parse as JSON for numbers/booleans/objects, otherwise keep as string
+                if (newVal === 'true') newVal = true;
+                else if (newVal === 'false') newVal = false;
+                else if (newVal === 'null') newVal = null;
+                else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
+              } catch (err) {}
+              data[key] = newVal;
+              syncNestedToRaw();
+            };
+            row.appendChild(input);
+          }
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'json-remove-btn';
+          removeBtn.innerText = '×';
+          removeBtn.onclick = () => {
+            if (isArray) {
+              data.splice(key, 1);
+            } else {
+              delete data[key];
+            }
+            renderNestedView(data, container);
+            syncNestedToRaw();
+          };
+          row.appendChild(removeBtn);
+
+          content.appendChild(row);
+        });
+
+        const addRow = document.createElement('div');
+        addRow.style.marginTop = '5px';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'json-add-btn';
+        addBtn.innerText = isArray ? '+ Add Item' : '+ Add Property';
+        addBtn.onclick = () => {
+          if (isArray) {
+            data.push("");
+          } else {
+            const newKey = prompt("Enter property name:");
+            if (newKey && !data.hasOwnProperty(newKey)) {
+              data[newKey] = "";
+            }
+          }
+          renderNestedView(data, container);
+          syncNestedToRaw();
+        };
+        addRow.appendChild(addBtn);
+        content.appendChild(addRow);
+
+        rootNode.appendChild(content);
+
+        const footer = document.createElement('div');
+        footer.innerText = closeChar;
+        rootNode.appendChild(footer);
+
+        container.appendChild(rootNode);
+      } else {
+        // Primitive
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'json-value-input';
+        input.value = JSON.stringify(data);
+        input.onchange = (e) => {
+           try {
+             currentlyEditingJSON.data = JSON.parse(e.target.value);
+             syncNestedToRaw();
+           } catch(err) {
+             alert("Invalid JSON primitive");
+           }
+        };
+        container.appendChild(input);
+      }
+    }
+
+    function syncNestedToRaw() {
+      const rawEditor = document.getElementById('json-raw-editor');
+      if (rawEditor) {
+        rawEditor.value = JSON.stringify(currentlyEditingJSON.data, null, 2);
+      }
+    }
+
+    function syncRawToNested() {
+      const rawEditor = document.getElementById('json-raw-editor');
+      if (rawEditor) {
+        try {
+          currentlyEditingJSON.data = JSON.parse(rawEditor.value);
+        } catch (e) {
+          // Keep old data if invalid JSON
+        }
+      }
+    }
+
     // --- UTILITY ---
     function escapeHTML(str) {
       if (typeof str !== "string") return str;
@@ -1581,11 +2088,14 @@
       return expectedType;
     }
 
-    function castPayloadValue(val, isBool, isOptionSet, field) {
+    function castPayloadValue(val, isBool, isOptionSet, field, isDate) {
       if (isBool) {
         if (val === "true" || val.toLowerCase() === "yes") val = true;
         else if (val === "false" || val.toLowerCase() === "no") val = false;
         else if (val === "") val = null;
+      } else if (isDate) {
+        if (val === "") val = null;
+        else val = new Date(val).toISOString();
       } else if (!isOptionSet) {
         let expectedType = getExpectedType(field);
         if (expectedType === "number") {
@@ -1674,7 +2184,9 @@
     }
 
     // --- SELECTION STATE ---
-    let selectedRowIds = new Set();
+    let selectedRows = new Map();
+    let selectAllMatching = false;
+    let totalMatchingCount = 0;
 
     // --- INITIALIZATION ---
     async function initApp() {
@@ -1769,7 +2281,10 @@
 
       // 4. Clear Row Selections & Column Filters
       hiddenColumns.clear();
-      selectedRowIds.clear();
+      selectedRows.clear();
+      selectAllMatching = false;
+      document.getElementById("all-matching-notice").style.display = "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       updateSelectionBar();
 
       // Clear layout cache so it re-fetches for the new configuration
@@ -1823,7 +2338,11 @@
 
         // Append Constraints
         if (currentConstraints.length > 0) {
-          const constraintsJson = JSON.stringify(currentConstraints);
+          // Resolve the "current date/time" sentinel to an actual ISO timestamp at fetch time
+          const resolvedConstraints = currentConstraints.map(c =>
+            c.value === "current date/time" ? { ...c, value: new Date().toISOString() } : c
+          );
+          const constraintsJson = JSON.stringify(resolvedConstraints);
           // encodeURIComponent ensures special characters like brackets and quotes don't break the URL
           fetchUrl += `&constraints=${encodeURIComponent(constraintsJson)}`;
         }
@@ -1846,6 +2365,7 @@
         columnTypeCache = {}; // Reset cache when new records are fetched
         const remaining = data.response.remaining;
         const count = data.response.count;
+        totalMatchingCount = (currentCursor || 0) + count + (remaining || 0);
 
         // Determine all structural columns across the batch from API meta
         const metaHeaders = cachedTypeColumns[currentType] || [];
@@ -2014,7 +2534,7 @@
 
       // Add Select-All Checkbox Header
       const allChecked =
-        records.length > 0 && records.every((r) => selectedRowIds.has(r._id));
+        records.length > 0 && records.every((r) => selectedRows.has(r._id));
       tableHTML += `<th class="select-cell">
                             <input type="checkbox" title="Select all rows" ${allChecked ? "checked" : ""}
                                    onchange="toggleSelectAll(this.checked)">
@@ -2063,7 +2583,7 @@
 
       // Generate Data Rows
       records.forEach((record) => {
-        const isSelected = selectedRowIds.has(record._id);
+        const isSelected = selectedRows.has(record._id);
         // Attach the _id to the tr element so we can target the whole row
         tableHTML += `<tr id="row-${record._id}" class="${isSelected ? "row-selected" : ""}">`;
 
@@ -2075,6 +2595,8 @@
 
         visibleHeaders.forEach((header) => {
           let cellValue = record[header];
+          let isJSON = false;
+          let jsonValue = "";
 
           // Convert boolean true/false to yes/no
           if (
@@ -2091,14 +2613,20 @@
           }
           // Bubble often returns linked data or geographic addresses as objects/arrays
           else if (typeof cellValue === "object") {
-            cellValue = JSON.stringify(cellValue);
+            isJSON = true;
+            jsonValue = JSON.stringify(cellValue);
+            cellValue = jsonValue;
           }
 
           // Escape output to prevent XSS
-          const safeValue = escapeHTML(cellValue);
+          let safeValue = escapeHTML(cellValue);
+
+          if (isJSON) {
+            safeValue = `<span class="json-badge" onclick="openJSONEditor('${record._id}', '${header}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;">${safeValue.substring(0, 30)}${safeValue.length > 30 ? '...' : ''}</span>`;
+          }
 
           // Assign data-field so we can map inputs back to Bubble's database schema
-          tableHTML += `<td data-field="${header}">${safeValue}</td>`;
+          tableHTML += `<td data-field="${header}" ${isJSON ? `data-json="${escapeHTML(jsonValue)}"` : ""}>${safeValue}</td>`;
         });
         tableHTML += "</tr>";
       });
@@ -2145,6 +2673,14 @@
 
     // --- SERVER SIDE CONSTRAINT FILTER ACTIONS ---
 
+    function toggleConstraintDateInput(selectEl) {
+      const container = selectEl.closest(".constraint-value-container");
+      const datePicker = container.querySelector(".constraint-date-picker");
+      if (datePicker) {
+        datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
+      }
+    }
+
     function updateConstraintInput(field, rowEl) {
       const container = rowEl.querySelector(".constraint-value-container");
       if (!container) return;
@@ -2152,9 +2688,11 @@
       const currentType = document.getElementById("data-type-selector")?.value || "";
       const optionValues = getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
+      const isDate = isDateField(currentType, field);
 
       // Clear current contents
       container.innerHTML = "";
+      container.style.flexDirection = isDate ? "column" : "row";
 
       if (isBool) {
         // Render a <select> dropdown for yes/no fields
@@ -2197,6 +2735,32 @@
         });
 
         container.appendChild(select);
+      } else if (isDate) {
+        const select = document.createElement("select");
+        select.className = "constraint-value constraint-date-selector";
+        select.style.width = "100%";
+        select.onchange = () => { toggleConstraintDateInput(select); markConstraintsDirty(); };
+
+        const currentOpt = document.createElement("option");
+        currentOpt.value = "current date/time";
+        currentOpt.text = "Current Date/Time";
+        select.appendChild(currentOpt);
+
+        const specificOpt = document.createElement("option");
+        specificOpt.value = "specific date";
+        specificOpt.text = "Specific Date...";
+        select.appendChild(specificOpt);
+
+        container.appendChild(select);
+
+        const dateInput = document.createElement("input");
+        dateInput.type = "datetime-local";
+        dateInput.className = "constraint-date-picker";
+        dateInput.style.display = "none";
+        dateInput.style.width = "100%";
+        dateInput.style.marginTop = "5px";
+        dateInput.oninput = () => markConstraintsDirty();
+        container.appendChild(dateInput);
       } else {
         // Restore original text input HTML
         container.innerHTML = `
@@ -2263,22 +2827,29 @@
         const type = constraintData.constraint_type;
         const val = constraintData.value;
 
+        const activeType = document.getElementById("data-type-selector")?.value || "";
+        const isDate = isDateField(activeType, constraintData.key);
+        const isNumber = getFieldMeta(activeType, constraintData.key)?.type === "number" || getExpectedType(constraintData.key) === "number";
+
         if (type === "text contains") operatorSelect.value = "contains";
         else if (type === "not text contains") operatorSelect.value = "does not contain";
         else if (type === "contains") operatorSelect.value = "contains case sensitive";
         else if (type === "not contains") operatorSelect.value = "does not contain case sensitive";
         else if (type === "is_empty") operatorSelect.value = "is empty or null";
         else if (type === "is_not_empty") operatorSelect.value = "is not empty or null";
-        else if (type === "not equal") operatorSelect.value = "not equals";
+        else if (type === "not equal") operatorSelect.value = isNumber ? "num not equals" : isDate ? "not equals" : "not equals";
         else if (type === "greater than") {
-          // Check if it was "greater than or equal" (by checking the offset we applied)
-          if (typeof val === "number" && String(val).includes("9999999")) {
+          if (isDate) {
+            operatorSelect.value = "date greater than";
+          } else if (typeof val === "number" && String(val).includes("9999999")) {
             operatorSelect.value = "num greater than or equal";
           } else {
             operatorSelect.value = "num greater than";
           }
         } else if (type === "less than") {
-          if (typeof val === "number" && String(val).includes("0000001")) {
+          if (isDate) {
+            operatorSelect.value = "date less than";
+          } else if (typeof val === "number" && String(val).includes("0000001")) {
             operatorSelect.value = "num less than or equal";
           } else {
             operatorSelect.value = "num less than";
@@ -2286,7 +2857,7 @@
         } else if (type === "equals") {
           if (val === true) operatorSelect.value = "is yes";
           else if (val === false) operatorSelect.value = "is no";
-          else operatorSelect.value = "equals";
+          else operatorSelect.value = isNumber ? "num equals" : "equals";
         } else {
           operatorSelect.value = "contains";
         }
@@ -2296,7 +2867,20 @@
 
         const valueInput = row.querySelector(".constraint-value");
         if (valueInput) {
+          if (valueInput.classList.contains("constraint-date-selector")) {
+            if (constraintData.value === "current date/time") {
+              valueInput.value = "current date/time";
+            } else {
+              valueInput.value = "specific date";
+              const datePicker = row.querySelector(".constraint-date-picker");
+              if (datePicker) {
+                datePicker.value = formatToDateTimeLocal(constraintData.value);
+                datePicker.style.display = "block";
+              }
+            }
+          } else {
           valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+          }
           if (valueInput.oninput) valueInput.oninput();
         }
       } else {
@@ -2351,6 +2935,8 @@
       if (field && field !== "any_field") {
         if (isBooleanField(activeType, field)) {
           type = "boolean";
+        } else if (isDateField(activeType, field)) {
+          type = "date";
         } else if (getOptionSetForField(activeType, field)) {
           type = "option";
         } else {
@@ -2460,7 +3046,20 @@
         const field = row.querySelector(".constraint-field").value;
         const operator = row.querySelector(".constraint-operator").value;
         const valueEl = row.querySelector(".constraint-value");
-        const value = valueEl ? valueEl.value : "";
+        let value = valueEl ? valueEl.value : "";
+
+        // Handle date specific logic for constraints
+        if (valueEl && valueEl.classList.contains("constraint-date-selector")) {
+          if (value === "specific date") {
+            const datePicker = row.querySelector(".constraint-date-picker");
+            if (datePicker && datePicker.value) {
+              value = new Date(datePicker.value).toISOString();
+            } else {
+              value = ""; // No date picked yet
+            }
+          }
+          // if value is "current date/time", we keep it as is and resolve in fetchAndRenderData
+        }
 
         // Skip rows without a field selected (though field should usually be "any_field" by default)
         if (!field) return;
@@ -2473,7 +3072,7 @@
 
         const key = field === "any_field" ? "any field" : field;
         let constraintType;
-        let constraintValue = value.trim();
+        let constraintValue = typeof value === "string" ? value.trim() : value;
         if (operator === "contains") {
           constraintType = "text contains";
         } else if (operator === "does not contain") {
@@ -2488,8 +3087,18 @@
           constraintType = "is_not_empty";
         } else if (operator === "equals") {
           constraintType = "equals";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "not equals") {
           constraintType = "not equal";
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
+            try {
+              constraintValue = new Date(value.trim()).toISOString();
+            } catch (e) { }
+          }
         } else if (operator === "is yes") {
           constraintType = "equals";
           constraintValue = true;
@@ -2516,8 +3125,18 @@
           constraintValue = parseFloat(value.trim()) + 0.0000001;
         } else if (operator === "date greater than") {
           constraintType = "greater than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else if (operator === "date less than") {
           constraintType = "less than";
+          try {
+            constraintValue = new Date(value.trim()).toISOString();
+          } catch (e) {
+            constraintValue = value.trim();
+          }
         } else {
           // Fallback
           constraintType = "text contains";
@@ -2648,7 +3267,7 @@
     }
 
     function editSelectedRows() {
-      selectedRowIds.forEach((recordId) => {
+      selectedRows.forEach((record, recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         if (row && !row.classList.contains("editing-row")) {
           editRow(recordId);
@@ -2661,6 +3280,9 @@
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
 
@@ -2671,10 +3293,9 @@
         cell.setAttribute("data-original", currentValue); // Store for cancellation
 
         // Check if this field uses an option set or yes/no type
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const optionValues = getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
+        const isDate = isDateField(currentType, field);
 
         cell.innerHTML = "";
 
@@ -2706,6 +3327,16 @@
           });
 
           cell.appendChild(select);
+        } else if (isDateField(currentType, field)) {
+          // Render a datetime-local picker for date fields
+          const input = document.createElement("input");
+          input.type = "datetime-local";
+          input.value = formatToDateTimeLocal(currentValue);
+          input.style.width = "100%";
+          input.style.minWidth = "100px";
+          input.style.boxSizing = "border-box";
+          input.style.padding = "4px";
+          cell.appendChild(input);
         } else if (optionValues && optionValues.length > 0) {
           // Render a <select> dropdown for option set fields
           const select = document.createElement("select");
@@ -2738,9 +3369,37 @@
           }
 
           cell.appendChild(select);
+        } else if (cell.hasAttribute('data-json')) {
+          // Render JSON edit UI
+          const jsonVal = cell.getAttribute('data-json');
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
+          hiddenInput.value = jsonVal;
+          cell.appendChild(hiddenInput);
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'json-badge';
+          editBtn.innerText = 'Edit JSON';
+          editBtn.onclick = () => openJSONEditor(recordId, field, hiddenInput.value);
+          cell.appendChild(editBtn);
+
+          const preview = document.createElement('span');
+          preview.style.fontSize = '11px';
+          preview.style.color = '#666';
+          preview.style.marginLeft = '5px';
+          preview.style.fontFamily = 'monospace';
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue;
+          cell.appendChild(preview);
         } else {
           // Default: render a text input or textarea for non-option-set fields
           renderEditableTextField(cell, currentValue);
+          const input = document.createElement("input");
+          input.type = "text";
+          input.value = currentValue;
+          input.style.width = "100%";
+          input.style.minWidth = "100px";
+          input.style.boxSizing = "border-box";
+          cell.appendChild(input);
         }
       });
 
@@ -2781,6 +3440,9 @@
       let payload = {};
       let hasChanges = false;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       // 2. Loop through row, compare original values to input/select values, and build payload
       cells.forEach((cell) => {
         if (cell.hasAttribute("data-original")) {
@@ -2794,10 +3456,10 @@
           if (editEl) {
             let val = editEl.value;
 
-            const currentType =
-              document.getElementById("data-type-selector").value;
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
+            const isDate = isDateField(currentType, field);
+            const isJSON = editEl.type === 'hidden' && cell.hasAttribute('data-json');
 
             let origCompared = originalValue;
             if (isBool) {
@@ -2812,6 +3474,8 @@
               )
                 origCompared = "false";
               else origCompared = "";
+            } else if (isDate) {
+              origCompared = formatToDateTimeLocal(originalValue);
             }
 
             if (val !== origCompared && (val !== originalValue || isBool)) {
@@ -2830,7 +3494,6 @@
         return;
       }
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
       const actionCell = row.querySelector(".action-cell");
@@ -2859,15 +3522,16 @@
         // 4. Success! Update the UI with new values
         cells.forEach((cell) => {
           if (cell.hasAttribute("data-original")) {
-            const input = cell.querySelector("input");
+            const input = cell.querySelector('input:not([type="hidden"])');
+            const hiddenInput = cell.querySelector('input[type="hidden"]');
             const textarea = cell.querySelector("textarea");
             const select = cell.querySelector("select");
-            const editEl = input || textarea || select;
+            const editEl = input || textarea || select || hiddenInput;
             if (editEl) {
               const field = cell.getAttribute("data-field");
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isBool = isBooleanField(currentType, field);
+              const isDate = isDateField(currentType, field);
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let newValue = editEl.value;
               let displayValue = newValue;
@@ -2878,6 +3542,20 @@
                 } else if (newValue === "false") {
                   newValue = false;
                   displayValue = "no";
+                } else {
+                  newValue = null;
+                  displayValue = "";
+                }
+              } else if (isJSON) {
+                try {
+                  newValue = JSON.parse(newValue);
+                  displayValue = JSON.stringify(newValue);
+                  cell.setAttribute('data-json', displayValue);
+                } catch (e) {}
+              } else if (isDate) {
+                if (newValue) {
+                  newValue = new Date(newValue).toISOString();
+                  displayValue = newValue;
                 } else {
                   newValue = null;
                   displayValue = "";
@@ -2913,9 +3591,14 @@
     // --- ROW SELECTION & DELETION ---
     function toggleRowSelection(recordId, isChecked) {
       if (isChecked) {
-        selectedRowIds.add(recordId);
+        const record = cachedRecords.find(r => r._id === recordId);
+        if (record) selectedRows.set(recordId, record);
       } else {
-        selectedRowIds.delete(recordId);
+        selectedRows.delete(recordId);
+        if (selectAllMatching) {
+          selectAllMatching = false;
+          document.getElementById("all-matching-selected-notice").style.display = "none";
+        }
       }
       // Update row highlight without full re-render
       const row = document.getElementById(`row-${recordId}`);
@@ -2945,9 +3628,9 @@
 
       visibleRecords.forEach((record) => {
         if (isChecked) {
-          selectedRowIds.add(record._id);
+          selectedRows.set(record._id, record);
         } else {
-          selectedRowIds.delete(record._id);
+          selectedRows.delete(record._id);
         }
         const row = document.getElementById(`row-${record._id}`);
         if (row) {
@@ -2956,7 +3639,212 @@
           if (cb) cb.checked = isChecked;
         }
       });
+
+      const allMatchingNotice = document.getElementById("all-matching-notice");
+      const allMatchingSelectedNotice = document.getElementById("all-matching-selected-notice");
+
+      if (isChecked && totalMatchingCount > visibleRecords.length) {
+        allMatchingNotice.style.display = "block";
+        document.getElementById("current-page-count").textContent = visibleRecords.length;
+        document.getElementById("total-matching-count-notice").textContent = totalMatchingCount;
+      } else {
+        allMatchingNotice.style.display = "none";
+        allMatchingSelectedNotice.style.display = "none";
+        selectAllMatching = false;
+      }
+
       updateSelectionBar();
+    }
+
+    function selectAllMatchingRecords() {
+      selectAllMatching = true;
+      document.getElementById("all-matching-notice").style.display = "none";
+      const selectedNotice = document.getElementById("all-matching-selected-notice");
+      selectedNotice.style.display = "block";
+      document.getElementById("total-matching-selected-count").textContent = totalMatchingCount;
+      updateSelectionBar();
+    }
+
+    function showBulkEdit() {
+      const bar = document.getElementById("selection-bar");
+      const container = document.getElementById("bulk-edit-container");
+      const buttons = document.getElementById("selection-buttons");
+      const fieldSelect = document.getElementById("bulk-edit-field");
+
+      if (!container || !buttons || !fieldSelect) return;
+
+      bar.classList.add("bulk-editing");
+
+      // Populate field selector
+      const currentType = document.getElementById("data-type-selector")?.value || "";
+      fieldSelect.innerHTML = "";
+
+      const editableHeaders = detectedHeaders
+        .filter(h => !PROTECTED_FIELDS.includes(h))
+        .sort((a, b) => a.replace(/_/g, " ").trim().localeCompare(b.replace(/_/g, " ").trim()));
+
+      editableHeaders.forEach(header => {
+        const opt = document.createElement("option");
+        opt.value = header;
+        opt.textContent = header.replace(/_/g, " ").trim();
+        fieldSelect.appendChild(opt);
+      });
+
+      updateBulkEditValueInput();
+    }
+
+    function hideBulkEdit() {
+      const bar = document.getElementById("selection-bar");
+      const container = document.getElementById("bulk-edit-container");
+      const buttons = document.getElementById("selection-buttons");
+
+      if (!container || !buttons) return;
+
+      bar.classList.remove("bulk-editing");
+    }
+
+    function updateBulkEditValueInput() {
+      const fieldSelect = document.getElementById("bulk-edit-field");
+      const valueContainer = document.getElementById("bulk-edit-value-container");
+      if (!fieldSelect || !valueContainer) return;
+
+      const field = fieldSelect.value;
+      const currentType = document.getElementById("data-type-selector")?.value || "";
+      const optionValues = getOptionSetForField(currentType, field);
+      const isBool = isBooleanField(currentType, field);
+
+      valueContainer.innerHTML = "";
+
+      if (isBool) {
+        const select = document.createElement("select");
+        select.className = "bulk-edit-value";
+        select.style.width = "100%";
+        select.style.boxSizing = "border-box";
+        select.style.padding = "8px";
+
+        const blankOpt = document.createElement("option");
+        blankOpt.value = "";
+        blankOpt.text = "— select —";
+        select.appendChild(blankOpt);
+
+        ["yes", "no"].forEach((val) => {
+          const opt = document.createElement("option");
+          opt.value = val === "yes" ? "true" : "false";
+          opt.text = val;
+          select.appendChild(opt);
+        });
+        valueContainer.appendChild(select);
+      } else if (optionValues && optionValues.length > 0) {
+        const select = document.createElement("select");
+        select.className = "bulk-edit-value";
+        select.style.width = "100%";
+        select.style.boxSizing = "border-box";
+        select.style.padding = "8px";
+
+        const blankOpt = document.createElement("option");
+        blankOpt.value = "";
+        blankOpt.text = "— select —";
+        select.appendChild(blankOpt);
+
+        optionValues.forEach((optVal) => {
+          const opt = document.createElement("option");
+          opt.value = optVal;
+          opt.text = optVal;
+          select.appendChild(opt);
+        });
+        valueContainer.appendChild(select);
+      } else {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "bulk-edit-value";
+        input.placeholder = "Enter value to apply to all selected rows...";
+        input.style.width = "100%";
+        input.style.boxSizing = "border-box";
+        input.style.padding = "8px";
+        valueContainer.appendChild(input);
+      }
+    }
+
+    async function applyBulkEdit() {
+      const fieldSelect = document.getElementById("bulk-edit-field");
+      const valueEl = document.querySelector(".bulk-edit-value");
+      if (!fieldSelect || !valueEl) return;
+
+      const field = fieldSelect.value;
+      let value = valueEl.value;
+      const count = selectedRows.size;
+
+      if (!field) {
+        alert("Please select a field to edit.");
+        return;
+      }
+
+      if (value === "") {
+        const confirmClear = confirm(`Are you sure you want to clear "${field.replace(/_/g, " ")}" for ${count} selected row(s)?`);
+        if (!confirmClear) return;
+      } else {
+        const confirmMsg = `Are you sure you want to apply "${value}" to the field "${field.replace(/_/g, " ")}" for ${count} selected row(s)?`;
+        if (!confirm(confirmMsg)) return;
+      }
+
+      const applyBtn = document.getElementById("apply-bulk-edit-btn");
+      const originalBtnText = applyBtn.textContent;
+      applyBtn.disabled = true;
+      applyBtn.textContent = "Applying...";
+
+      const currentType = document.getElementById("data-type-selector").value;
+      const isOptionSet = !!getOptionSetForField(currentType, field);
+      const isBool = isBooleanField(currentType, field);
+      const typedValue = castPayloadValue(value, isBool, isOptionSet, field);
+
+      let successCount = 0;
+      let failCount = 0;
+
+      const idsToUpdate = Array.from(selectedRows.keys());
+
+      for (const recordId of idsToUpdate) {
+        const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
+        const payload = { [field]: typedValue };
+
+        try {
+          const response = await fetch(fetchUrl, {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${API_TOKEN}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.body?.message || `HTTP Error: ${response.status}`);
+          }
+
+          // Update local cache
+          const recordIndex = cachedRecords.findIndex(r => r._id === recordId);
+          if (recordIndex > -1) {
+            cachedRecords[recordIndex][field] = typedValue;
+          }
+
+          successCount++;
+        } catch (error) {
+          console.error(`Bulk edit error for row ${recordId}:`, error);
+          failCount++;
+        }
+      }
+
+      applyBtn.disabled = false;
+      applyBtn.textContent = originalBtnText;
+
+      alert(`Bulk edit complete. ${successCount} row(s) updated successfully, ${failCount} failed.`);
+
+      hideBulkEdit();
+      clearSelection();
+
+      // Re-render table to show updated values
+      const container = document.getElementById("table-container");
+      renderTable(cachedRecords, detectedHeaders, container);
     }
 
     function updateSelectAllCheckbox() {
@@ -2965,14 +3853,26 @@
       );
       if (!selectAllCb) return;
       const rows = document.querySelectorAll("tbody tr");
-      if (rows.length === 0) {
+      const filterValue = document
+        .getElementById("table-filter")
+        .value.trim()
+        .toLowerCase();
+      const visibleRecords = filterValue
+        ? cachedRecords.filter((record) =>
+          Object.values(record).some((val) => {
+            if (val === null || val === undefined) return false;
+            const s =
+              typeof val === "object" ? JSON.stringify(val) : String(val);
+            return s.toLowerCase().includes(filterValue);
+          }),
+        )
+        : cachedRecords;
+
+      if (visibleRecords.length === 0) {
         selectAllCb.checked = false;
         return;
       }
-      const allChecked = Array.from(rows).every((row) => {
-        const cb = row.querySelector('.select-cell input[type="checkbox"]');
-        return cb && cb.checked;
-      });
+      const allChecked = visibleRecords.every((r) => selectedRows.has(r._id));
       selectAllCb.checked = allChecked;
     }
 
@@ -2980,13 +3880,15 @@
       const bar = document.getElementById("selection-bar");
       const countSpan = document.getElementById("selection-count");
       const editBtn = document.getElementById("edit-selected-btn");
+      const bulkEditBtn = document.getElementById("bulk-edit-btn");
       const saveBtn = document.getElementById("save-selected-btn");
       const cancelBtn = document.getElementById("cancel-selected-btn");
+      const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
 
-      const count = selectedRowIds.size;
-      const isEditing = Array.from(selectedRowIds).some((id) => {
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
+      const isEditing = Array.from(selectedRows.keys()).some((id) => {
         const r = document.getElementById(`row-${id}`);
         return r && r.classList.contains("editing-row");
       });
@@ -2997,17 +3899,27 @@
 
         if (isEditing) {
           if (editBtn) editBtn.style.display = "none";
+          if (bulkEditBtn) bulkEditBtn.style.display = "none";
+          if (duplicateBtn) duplicateBtn.style.display = "none";
           if (deleteBtn) deleteBtn.style.display = "none";
           if (saveBtn) saveBtn.style.display = "inline-block";
           if (cancelBtn) cancelBtn.style.display = "inline-block";
         } else {
           if (editBtn) {
             editBtn.style.display = "inline-block";
-            editBtn.disabled = false;
+            editBtn.disabled = selectAllMatching; // Bulk editing not supported
+          }
+          if (duplicateBtn) {
+            duplicateBtn.style.display = "inline-block";
+            duplicateBtn.disabled = false;
+          }
+          if (bulkEditBtn) {
+            bulkEditBtn.style.display = "inline-block";
+            bulkEditBtn.disabled = false;
           }
           if (deleteBtn) {
             deleteBtn.style.display = "inline-block";
-            deleteBtn.disabled = false;
+            deleteBtn.disabled = selectAllMatching;
           }
           if (saveBtn) saveBtn.style.display = "none";
           if (cancelBtn) cancelBtn.style.display = "none";
@@ -3020,6 +3932,14 @@
           editBtn.style.display = "inline-block";
           editBtn.disabled = true;
         }
+        if (bulkEditBtn) {
+          bulkEditBtn.style.display = "inline-block";
+          bulkEditBtn.disabled = true;
+        }
+        if (duplicateBtn) {
+          duplicateBtn.style.display = "inline-block";
+          duplicateBtn.disabled = true;
+        }
         if (deleteBtn) {
           deleteBtn.style.display = "inline-block";
           deleteBtn.disabled = true;
@@ -3031,7 +3951,7 @@
     }
 
     async function saveSelectedRows() {
-      const editingIds = Array.from(selectedRowIds).filter((recordId) => {
+      const editingIds = Array.from(selectedRows.keys()).filter((recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         return row && row.classList.contains("editing-row");
       });
@@ -3054,6 +3974,9 @@
       let successCount = 0;
       let failCount = 0;
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       for (const recordId of editingIds) {
         const row = document.getElementById(`row-${recordId}`);
         if (!row) continue;
@@ -3066,17 +3989,18 @@
           if (cell.hasAttribute("data-original")) {
             const field = cell.getAttribute("data-field");
             const originalValue = cell.getAttribute("data-original");
-            const input = cell.querySelector("input");
+            const input = cell.querySelector('input:not([type="hidden"])');
+            const hiddenInput = cell.querySelector('input[type="hidden"]');
             const textarea = cell.querySelector("textarea");
             const select = cell.querySelector("select");
-            const editEl = input || textarea || select;
+            const editEl = input || textarea || select || hiddenInput;
 
             if (editEl) {
               let val = editEl.value;
-              const currentType =
-                document.getElementById("data-type-selector").value;
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
+              const isDate = isDateField(currentType, field);
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let origCompared = originalValue;
               if (isBool) {
@@ -3091,10 +4015,12 @@
                 )
                   origCompared = "false";
                 else origCompared = "";
+              } else if (isDate) {
+                origCompared = formatToDateTimeLocal(originalValue);
               }
 
-              if (val !== origCompared && (val !== originalValue || isBool)) {
-                val = castPayloadValue(val, isBool, isOptionSet, field);
+              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+                val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
                 payload[field] = val;
                 hasChanges = true;
@@ -3109,7 +4035,6 @@
           continue;
         }
 
-        const currentType = document.getElementById("data-type-selector").value;
         const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
 
         try {
@@ -3131,15 +4056,16 @@
 
           cells.forEach((cell) => {
             if (cell.hasAttribute("data-original")) {
-              const input = cell.querySelector("input");
+              const input = cell.querySelector('input:not([type="hidden"])');
+              const hiddenInput = cell.querySelector('input[type="hidden"]');
               const textarea = cell.querySelector("textarea");
               const select = cell.querySelector("select");
-              const editEl = input || textarea || select;
+              const editEl = input || textarea || select || hiddenInput;
               if (editEl) {
                 const field = cell.getAttribute("data-field");
-                const currentType =
-                  document.getElementById("data-type-selector").value;
                 const isBool = isBooleanField(currentType, field);
+                const isDate = isDateField(currentType, field);
+                const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
                 let newValue = editEl.value;
                 let displayValue = newValue;
@@ -3150,6 +4076,20 @@
                   } else if (newValue === "false") {
                     newValue = false;
                     displayValue = "no";
+                  } else {
+                    newValue = null;
+                    displayValue = "";
+                  }
+                                } else if (isJSON) {
+                  try {
+                    newValue = JSON.parse(newValue);
+                    displayValue = JSON.stringify(newValue);
+                    cell.setAttribute('data-json', displayValue);
+                  } catch (e) {}
+                } else if (isDate) {
+                  if (newValue) {
+                    newValue = new Date(newValue).toISOString();
+                    displayValue = newValue;
                   } else {
                     newValue = null;
                     displayValue = "";
@@ -3195,7 +4135,7 @@
     }
 
     function cancelSelectedRows() {
-      selectedRowIds.forEach((recordId) => {
+      selectedRows.forEach((record, recordId) => {
         const row = document.getElementById(`row-${recordId}`);
         if (row && row.classList.contains("editing-row")) {
           cancelEditRow(recordId);
@@ -3209,7 +4149,10 @@
         const id = row.id.replace("row-", "");
         cancelEditRow(id);
       });
-      selectedRowIds.clear();
+      selectedRows.clear();
+      selectAllMatching = false;
+      document.getElementById("all-matching-notice").style.display = "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       // Uncheck all visible checkboxes and remove highlights
       document.querySelectorAll("tbody tr").forEach((row) => {
         row.classList.remove("row-selected");
@@ -3220,8 +4163,107 @@
       updateSelectionBar();
     }
 
+    async function fetchAllMatchingRows() {
+      const currentType = document.getElementById("data-type-selector").value;
+      let allRecords = [];
+      let cursor = 0;
+      let remaining = 1;
+
+      while (remaining > 0) {
+        let fetchUrl = `${API_BASE_URL}${currentType}?cursor=${cursor}`;
+        if (currentConstraints.length > 0) {
+          fetchUrl += `&constraints=${encodeURIComponent(JSON.stringify(currentConstraints))}`;
+        }
+        if (sortField) {
+          fetchUrl += `&sort_field=${encodeURIComponent(sortField)}&descending=${sortDescending}`;
+        }
+
+        const response = await fetch(fetchUrl, {
+          headers: { Authorization: `Bearer ${API_TOKEN}` }
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status} fetching matching rows`);
+
+        const data = await response.json();
+        const results = data.response.results || [];
+        allRecords = allRecords.concat(results);
+        remaining = data.response.remaining;
+        cursor += results.length;
+      }
+
+      return allRecords;
+    }
+
+    async function duplicateSelectedRows() {
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
+      if (count === 0) return;
+
+      const confirmed = window.confirm(
+        `Are you sure you want to duplicate ${count} row${count !== 1 ? "s" : ""}?`
+      );
+      if (!confirmed) return;
+
+      const currentType = document.getElementById("data-type-selector").value;
+      const countSpan = document.getElementById("selection-count");
+      const duplicateBtn = document.getElementById("duplicate-selected-btn");
+      const originalText = duplicateBtn.textContent;
+
+      duplicateBtn.disabled = true;
+      duplicateBtn.textContent = "Duplicating...";
+
+      try {
+        let rowsToDuplicate = [];
+        if (selectAllMatching) {
+          countSpan.textContent = `Fetching all ${totalMatchingCount} matching rows...`;
+          rowsToDuplicate = await fetchAllMatchingRows();
+        } else {
+          rowsToDuplicate = Array.from(selectedRows.values());
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < rowsToDuplicate.length; i++) {
+          const original = rowsToDuplicate[i];
+          countSpan.textContent = `Duplicating ${i + 1} of ${rowsToDuplicate.length}...`;
+
+          // Prepare payload: strip protected fields
+          const payload = { ...original };
+          PROTECTED_FIELDS.forEach(f => delete payload[f]);
+
+          try {
+            const response = await fetch(`${API_BASE_URL}${currentType}`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${API_TOKEN}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            successCount++;
+          } catch (err) {
+            console.error(`Failed to duplicate row ${original._id}:`, err);
+            failCount++;
+          }
+        }
+
+        alert(`Successfully duplicated ${successCount} row${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` Failed to duplicate ${failCount} row(s).` : ""}`);
+        clearSelection();
+        fetchAndRenderData();
+      } catch (error) {
+        console.error("Duplication error:", error);
+        alert(`An error occurred during duplication: ${error.message}`);
+      } finally {
+        duplicateBtn.disabled = false;
+        duplicateBtn.textContent = originalText;
+        updateSelectionBar();
+      }
+    }
+
     async function deleteSelectedRows() {
-      const count = selectedRowIds.size;
+      const count = selectedRows.size;
       if (count === 0) return;
 
       const confirmed = window.confirm(
@@ -3232,7 +4274,7 @@
       const currentType = document.getElementById("data-type-selector").value;
       const bar = document.getElementById("selection-bar");
       const countSpan = document.getElementById("selection-count");
-      const idsToDelete = Array.from(selectedRowIds);
+      const idsToDelete = Array.from(selectedRows.keys());
 
       let successCount = 0;
       let failCount = 0;
@@ -3267,7 +4309,7 @@
           successfullyDeletedIds.add(id);
 
           // Remove from local selection
-          selectedRowIds.delete(id);
+          selectedRows.delete(id);
 
           // Remove the row from the DOM immediately
           const row = document.getElementById(`row-${id}`);
@@ -3356,6 +4398,15 @@
             });
 
             td.appendChild(select);
+          } else if (isDateField(currentType, header)) {
+            const input = document.createElement("input");
+            input.type = "datetime-local";
+            input.value = "";
+            input.style.width = "100%";
+            input.style.minWidth = "100px";
+            input.style.boxSizing = "border-box";
+            input.style.padding = "4px";
+            td.appendChild(input);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
             const select = document.createElement("select");
@@ -3378,7 +4429,31 @@
 
             td.appendChild(select);
           } else {
-            renderEditableTextField(td, "", header.replace(/_/g, " "));
+            // Check if this might be a JSON field by looking at cachedRecords metadata/values
+            const exampleVal = cachedRecords.length > 0 ? cachedRecords[0][header] : null;
+            const isLikelyJSON = exampleVal && typeof exampleVal === 'object';
+
+            if (isLikelyJSON) {
+              const hiddenInput = document.createElement('input');
+              hiddenInput.type = 'hidden';
+              hiddenInput.value = Array.isArray(exampleVal) ? "[]" : "{}";
+              td.appendChild(hiddenInput);
+
+              const editBtn = document.createElement('button');
+              editBtn.className = 'json-badge';
+              editBtn.innerText = 'Edit JSON';
+              editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
+              td.appendChild(editBtn);
+          } else {
+            const input = document.createElement("input");
+            input.type = "text";
+            input.value = "";
+            input.placeholder = header.replace(/_/g, " ");
+            input.style.width = "100%";
+            input.style.minWidth = "100px";
+            input.style.boxSizing = "border-box";
+            td.appendChild(input);
+            }
           }
         }
         newRow.appendChild(td);
@@ -3419,32 +4494,34 @@
       const cells = newRow.querySelectorAll("td[data-field]");
       let payload = {};
 
+      const currentType =
+        document.getElementById("data-type-selector").value;
+
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
         // Skip system-managed fields
         if (PROTECTED_FIELDS.includes(field)) return;
 
-        const input = cell.querySelector("input");
+        const input = cell.querySelector('input:not([type="hidden"])');
+        const hiddenInput = cell.querySelector('input[type="hidden"]');
         const textarea = cell.querySelector("textarea");
         const select = cell.querySelector("select");
-        const editEl = input || textarea || select;
+        const editEl = input || textarea || select || hiddenInput;
         if (!editEl) return;
 
         let val = editEl.value;
-        if (val.trim() === "") return; // Don't send empty fields
+        if (val.trim() === "" && editEl.type !== 'hidden') return; // Don't send empty fields (unless it's hidden JSON)
 
         // Check if this is an option set or yes/no field
-        const currentType =
-          document.getElementById("data-type-selector").value;
         const isOptionSet = !!getOptionSetForField(currentType, field);
         const isBool = isBooleanField(currentType, field);
+        const isDate = isDateField(currentType, field);
 
-        val = castPayloadValue(val, isBool, isOptionSet, field);
+        val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
         payload[field] = val;
       });
 
-      const currentType = document.getElementById("data-type-selector").value;
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
       const actionCell = newRow.querySelector(".action-cell");
@@ -3696,7 +4773,7 @@
       } else {
         // Reset state for current type if we're just loading a different filter
         currentCursor = 0;
-        selectedRowIds.clear();
+        selectedRows.clear();
         updateSelectionBar();
       }
 

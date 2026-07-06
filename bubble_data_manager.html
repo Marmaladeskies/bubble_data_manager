@@ -1252,22 +1252,22 @@
     <div id="selection-buttons" class="selection-bar">
       <span id="selection-count">0 rows selected</span>
       <button id="edit-selected-btn" class="btn btn-primary" onclick="editSelectedRows()" disabled>
-        Edit Selected
+        Edit
       </button>
       <button id="bulk-edit-btn" class="btn btn-primary" onclick="showBulkEdit()" disabled>
         Bulk Edit
       </button>
       <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" style="display: none;">
-        Save Changes
+        Save
       </button>
       <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" style="display: none;">
-        Cancel Edits
+        Cancel
       </button>
       <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
-        Duplicate Selected
+        Duplicate Row(s)
       </button>
       <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
-        Delete Selected
+        Delete
       </button>
       <button id="clear-selection-btn" class="btn" onclick="clearSelection()" disabled>
         Clear Selection
@@ -1411,6 +1411,7 @@
       field: null,
       isNewRow: false
     };
+    
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
     const API_TOKEN = "<your_private_API_key>";

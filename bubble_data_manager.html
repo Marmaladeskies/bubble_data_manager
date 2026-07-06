@@ -2064,7 +2064,7 @@
                 else if (newVal === 'false') newVal = false;
                 else if (newVal === 'null') newVal = null;
                 else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
-              } catch (err) {}
+              } catch (err) { }
               data[key] = newVal;
               syncNestedToRaw();
             };
@@ -3763,7 +3763,7 @@
                   newValue = JSON.parse(newValue);
                   displayValue = JSON.stringify(newValue);
                   cell.setAttribute('data-json', displayValue);
-                } catch (e) {}
+                } catch (e) { }
               } else if (isDate) {
                 if (newValue) {
                   newValue = new Date(newValue).toISOString();
@@ -4296,7 +4296,7 @@
                     newValue = JSON.parse(newValue);
                     displayValue = JSON.stringify(newValue);
                     cell.setAttribute('data-json', displayValue);
-                  } catch (e) {}
+                  } catch (e) { }
                 } else if (isDate) {
                   if (newValue) {
                     newValue = new Date(newValue).toISOString();

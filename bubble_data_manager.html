@@ -1523,7 +1523,7 @@
     // Named keys within the BUBBLE_DATA_MANAGER_SETTINGS JSON object:
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
-    //Parse the BUBBLE_DATA_MANAGER_SETTINGS text field into an object. Returns {} if missing or unparseable.
+
     let currentlyEditingJSON = {
       recordId: null,
       field: null,
@@ -1535,6 +1535,8 @@
       field: null,
       isNewRow: false
     };
+    
+    //Parse the BUBBLE_DATA_MANAGER_SETTINGS text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
       const raw = settingsRecord && settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS];
       if (!raw) return {};
@@ -2071,7 +2073,7 @@
                 else if (newVal === 'false') newVal = false;
                 else if (newVal === 'null') newVal = null;
                 else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
-              } catch (err) {}
+              } catch (err) { }
               data[key] = newVal;
               syncNestedToRaw();
             };
@@ -3760,7 +3762,7 @@
                   newValue = JSON.parse(newValue);
                   displayValue = JSON.stringify(newValue);
                   cell.setAttribute('data-json', displayValue);
-                } catch (e) {}
+                } catch (e) { }
               } else if (isDate) {
                 if (newValue) {
                   newValue = new Date(newValue).toISOString();
@@ -4301,7 +4303,7 @@
                     newValue = JSON.parse(newValue);
                     displayValue = JSON.stringify(newValue);
                     cell.setAttribute('data-json', displayValue);
-                  } catch (e) {}
+                  } catch (e) { }
                 } else if (isDate) {
                   if (newValue) {
                     newValue = new Date(newValue).toISOString();

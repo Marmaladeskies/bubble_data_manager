@@ -2287,22 +2287,29 @@
         const type = constraintData.constraint_type;
         const val = constraintData.value;
 
+        const activeType = document.getElementById("data-type-selector")?.value || "";
+        const isDate = isDateField(activeType, constraintData.key);
+        const isNumber = getFieldMeta(activeType, constraintData.key)?.type === "number" || getExpectedType(constraintData.key) === "number";
+
         if (type === "text contains") operatorSelect.value = "contains";
         else if (type === "not text contains") operatorSelect.value = "does not contain";
         else if (type === "contains") operatorSelect.value = "contains case sensitive";
         else if (type === "not contains") operatorSelect.value = "does not contain case sensitive";
         else if (type === "is_empty") operatorSelect.value = "is empty or null";
         else if (type === "is_not_empty") operatorSelect.value = "is not empty or null";
-        else if (type === "not equal") operatorSelect.value = "not equals";
+        else if (type === "not equal") operatorSelect.value = isNumber ? "num not equals" : isDate ? "not equals" : "not equals";
         else if (type === "greater than") {
-          // Check if it was "greater than or equal" (by checking the offset we applied)
-          if (typeof val === "number" && String(val).includes("9999999")) {
+          if (isDate) {
+            operatorSelect.value = "date greater than";
+          } else if (typeof val === "number" && String(val).includes("9999999")) {
             operatorSelect.value = "num greater than or equal";
           } else {
             operatorSelect.value = "num greater than";
           }
         } else if (type === "less than") {
-          if (typeof val === "number" && String(val).includes("0000001")) {
+          if (isDate) {
+            operatorSelect.value = "date less than";
+          } else if (typeof val === "number" && String(val).includes("0000001")) {
             operatorSelect.value = "num less than or equal";
           } else {
             operatorSelect.value = "num less than";
@@ -2310,7 +2317,7 @@
         } else if (type === "equals") {
           if (val === true) operatorSelect.value = "is yes";
           else if (val === false) operatorSelect.value = "is no";
-          else operatorSelect.value = "equals";
+          else operatorSelect.value = isNumber ? "num equals" : "equals";
         } else {
           operatorSelect.value = "contains";
         }
@@ -2388,6 +2395,8 @@
       if (field && field !== "any_field") {
         if (isBooleanField(activeType, field)) {
           type = "boolean";
+        } else if (isDateField(activeType, field)) {
+          type = "date";
         } else if (getOptionSetForField(activeType, field)) {
           type = "option";
         } else {

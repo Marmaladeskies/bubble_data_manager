@@ -40,6 +40,10 @@
       padding: 5px 8px;
       text-align: left;
       line-height: 1.3;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     tbody td input[type="text"],
@@ -64,6 +68,10 @@
       border: 1px solid #ddd;
       padding: 7px 10px;
       text-align: left;
+      max-width: 300px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     /* Version-aware header row colors */
@@ -1350,6 +1358,23 @@
     </div>
   </div>
 
+  <!-- Text Editor Modal -->
+  <div id="text-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeTextEditor()">
+    <div class="modal-container">
+      <div class="modal-header">
+        <h3 id="text-modal-title">Edit Text Field</h3>
+        <button type="button" class="icon-btn" onclick="closeTextEditor()" style="border:none; font-size: 24px;">×</button>
+      </div>
+      <div class="modal-body">
+        <textarea id="text-editor-textarea" style="width: 100%; height: 400px; font-family: inherit; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeTextEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveTextEditor()">Save Text</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JSON Editor Modal -->
   <div id="json-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeJSONEditor()">
     <div class="modal-container">
@@ -1380,6 +1405,11 @@
       field: null,
       isNewRow: false,
       data: null
+    };
+    let currentlyEditingText = {
+      recordId: null,
+      field: null,
+      isNewRow: false
     };
     const DOMAIN_NAME = "yourdomain.com";
     let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
@@ -2009,6 +2039,47 @@
       }
     }
 
+    // --- TEXT EDITOR FUNCTIONS ---
+
+    function openTextEditor(recordId, field, initialValue, isNewRow = false) {
+      currentlyEditingText = {
+        recordId,
+        field,
+        isNewRow
+      };
+
+      document.getElementById('text-modal-title').innerText = `Edit Text: ${field}`;
+      document.getElementById('text-editor-textarea').value = initialValue || "";
+
+      document.getElementById('text-editor-modal').style.display = 'flex';
+    }
+
+    function closeTextEditor() {
+      document.getElementById('text-editor-modal').style.display = 'none';
+    }
+
+    function saveTextEditor() {
+      const textVal = document.getElementById('text-editor-textarea').value;
+      const rowId = currentlyEditingText.isNewRow ? 'row-new' : `row-${currentlyEditingText.recordId}`;
+      const row = document.getElementById(rowId);
+      if (row) {
+        const cell = row.querySelector(`td[data-field="${currentlyEditingText.field}"]`);
+        if (cell) {
+          const hiddenInput = cell.querySelector('input[type="hidden"]');
+          const preview = cell.querySelector('.text-preview');
+          if (hiddenInput) {
+            hiddenInput.value = textVal;
+          }
+          if (preview) {
+            preview.innerText = textVal.length > 20 ? textVal.substring(0, 20) + '...' : textVal;
+          }
+          cell.setAttribute('title', textVal);
+        }
+      }
+
+      closeTextEditor();
+    }
+
     // --- UTILITY ---
     function escapeHTML(str) {
       if (typeof str !== "string") return str;
@@ -2582,7 +2653,7 @@
           }
 
           // Assign data-field so we can map inputs back to Bubble's database schema
-          tableHTML += `<td data-field="${header}" ${isJSON ? `data-json="${escapeHTML(jsonValue)}"` : ""}>${safeValue}</td>`;
+          tableHTML += `<td data-field="${header}" ${isJSON ? `data-json="${escapeHTML(jsonValue)}"` : ""} title="${escapeHTML(cellValue)}">${safeValue}</td>`;
         });
         tableHTML += "</tr>";
       });
@@ -3291,14 +3362,26 @@
           preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue;
           cell.appendChild(preview);
         } else {
-          // Default: render a text input for non-option-set fields
-          const input = document.createElement("input");
-          input.type = "text";
-          input.value = currentValue;
-          input.style.width = "100%";
-          input.style.minWidth = "100px";
-          input.style.boxSizing = "border-box";
-          cell.appendChild(input);
+          // Default: render a text input with multi-line modal support
+          const hiddenInput = document.createElement("input");
+          hiddenInput.type = "hidden";
+          hiddenInput.value = currentValue;
+          cell.appendChild(hiddenInput);
+
+          const editBtn = document.createElement("button");
+          editBtn.className = "json-badge";
+          editBtn.innerText = "Text";
+          editBtn.onclick = () => openTextEditor(recordId, field, hiddenInput.value);
+          cell.appendChild(editBtn);
+
+          const preview = document.createElement("span");
+          preview.className = "text-preview";
+          preview.style.fontSize = "11px";
+          preview.style.color = "#666";
+          preview.style.marginLeft = "5px";
+          preview.style.fontFamily = "monospace";
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + "..." : currentValue;
+          cell.appendChild(preview);
         }
       });
 
@@ -3460,6 +3543,7 @@
               }
 
               cell.innerText = displayValue;
+              cell.setAttribute('title', displayValue);
               cell.removeAttribute("data-original");
 
               // Keep the local Javascript array in sync so client-side searching works
@@ -3992,6 +4076,7 @@
                 }
 
                 cell.innerText = displayValue;
+                cell.setAttribute('title', displayValue);
                 cell.removeAttribute("data-original");
 
                 const recordIndex = cachedRecords.findIndex(
@@ -4340,14 +4425,25 @@
               editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
               td.appendChild(editBtn);
           } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.value = "";
-            input.placeholder = header.replace(/_/g, " ");
-            input.style.width = "100%";
-            input.style.minWidth = "100px";
-            input.style.boxSizing = "border-box";
-            td.appendChild(input);
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.value = "";
+            td.appendChild(hiddenInput);
+
+            const editBtn = document.createElement("button");
+            editBtn.className = "json-badge";
+            editBtn.innerText = "Text";
+            editBtn.onclick = () => openTextEditor("new", header, hiddenInput.value, true);
+            td.appendChild(editBtn);
+
+            const preview = document.createElement("span");
+            preview.className = "text-preview";
+            preview.style.fontSize = "11px";
+            preview.style.color = "#666";
+            preview.style.marginLeft = "5px";
+            preview.style.fontFamily = "monospace";
+            preview.innerText = "...";
+            td.appendChild(preview);
             }
           }
         }

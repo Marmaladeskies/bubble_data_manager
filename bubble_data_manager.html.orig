@@ -114,10 +114,6 @@
       min-width: 16px !important;
       text-align: center;
       padding: 0px !important;
-      position: sticky;
-      left: 0;
-      z-index: 5;
-      background-color: inherit;
     }
 
     .select-links {
@@ -127,10 +123,6 @@
       font-style: italic;
       color: #007bff;
 
-    }
-
-    th.select-cell {
-      z-index: 15;
     }
 
     .select-cell input[type="checkbox"] {

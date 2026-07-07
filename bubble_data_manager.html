@@ -3815,6 +3815,7 @@
         if (actionCell) {
           actionCell.remove();
         }
+        clearSelection();
       } catch (error) {
         console.error("Save error:", error);
         alert(`Failed to save to Bubble: ${error.message}`);
@@ -4382,7 +4383,7 @@
           `Saved ${successCount} row${successCount !== 1 ? "s" : ""}, but failed to save ${failCount} row${failCount !== 1 ? "s" : ""}. Check console for details.`,
         );
       }
-      updateSelectionBar();
+      clearSelection();
     }
 
     function cancelSelectedRows() {
@@ -4576,8 +4577,7 @@
       }
 
       // Update UI
-      updateSelectAllCheckbox();
-      updateSelectionBar();
+      clearSelection();
 
       // Report results
       let msg = `Deleted ${successCount} row${successCount !== 1 ? "s" : ""} successfully.`;
@@ -5013,6 +5013,7 @@
         nameInput.value = "";
         currentFilterName = name;
         renderDataTypeSidebar();
+        clearSelection();
         alert(`View "${name}" saved successfully.`);
       } catch (error) {
         console.error("Save filter error:", error);
@@ -5110,6 +5111,7 @@
           currentFilterName = null;
         }
         renderDataTypeSidebar();
+        clearSelection();
       } catch (error) {
         console.error("Delete filter error:", error);
         alert(`Failed to delete filter: ${error.message}`);

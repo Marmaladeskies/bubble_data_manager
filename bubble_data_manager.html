@@ -188,6 +188,7 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+      margin-top: 5px;
     }
 
     .column-filter-header {
@@ -496,6 +497,14 @@
 
     .btn-primary:hover:not(:disabled) {
       background: #0056b3;
+    }
+
+    .btn-applied,
+    .btn-applied:hover {
+      background: #469bf0 !important;
+      color: #ffffff !important;
+      border-color: #dee2e6 !important;
+      cursor: not-allowed !important;
     }
 
     #page-info {
@@ -1271,7 +1280,9 @@
     </select>
   </h1>
   <select id="data-type-selector" style="display: none;" onchange="handleDataTypeChange()"></select>
-  <div id="filters-container" style="border: 2px solid #333; border-radius: 8px; padding: 15px; margin-bottom: 20px; background-color: #fafafa;">
+  <div id="filters-container"
+    style="border: 2px solid #333; border-radius: 8px; padding: 10px 15px 15px 15px; background-color: #fafafa;">
+    <span style="font-size: 15x; font-weight: 700; color: #222;">CONSTRAINTS</span>
     <div id="column-filter-group" class="column-filter-group">
       <div class="column-filter-header">
         <span style="font-size: 14px; font-weight: 500; color: #222;">Select Columns To Display:</span>
@@ -1287,24 +1298,25 @@
         <div style="display: flex; align-items: center; gap: 15px;">
           <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
         </div>
-        <div id="save-constraint-group">
-          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
-          <input type="text" id="save-filter-name" placeholder="Filter Name...">
-        </div>
       </div>
       <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
       <button type="button" class="btn" style="padding: 4px 10px; margin: 5px; font-size: 12px;"
         onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
         Constraint</button>
-      <div class="constraint-actions" style="display: flex; gap: 10px; margin-top: 5px;">
-        <button id="apply-constraints-btn" type="button" class="btn btn-primary" onclick="applyConstraintFilter()"
-          style="max-width: fit-content;">
+      <div class="constraint-actions"
+        style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; align-items: center;">
+        <button id="apply-constraints-btn" type="button" class="btn btn-primary btn-applied" disabled
+          onclick="applyConstraintFilter()" style="max-width: fit-content;">
           Apply Constraints
         </button>
-        <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
-          style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
-          Save Current View
-        </button>
+        <div id="save-constraint-group" style="display: none; align-items: center; gap: 10px;">
+          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+          <input type="text" id="save-filter-name" placeholder="Filter Name...">
+          <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
+            style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
+            Save Columns & Constraints
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1322,12 +1334,13 @@
         <div id="bulk-edit-value-container" style="flex: 1; min-width: 200px; display: flex;"></div>
       </div>
       <div id="bulk-edit-actions" style="display: none; gap: 8px;">
-        <button id="apply-bulk-edit-btn" class="btn btn-success" onclick="applyBulkEdit()">Apply</button>
+        <button id="apply-bulk-edit-btn" class="btn btn-success" onclick="applyBulkEdit()">Apply Bulk Edit</button>
         <button class="btn" onclick="hideBulkEdit()">Cancel</button>
       </div>
     </div>
   </div>
-  <div id="action-buttons" style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0px;">
+  <div id="action-buttons"
+    style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0px;">
     <div id="dup-del-wrapper" style="display: none; gap: 10px; align-items: center;">
       <button id="duplicate-selected-btn" class="btn btn-primary" style="min-width: fit-content"
         onclick="duplicateSelectedRows()" disabled>
@@ -1339,7 +1352,7 @@
       </button>
     </div>
     <div>
-        <span id="selection-count">0 rows selected</span>
+      <span id="selection-count">0 rows selected</span>
     </div>
     <div style="margin-bottom: 0; justify-self: right;">
       <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
@@ -1559,8 +1572,6 @@
     // Disable editing for these fields:
     const PROTECTED_FIELDS = [
       "_id",
-      "Unique ID",
-      "unique ID",
       "Created Date",
       "Created By",
       "Modified Date",
@@ -2470,18 +2481,21 @@
         if (labelEl) labelEl.classList.add("hidden-column");
       }
       applyClientFilter();
+        markConstraintsDirty();
     }
 
     function selectAllColumnsFilter() {
       hiddenColumns.clear();
       populateColumnFilterGroup(detectedHeaders);
       applyClientFilter();
+        markConstraintsDirty();
     }
 
     function deselectAllColumnsFilter() {
       detectedHeaders.forEach((h) => hiddenColumns.add(h));
       populateColumnFilterGroup(detectedHeaders);
       applyClientFilter();
+        markConstraintsDirty();
     }
 
     // --- SELECTION STATE ---
@@ -2989,11 +3003,13 @@
           opt.text = val;
           select.appendChild(opt);
         });
+          select.onchange = () => markConstraintsDirty();
 
         container.appendChild(select);
       } else if (optionValues && optionValues.length > 0) {
         const select = document.createElement("select");
         select.className = "constraint-value";
+          select.onchange = () => markConstraintsDirty();
         select.style.width = "100%";
         select.style.boxSizing = "border-box";
         select.style.padding = "8px";
@@ -3303,15 +3319,27 @@
     function markConstraintsDirty() {
       const applyBtn = document.getElementById("apply-constraints-btn");
       const saveBtn = document.getElementById("save-view-btn");
-      if (applyBtn) { applyBtn.disabled = false; applyBtn.classList.remove("btn-applied"); }
+        const saveGroup = document.getElementById("save-constraint-group");
+        if (applyBtn) {
+          applyBtn.disabled = false;
+          applyBtn.classList.remove("btn-applied");
+          applyBtn.innerText = "Apply Constraints";
+        }
       if (saveBtn) saveBtn.disabled = true;
+        if (saveGroup) saveGroup.style.display = "none";
     }
 
     function markConstraintsApplied() {
       const applyBtn = document.getElementById("apply-constraints-btn");
       const saveBtn = document.getElementById("save-view-btn");
-      if (applyBtn) { applyBtn.disabled = true; applyBtn.classList.add("btn-applied"); }
+        const saveGroup = document.getElementById("save-constraint-group");
+        if (applyBtn) {
+          applyBtn.disabled = true;
+          applyBtn.classList.add("btn-applied");
+          applyBtn.innerText = "Apply Constraints";
+        }
       if (saveBtn) saveBtn.disabled = false;
+        if (saveGroup) saveGroup.style.display = "flex";
     }
 
     function applyConstraintFilter() {
@@ -3459,6 +3487,7 @@
       if (input) {
         input.value = "";
         btn.style.display = "none";
+          markConstraintsDirty();
       }
     }
 
@@ -4998,6 +5027,8 @@
         settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettings;
         nameInput.value = "";
         currentFilterName = name;
+          const saveGroup = document.getElementById("save-constraint-group");
+          if (saveGroup) saveGroup.style.display = "none";
         renderDataTypeSidebar();
         alert(`View "${name}" saved successfully.`);
       } catch (error) {
@@ -5036,6 +5067,7 @@
           currentConstraints = filter.constraints || [];
           currentFilterName = filterName;
           syncConstraintsUI();
+        markConstraintsApplied();
           fetchAndRenderData();
           renderDataTypeSidebar();
           // Populate the filter name input with the loaded filter's name

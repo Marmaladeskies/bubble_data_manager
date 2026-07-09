@@ -1,0 +1,39 @@
+# Exclude directories
+directory/*
+
+# Exclude files
+.devcontainer
+.vscode
+.~lock.*
+
+# Exclude file extensions
+*.yaml
+*.log
+*.code-workspace
+*_log.txt
+*.xlsx
+*.csv
+
+# Environments
+.python_version
+.python-version
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytype/
+cython_debug/
+pyvenv.cfg
+local_settings.py
+__pycache*
+*/__pycache*/
+*.pyc
+.continue*
+.VSCode*
+.agents/rules/*
+
+# Explictly include (must come after exclusions):
+!directory/file_name.ext

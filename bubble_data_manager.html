@@ -49,7 +49,7 @@
     tbody td input[type="text"],
     tbody td input[type="datetime-local"],
     tbody td select {
-      padding: 2px 4px !important;
+      padding: 2px 4px;
       margin: 0;
     }
 
@@ -427,12 +427,14 @@
       background: #218838;
     }
 
+    #edit-action-buttons,
     #selection-buttons {
       justify-content: space-between;
       display: none;
       align-self: center;
     }
 
+    #selection-bar.active:not(.bulk-editing) #edit-action-buttons,
     #selection-bar.active:not(.bulk-editing) #selection-buttons {
       display: flex;
       justify-items: left;
@@ -447,7 +449,7 @@
     }
 
     .selection-bar {
-      display: flex;
+      display: none;
       flex-wrap: wrap;
       align-items: center;
       gap: 22px;
@@ -459,10 +461,12 @@
     }
 
     .selection-bar.active {
+      display: flex;
       background: #fff3cd;
       border: 1px solid #ffc107;
-      width: 95%;
+      width: fit-content;
       margin: 5px 0px;
+      padding: 10px;
     }
 
 
@@ -493,7 +497,6 @@
     }
 
     .selection-bar .btn {
-      max-width: none;
       width: 140px;
     }
 
@@ -654,7 +657,7 @@
       gap: 6px;
       padding: 3px 12px;
       height: fit-content;
-      align-self:flex-end;
+      align-self: flex-end;
     }
 
     #column-order-refresh-group {
@@ -1138,6 +1141,7 @@
     }
 
     @media (max-width: 925px) {
+
       #selection-bar,
       .selection-bar {
         flex-direction: column;
@@ -1452,7 +1456,8 @@
   </div>
   <div id="selection-bar" class="selection-bar">
     <div id="edit-action-buttons" style="display: none; gap: 10px; align-items: center; justify-items: left;">
-      <button id="bulk-edit-btn" class="btn btn-primary" style="background-color: #f08000;" onclick="showBulkEdit()" disabled>
+      <button id="bulk-edit-btn" class="btn btn-primary" style="background-color: #f08000; max-width: 300px;"
+        onclick="showBulkEdit()" disabled>
         Bulk Edit >
       </button>
     </div>
@@ -1470,25 +1475,30 @@
   </div>
   <div id="action-buttons"
     style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0px;">
-    <div id="dup-del-wrapper" style="display: none; gap: 10px; align-items: center;">
-      <button id="duplicate-selected-btn" class="btn btn-primary" style="min-width: fit-content"
-        onclick="duplicateSelectedRows()" disabled>
-        Duplicate Row(s)
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <button id="export-btn" class="btn" style="min-width: fit-content;" onclick="showExportModal()">
+        Export
       </button>
-      <button id="delete-selected-btn" class="btn btn-danger" style="width: fit-content" onclick="deleteSelectedRows()"
-        disabled>
-        Delete
-      </button>
+      <div id="dup-del-wrapper" style="display: none; gap: 10px; align-items: center;">
+        <button id="duplicate-selected-btn" class="btn btn-primary" style="min-width: fit-content"
+          onclick="duplicateSelectedRows()" disabled>
+          Duplicate Row(s)
+        </button>
+        <button id="delete-selected-btn" class="btn btn-danger" style="width: fit-content"
+          onclick="deleteSelectedRows()" disabled>
+          Delete
+        </button>
+      </div>
     </div>
     <div style="display: block; margin-bottom: 0; justify-self: right">
       <span id="selection-count" style="font-size: 14px"></span>
       <div style="margin-top: 5px">
         <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
-        style="display: none;">
-        Save
+          style="display: none;">
+          Save
         </button>
         <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" disabled style="display: none;">
-        Cancel
+          Cancel
         </button>
       </div>
     </div>
@@ -1627,13 +1637,51 @@
     </div>
   </div>
 
+  <!-- Export Modal -->
+  <div id="export-modal" class="modal-overlay" onclick="if(event.target === this) closeExportModal()">
+    <div class="modal-container" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3 id="export-modal-title">Export Data to CSV</h3>
+        <button type="button" class="icon-btn" onclick="closeExportModal()"
+          style="border:none; font-size: 24px;">×</button>
+      </div>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 600; font-size: 14px; color: #333;">Select Data Types to Export:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
+              onclick="selectAllExportTypes(true)">Select All</button>
+            <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
+              onclick="selectAllExportTypes(false)">Deselect All</button>
+          </div>
+        </div>
+        <div id="export-types-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+        <div id="export-progress-container"
+          style="display: none; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+          <div style="font-weight: 500; font-size: 13px; margin-bottom: 6px; color: #495057;"
+            id="export-progress-status">Starting export...</div>
+          <div style="width: 100%; background: #e9ecef; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div id="export-progress-bar"
+              style="width: 0%; background: #007bff; height: 100%; transition: width 0.2s ease;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="export-cancel-btn" class="btn" onclick="closeExportModal()">Cancel</button>
+        <button type="button" id="export-download-btn" class="btn btn-primary" onclick="startExportToCSV()">Download
+          CSV</button>
+      </div>
+    </div>
+  </div>
+
   <script>
+
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
+    let DOMAIN, API_KEY, API_BASE_URL;
 
     const DOMAIN_NAME = "yourdomain.com";
-    let API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
-    const API_TOKEN = "<Your API Key>";
+    const API_TOKEN = "Your API Key";
     const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
 
     // Optional: store persisent data
@@ -1642,9 +1690,139 @@
 
     // ---------------------
 
-    // Named keys within the BUBBLE_DATA_MANAGER_SETTINGS JSON object:
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
+    const SETTINGS_TYPE = localStorage.getItem('DEV_SETTINGS_TYPE') || APP_SETTINGS_TYPE;
+
+    // --- INITIALIZATION ---
+    async function initApp() {
+      [DOMAIN, API_KEY] = await initializeWithValidKey();
+      API_BASE_URL = `https://${DOMAIN}${VERSION}/api/1.1/obj/`;
+      const fetchedTypes = await fetchDataTypesFromBubble();
+      rebuildDataTypes(fetchedTypes);
+      console.log(
+        `Auto-loaded ${fetchedTypes.length} data types from Bubble.`,
+      );
+
+      // Fetch option sets and build the slug-to-display-name cross-reference
+      await fetchOptionSets();
+
+      // Sync the version selector UI with the configuration variable
+      const versionSelector = document.getElementById("version-selector");
+      versionSelector.value = VERSION;
+      const tableWrapper = document.querySelector(".sidebar-header");
+      if (VERSION === "") {
+        versionSelector.className = "badge-live";
+        if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
+        document.body.classList.remove("version-test");
+        document.body.classList.add("version-live");
+      } else {
+        versionSelector.className = "badge-test";
+        if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
+        document.body.classList.remove("version-live");
+        document.body.classList.add("version-test");
+      }
+
+      if (window.innerWidth <= 800) {
+        console.log("Mobile view detected (" + window.innerWidth + "px), collapsing sidebar");
+        const sidebar = document.getElementById("data-types-sidebar");
+        const collapsedView = document.getElementById("data-types-collapsed-view");
+        const icon = document.getElementById("sidebar-toggle-icon");
+        if (sidebar) sidebar.classList.add("collapsed");
+        if (collapsedView) collapsedView.classList.add("active");
+        if (icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+      }
+
+      fetchAndRenderData();
+    }
+
+    async function initializeWithValidKey() {
+      let DOMAIN = localStorage.getItem('home');
+      let API_KEY = localStorage.getItem('cached_pref');
+
+      while (true) {
+        if (!DOMAIN) {
+          let rawInput = window.prompt("Enter your Bubble app's URL:");
+          if (rawInput) {
+            let cleanedInput = rawInput.trim();
+            if (!cleanedInput.startsWith('http://') && !cleanedInput.startsWith('https://')) {
+              cleanedInput = 'https://' + cleanedInput;
+            }
+            try {
+              const parsedUrl = new URL(cleanedInput);
+              DOMAIN = parsedUrl.hostname;
+              localStorage.setItem('home', DOMAIN);
+              console.log(`Domain saved to localStorage: ${DOMAIN}`);
+            } catch (error) {
+              console.error("The provided text could not be parsed into a valid URL.");
+              alert("Invalid URL format. Please refresh and try again.");
+              DOMAIN = null;
+            }
+          }
+          else {
+            console.warn("No URL entered. You are not connected to a Bubble app.");
+            window.alert(`No URL entered. You are not connected to a Bubble app.`);
+            return [null, null];
+          }
+        }
+        else {
+          console.log("DOMAIN loaded from localStorage.");
+        }
+
+        if (!API_KEY) {
+          API_KEY = window.prompt("Enter your Bubble app's API key to connect to your app:");
+          if (API_KEY) {
+            localStorage.setItem('cached_pref', API_KEY);
+            console.log("API Key saved to localStorage.");
+          } else {
+            console.warn("No API key entered. You are not connected to a Bubble app.");
+            window.alert(`No API key entered. You are not connected to a Bubble app.`);
+            return [null, null];
+          }
+        } else {
+          console.log("API_KEY loaded from localStorage.");
+        }
+
+        // use a non-existent endpoint to test the API key:
+        const testUrl = `https://${DOMAIN}${VERSION}/api/1.1/obj/auth_validation_dummy?limit=1`;
+        try {
+          const response = await fetch(testUrl, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${API_KEY}`
+            }
+          });
+
+          // 401 means the key was explicitly rejected.
+          if (response.status === 401) {
+            console.warn("Invalid API Key. Authentication failed.");
+            window.alert(`The API key entered is not valid for ${DOMAIN}`);
+            localStorage.removeItem('home');
+            localStorage.removeItem('cached_pref');
+            DOMAIN = null;
+            API_KEY = null;
+            continue;
+          }
+          else if (response.ok || response.status === 404 || response.status === 400) {
+            console.log("Domain and API Key are valid.");
+            return [DOMAIN, API_KEY];
+          }
+          else {
+            console.warn(`Unexpected status code: ${response.status}`);
+            window.alert(`Received an unexpected response from ${DOMAIN}. Are you sure this is a Bubble app?`);
+            localStorage.removeItem('home');
+            DOMAIN = null;
+            continue;
+          }
+        } catch (error) {
+          console.error("Network error during validation:", error);
+          window.alert(`Could not connect to ${DOMAIN}. The URL may be misspelled, offline, or not a Bubble application.`);
+          localStorage.removeItem('home');
+          DOMAIN = null;
+          continue;
+        }
+      }
+    }
 
     let currentlyEditingJSON = {
       recordId: null,
@@ -1688,6 +1866,7 @@
       "Created Date",
       "Created By",
       "Modified Date",
+      "Slug",
     ];
 
     // Build the full DATA_TYPES array with layout keys from a base list
@@ -1719,9 +1898,9 @@
 
     // Fetch available data types from Bubble's API meta endpoint
     async function fetchDataTypesFromBubble() {
-      const metaUrl = `https://${DOMAIN_NAME}${VERSION}/api/1.1/meta`;
+      const metaUrl = `https://${DOMAIN}${VERSION}/api/1.1/meta`;
       const response = await fetch(metaUrl, {
-        headers: { Authorization: `Bearer ${API_TOKEN}` },
+        headers: { Authorization: `Bearer ${API_KEY}` },
       });
       if (!response.ok)
         throw new Error(`HTTP ${response.status} fetching API meta`);
@@ -1785,20 +1964,20 @@
     // Fetch all option sets from the backend workflow API
     async function fetchOptionSets() {
       try {
-        let url = `https://${DOMAIN_NAME}${VERSION}/api/1.1/wf/get-options`;
+        let url = `https://${DOMAIN}${VERSION}/api/1.1/wf/get-options`;
         let response = await fetch(url, {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
           },
         });
         if (!response.ok && VERSION === "") {
           // Fallback to version-test if get-options is not deployed to live yet
-          url = `https://${DOMAIN_NAME}/version-test/api/1.1/wf/get-options`;
+          url = `https://${DOMAIN}/version-test/api/1.1/wf/get-options`;
           response = await fetch(url, {
             method: "GET",
             headers: {
-              Authorization: `Bearer ${API_TOKEN}`,
+              Authorization: `Bearer ${API_KEY}`,
             },
           });
         }
@@ -2328,6 +2507,217 @@
       closeTextEditor();
     }
 
+    // --- CSV EXPORT MODAL & LOGIC ---
+    function showExportModal() {
+      const modal = document.getElementById("export-modal");
+      const listContainer = document.getElementById("export-types-list");
+      if (!modal || !listContainer) return;
+
+      listContainer.innerHTML = "";
+
+      const progressContainer = document.getElementById("export-progress-container");
+      if (progressContainer) progressContainer.style.display = "none";
+      const downloadBtn = document.getElementById("export-download-btn");
+      if (downloadBtn) {
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = "Download CSV";
+      }
+      const cancelBtn = document.getElementById("export-cancel-btn");
+      if (cancelBtn) cancelBtn.disabled = false;
+
+      const currentType = document.getElementById("data-type-selector")?.value;
+
+      DATA_TYPES.forEach((dt) => {
+        const labelEl = document.createElement("label");
+        labelEl.style.cssText = "display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; padding: 6px 8px; border-radius: 4px; transition: background-color 0.15s;";
+        labelEl.onmouseover = () => { labelEl.style.backgroundColor = "#f0f4f8"; };
+        labelEl.onmouseout = () => { labelEl.style.backgroundColor = "transparent"; };
+
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.className = "export-type-checkbox";
+        cb.value = dt.value;
+        cb.checked = (dt.value === currentType) || (DATA_TYPES.length === 1);
+
+        const span = document.createElement("span");
+        span.textContent = dt.label + (dt.value !== dt.label ? ` (${dt.value})` : "");
+
+        labelEl.appendChild(cb);
+        labelEl.appendChild(span);
+        listContainer.appendChild(labelEl);
+      });
+
+      modal.style.display = "flex";
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById("export-modal");
+      if (modal) modal.style.display = "none";
+    }
+
+    function selectAllExportTypes(select) {
+      document.querySelectorAll(".export-type-checkbox").forEach((cb) => {
+        cb.checked = select;
+      });
+    }
+
+    function formatCSVField(val, header, typeSlug) {
+      if (val === null || val === undefined) return "";
+      let str = "";
+      if (typeof val === "boolean" || (isBooleanField(typeSlug, header) && (val === "true" || val === "false"))) {
+        str = (val === true || val === "true") ? "yes" : "no";
+      } else if (typeof val === "object") {
+        str = JSON.stringify(val);
+      } else {
+        str = String(val);
+      }
+      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function downloadCSVFile(csvContent, filename) {
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+
+    async function fetchAllRowsForDataType(dataTypeValue) {
+      let allRecords = [];
+      let cursor = 0;
+      let remaining = 1;
+      const headersConfig = {};
+      if (typeof API_KEY !== "undefined" && API_KEY) {
+        headersConfig["Authorization"] = `Bearer ${API_KEY}`;
+      }
+
+      while (remaining > 0) {
+        let fetchUrl = `${API_BASE_URL}${dataTypeValue}?cursor=${cursor}&limit=100`;
+        const response = await fetch(fetchUrl, { headers: headersConfig });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} fetching records for ${dataTypeValue}`);
+        }
+        const data = await response.json();
+        const results = (data.response && data.response.results) ? data.response.results : [];
+        allRecords = allRecords.concat(results);
+        remaining = (data.response && data.response.remaining) ? data.response.remaining : 0;
+        cursor += results.length;
+        if (results.length === 0) break;
+      }
+      return allRecords;
+    }
+
+    async function startExportToCSV() {
+      const checkedBoxes = Array.from(document.querySelectorAll(".export-type-checkbox:checked"));
+      if (checkedBoxes.length === 0) {
+        alert("Please select at least one data type to export.");
+        return;
+      }
+
+      const selectedTypes = checkedBoxes.map(cb => {
+        const dt = DATA_TYPES.find(d => d.value === cb.value);
+        return dt ? dt : { value: cb.value, label: cb.value };
+      });
+
+      const progressContainer = document.getElementById("export-progress-container");
+      const progressStatus = document.getElementById("export-progress-status");
+      const progressBar = document.getElementById("export-progress-bar");
+      const downloadBtn = document.getElementById("export-download-btn");
+      const cancelBtn = document.getElementById("export-cancel-btn");
+
+      if (progressContainer) progressContainer.style.display = "block";
+      if (downloadBtn) downloadBtn.disabled = true;
+      if (cancelBtn) cancelBtn.disabled = true;
+
+      try {
+        for (let i = 0; i < selectedTypes.length; i++) {
+          const typeObj = selectedTypes[i];
+          const percent = Math.round((i / selectedTypes.length) * 100);
+          if (progressBar) progressBar.style.width = `${percent}%`;
+          if (progressStatus) progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Fetching records for "${typeObj.label}"...`;
+
+          const records = await fetchAllRowsForDataType(typeObj.value);
+          if (progressStatus) progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Generating CSV for "${typeObj.label}"...`;
+
+          const metaHeaders = cachedTypeColumns[typeObj.value] || [];
+          const allKeysSet = new Set(metaHeaders);
+          records.forEach((record) => {
+            Object.keys(record).forEach((key) => {
+              if (key.toLowerCase() === "unique id" && allKeysSet.has("_id")) return;
+              allKeysSet.add(key);
+            });
+          });
+          let headers = Array.from(allKeysSet);
+
+          try {
+            const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
+            const rawMap = allOrders[typeObj.value];
+            let activeOrderMap = null;
+            if (rawMap) {
+              if (Array.isArray(rawMap)) {
+                activeOrderMap = rawMap;
+              } else if (typeof rawMap === "string") {
+                try { activeOrderMap = JSON.parse(rawMap); } catch (_) { }
+              }
+            }
+            if (activeOrderMap && activeOrderMap.length > 0) {
+              let reorderedHeaders = [];
+              activeOrderMap.forEach((headerName) => {
+                if (headers.includes(headerName)) {
+                  reorderedHeaders.push(headerName);
+                }
+              });
+              headers.forEach((header) => {
+                if (!reorderedHeaders.includes(header)) {
+                  reorderedHeaders.push(header);
+                }
+              });
+              headers = reorderedHeaders;
+            }
+          } catch (_) { }
+
+          const headerRow = headers.map(h => formatCSVField(h, h, typeObj.value)).join(",");
+          const csvRows = records.map(record => {
+            return headers.map(header => formatCSVField(record[header], header, typeObj.value)).join(",");
+          });
+          const csvContent = [headerRow, ...csvRows].join("\r\n");
+
+          const filename = `${typeObj.value}_export.csv`;
+          downloadCSVFile(csvContent, filename);
+
+          if (i < selectedTypes.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, 400));
+          }
+        }
+
+        if (progressBar) progressBar.style.width = "100%";
+        if (progressStatus) progressStatus.textContent = `Successfully exported ${selectedTypes.length} data type(s) to CSV!`;
+        setTimeout(() => {
+          closeExportModal();
+        }, 1500);
+
+      } catch (error) {
+        console.error("Error exporting to CSV:", error);
+        if (progressStatus) progressStatus.textContent = `Error during export: ${error.message || error}`;
+        if (progressBar) progressBar.style.backgroundColor = "#dc3545";
+        if (cancelBtn) cancelBtn.disabled = false;
+      } finally {
+        if (downloadBtn) {
+          downloadBtn.disabled = false;
+          downloadBtn.textContent = "Download CSV";
+        }
+        if (cancelBtn) cancelBtn.disabled = false;
+      }
+    }
+
     // --- UTILITY ---
     function escapeHTML(str) {
       if (typeof str !== "string") return str;
@@ -2639,53 +3029,13 @@
     let selectAllMatching = false;
     let totalMatchingCount = 0;
 
-    // --- INITIALIZATION ---
-    async function initApp() {
-      const fetchedTypes = await fetchDataTypesFromBubble();
-      rebuildDataTypes(fetchedTypes);
-      console.log(
-        `Auto-loaded ${fetchedTypes.length} data types from Bubble.`,
-      );
-
-      // Fetch option sets and build the slug-to-display-name cross-reference
-      await fetchOptionSets();
-
-      // Sync the version selector UI with the configuration variable
-      const versionSelector = document.getElementById("version-selector");
-      versionSelector.value = VERSION;
-      const tableWrapper = document.querySelector(".sidebar-header");
-      if (VERSION === "") {
-        versionSelector.className = "badge-live";
-        if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
-        document.body.classList.remove("version-test");
-        document.body.classList.add("version-live");
-      } else {
-        versionSelector.className = "badge-test";
-        if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
-        document.body.classList.remove("version-live");
-        document.body.classList.add("version-test");
-      }
-
-      if (window.innerWidth <= 800) {
-        console.log("Mobile view detected (" + window.innerWidth + "px), collapsing sidebar");
-        const sidebar = document.getElementById("data-types-sidebar");
-        const collapsedView = document.getElementById("data-types-collapsed-view");
-        const icon = document.getElementById("sidebar-toggle-icon");
-        if (sidebar) sidebar.classList.add("collapsed");
-        if (collapsedView) collapsedView.classList.add("active");
-        if (icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
-      }
-
-      fetchAndRenderData();
-    }
-
     // --- FETCH CENTRALIZED COLUMN ORDER SETTINGS ---
     async function fetchSettings() {
       try {
         // Fetch the single constants record
-        const fetchUrl = `${API_BASE_URL}${APP_SETTINGS_TYPE}?limit=1`;
+        const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}?limit=1`;
         const response = await fetch(fetchUrl, {
-          headers: { Authorization: `Bearer ${API_TOKEN}` },
+          headers: { Authorization: `Bearer ${API_KEY}` },
         });
 
         if (response.ok) {
@@ -2778,8 +3128,8 @@
 
         // Set up headers for authentication
         const headersConfig = {};
-        if (API_TOKEN) {
-          headersConfig["Authorization"] = `Bearer ${API_TOKEN}`;
+        if (API_KEY) {
+          headersConfig["Authorization"] = `Bearer ${API_KEY}`;
         }
 
         // Construct URL dynamically based on the selected data type
@@ -3890,7 +4240,7 @@
         const response = await fetch(fetchUrl, {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
@@ -4027,9 +4377,6 @@
         const row = document.getElementById(`row-${record._id}`);
         if (isChecked) {
           selectedRows.set(record._id, record);
-          if (row && !row.classList.contains("editing-row")) {
-            editRow(record._id);
-          }
         } else {
           selectedRows.delete(record._id);
           if (row && row.classList.contains("editing-row")) {
@@ -4113,6 +4460,8 @@
       document.getElementById("bulk-edit-btn").style.display = "inline-block";
       document.getElementById("bulk-edit-bar").style.display = "none";
       document.getElementById("bulk-edit-actions").style.display = "none";
+
+      updateSelectionBar();
     }
 
     function toggleBulkEditDateInput(selectEl) {
@@ -4289,7 +4638,7 @@
           const response = await fetch(fetchUrl, {
             method: "PATCH",
             headers: {
-              Authorization: `Bearer ${API_TOKEN}`,
+              Authorization: `Bearer ${API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify(payload),
@@ -4378,53 +4727,45 @@
         return r && r.classList.contains("editing-row") && r.classList.contains("has-edits");
       });
 
-      if (count > 0) {
-        if (isEditing && count > 1) {
-          bar.classList.add("active");
-        } else {
-          bar.classList.remove("active");
-        }
+      if (count > 1 || hasEdits) {
+        bar.classList.add("active");
         countSpan.textContent = `${count} row${count !== 1 ? "s" : ""} selected`;
 
-        if (bulkEditBtn) bulkEditBtn.disabled = false;
+        if (bulkEditBtn) bulkEditBtn.disabled = count <= 1;
+        if (dupDelWrapper) dupDelWrapper.style.display = "flex";
+        if (duplicateBtn) duplicateBtn.disabled = false;
+        if (deleteBtn) deleteBtn.disabled = selectAllMatching;
 
-        if (isEditing) {
-          if (dupDelWrapper) dupDelWrapper.style.display = "flex";
-          if (duplicateBtn) duplicateBtn.disabled = false;
-          if (deleteBtn) deleteBtn.disabled = selectAllMatching;
-          if (saveBtn) { saveBtn.style.display = "inline-block"; saveBtn.disabled = !hasEdits; }
-          if (cancelBtn) { cancelBtn.style.display = "inline-block"; cancelBtn.disabled = !hasEdits; }
-          if (editActionBtns) editActionBtns.style.display = "flex";
-          if (newrefreshBtns) newrefreshBtns.style.display = "none";
-        } else {
-          if (dupDelWrapper) dupDelWrapper.style.display = "none";
-          if (duplicateBtn) duplicateBtn.disabled = true;
-          if (deleteBtn) deleteBtn.disabled = true;
-          if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
-          if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
-          if (editActionBtns) editActionBtns.style.display = "none";
-          if (newrefreshBtns) newrefreshBtns.style.display = "flex";
+        if (saveBtn) { saveBtn.style.display = hasEdits ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
+        if (cancelBtn) { cancelBtn.style.display = hasEdits ? "inline-block" : "none"; cancelBtn.disabled = !hasEdits; }
+
+        if (editActionBtns) {
+          editActionBtns.style.display = (count > 1 || hasEdits) && !bar.classList.contains("bulk-editing") ? "flex" : "none";
         }
+        if (newrefreshBtns) newrefreshBtns.style.display = "none";
         if (clearBtn) clearBtn.disabled = false;
       } else {
         bar.classList.remove("active");
-        countSpan.textContent = "0 rows selected";
+        if (bar.classList.contains("bulk-editing")) {
+          hideBulkEdit();
+        }
+        countSpan.textContent = count === 1 ? "1 row selected" : "0 rows selected";
         if (bulkEditBtn) bulkEditBtn.disabled = true;
         if (dupDelWrapper) dupDelWrapper.style.display = "none";
         if (duplicateBtn) duplicateBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
-        if (editActionBtns) editActionBtns.style.display = "none";
         if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
         if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
-        if (clearBtn) clearBtn.disabled = true;
+        if (editActionBtns) editActionBtns.style.display = "none";
         if (newrefreshBtns) newrefreshBtns.style.display = "flex";
+        if (clearBtn) clearBtn.disabled = count === 0;
       }
     }
 
     async function saveSelectedRows() {
       const editingIds = Array.from(selectedRows.keys()).filter((recordId) => {
         const row = document.getElementById(`row-${recordId}`);
-        return row && row.classList.contains("editing-row");
+        return row && row.classList.contains("editing-row") && row.classList.contains("has-edits");
       });
       if (editingIds.length === 0) return;
 
@@ -4511,7 +4852,7 @@
           const response = await fetch(fetchUrl, {
             method: "PATCH",
             headers: {
-              Authorization: `Bearer ${API_TOKEN}`,
+              Authorization: `Bearer ${API_KEY}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify(payload),
@@ -4650,7 +4991,7 @@
         }
 
         const response = await fetch(fetchUrl, {
-          headers: { Authorization: `Bearer ${API_TOKEN}` }
+          headers: { Authorization: `Bearer ${API_KEY}` }
         });
 
         if (!response.ok) throw new Error(`HTTP ${response.status} fetching matching rows`);
@@ -4693,30 +5034,82 @@
 
         let successCount = 0;
         let failCount = 0;
+        const BATCH_SIZE = 500;
 
-        for (let i = 0; i < rowsToDuplicate.length; i++) {
-          const original = rowsToDuplicate[i];
-          countSpan.textContent = `Duplicating ${i + 1} of ${rowsToDuplicate.length}...`;
+        for (let i = 0; i < rowsToDuplicate.length; i += BATCH_SIZE) {
+          const batch = rowsToDuplicate.slice(i, i + BATCH_SIZE);
+          countSpan.textContent = `Duplicating rows ${i + 1}-${Math.min(i + BATCH_SIZE, rowsToDuplicate.length)} of ${rowsToDuplicate.length}...`;
 
-          // Prepare payload: strip protected fields
-          const payload = { ...original };
-          PROTECTED_FIELDS.forEach(f => delete payload[f]);
+          const lines = batch.map((original) => {
+            const payload = { ...original };
+            PROTECTED_FIELDS.forEach(f => delete payload[f]);
+            return JSON.stringify(payload);
+          });
+
+          const body = lines.join("\n");
 
           try {
-            const response = await fetch(`${API_BASE_URL}${currentType}`, {
+            const response = await fetch(`${API_BASE_URL}${currentType}/bulk`, {
               method: "POST",
               headers: {
-                Authorization: `Bearer ${API_TOKEN}`,
-                "Content-Type": "application/json",
+                Authorization: `Bearer ${API_KEY}`,
+                "Content-Type": "text/plain",
               },
-              body: JSON.stringify(payload),
+              body: body,
             });
 
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            successCount++;
+            if (!response.ok) {
+              const errText = await response.text();
+              console.error(`Bulk duplication failed for batch starting at index ${i}:`, errText);
+              throw new Error(`HTTP ${response.status}: ${errText || "Bulk request failed"}`);
+            }
+
+            const responseText = await response.text();
+            let parsedLines = [];
+
+            try {
+              const jsonData = JSON.parse(responseText);
+              if (Array.isArray(jsonData)) {
+                parsedLines = jsonData;
+              } else if (jsonData && typeof jsonData === "object") {
+                parsedLines = jsonData.lines || jsonData.response?.lines || jsonData.results || [jsonData];
+              }
+            } catch (jsonErr) {
+              // Bubble's /bulk endpoint returns text/plain with one JSON object per line (JSONL format)
+              parsedLines = responseText
+                .split("\n")
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => {
+                  try {
+                    return JSON.parse(line);
+                  } catch (e) {
+                    return null;
+                  }
+                })
+                .filter(Boolean);
+            }
+
+            if (parsedLines.length > 0) {
+              parsedLines.forEach(item => {
+                const isSuccess = item && (
+                  (typeof item.status === "string" && item.status.toLowerCase() === "success") ||
+                  item.status === true ||
+                  (!item.status && item.id)
+                );
+                if (isSuccess) {
+                  successCount++;
+                } else {
+                  console.error("Bulk item duplication error:", item);
+                  failCount++;
+                }
+              });
+            } else {
+              successCount += batch.length;
+            }
           } catch (err) {
-            console.error(`Failed to duplicate row ${original._id}:`, err);
-            failCount++;
+            console.error(`Failed to duplicate batch ${i}-${i + batch.length}:`, err);
+            failCount += batch.length;
           }
         }
 
@@ -4757,7 +5150,7 @@
           const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
           const response = await fetch(fetchUrl, {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${API_TOKEN}` },
+            headers: { Authorization: `Bearer ${API_KEY}` },
           });
 
           if (!response.ok) {
@@ -4793,6 +5186,7 @@
       // Update local cache outside the loop to improve performance (O(N) instead of O(N*M))
       if (successfullyDeletedIds.size > 0) {
         cachedRecords = cachedRecords.filter((r) => !successfullyDeletedIds.has(r._id));
+        totalMatchingCount = Math.max(0, totalMatchingCount - successfullyDeletedIds.size);
       }
 
       // Update UI
@@ -4808,6 +5202,39 @@
       // If all visible rows were deleted, refresh to load more
       if (cachedRecords.length === 0) {
         fetchAndRenderData();
+      } else if (successfullyDeletedIds.size > 0) {
+        refreshPageInfo();
+      }
+    }
+
+    function refreshPageInfo() {
+      const pageInfo = document.getElementById("page-info");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      if (!pageInfo) return;
+
+      if (cachedRecords.length === 0) {
+        pageInfo.innerText = "No records";
+        if (prevBtn) prevBtn.disabled = currentCursor === 0;
+        if (nextBtn) nextBtn.disabled = true;
+      } else {
+        const startRecord = currentCursor + 1;
+        const endRecord = currentCursor + cachedRecords.length;
+        const remaining = Math.max(0, totalMatchingCount - currentCursor - cachedRecords.length);
+        pageInfo.innerText = `Showing ${startRecord} - ${endRecord} (${remaining} remaining)`;
+
+        if (prevBtn) prevBtn.disabled = currentCursor === 0;
+        if (nextBtn) nextBtn.disabled = remaining === 0;
+      }
+
+      if (prevBtn && nextBtn) {
+        if (prevBtn.disabled && nextBtn.disabled) {
+          prevBtn.style.display = "none";
+          nextBtn.style.display = "none";
+        } else {
+          prevBtn.style.display = "";
+          nextBtn.style.display = "";
+        }
       }
     }
 
@@ -5013,7 +5440,7 @@
         const response = await fetch(fetchUrl, {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
@@ -5050,7 +5477,7 @@
 
       // 1. Update the configuration variables based on the dropdown
       VERSION = selector.value;
-      API_BASE_URL = `https://${DOMAIN_NAME}${VERSION}/api/1.1/obj/`;
+      API_BASE_URL = `https://${DOMAIN}${VERSION}/api/1.1/obj/`;
 
       // 2. Update the visual color style of the dropdown badge
       const tableWrapper = document.querySelector(".sidebar-header");
@@ -5207,7 +5634,7 @@
       allFilters[currentType] = existingFilters;
       const updatedSettings = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
-      const fetchUrl = `${API_BASE_URL}${APP_SETTINGS_TYPE}/${settingsRecord._id}`;
+      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
       const btn = document.querySelector("button[onclick='saveFilterView()']");
       const originalText = btn.textContent;
       btn.textContent = "Saving...";
@@ -5217,7 +5644,7 @@
         const response = await fetch(fetchUrl, {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),
@@ -5311,12 +5738,12 @@
       allFilters[dataTypeValue] = existingFilters;
       const updatedSettings = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
-      const fetchUrl = `${API_BASE_URL}${APP_SETTINGS_TYPE}/${settingsRecord._id}`;
+      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
       try {
         const response = await fetch(fetchUrl, {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),
@@ -5356,13 +5783,13 @@
       allOrders[currentType] = newMap;
       const updatedSettings = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
 
-      const fetchUrl = `${API_BASE_URL}${APP_SETTINGS_TYPE}/${settingsRecord._id}`;
+      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
 
       try {
         const response = await fetch(fetchUrl, {
           method: "PATCH",
           headers: {
-            Authorization: `Bearer ${API_TOKEN}`,
+            Authorization: `Bearer ${API_KEY}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),

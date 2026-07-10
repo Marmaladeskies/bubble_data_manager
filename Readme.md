@@ -13,10 +13,11 @@ _This improved database manager is a single .html file that can be opened in any
 - Uses at least 10x less RAM than a bubble editor window in your browser and has more features
 - Drag and drop column reordering and column positions can be saved permanently
 - Use today's date to create dynamic constraint views of your database that can be saved to always use the current date
+- Date/time picker popup for editing date typed fields
 - Easy text and JSON viewing popups. JSON editor helps avoid sytnax errors
 - Bulk edit a column for multiple rows with type safe dropdowns for your option sets and calendar picker for dates
 - Easily delete or duplicate multiple rows (or every row of a constraint view)
-- Export any or all data types to CSV files with one click. Don't have to export each data type individually
+- Export any or all data types to CSV files in their saved column order with one click. Don't have to export each data type individually
 - Automatically detects your app's data types, fields, and typing and populates the table and sidebar for you. Very little setup required
 - You have the code. You can throw this file in Cursor/Antigravity/Claude and tell your favorite AI any changes you want to make, and it will be done without wasting a minute clicking through whatever UI changes Bubble is currently experimenting with. Easier, faster, and none of Bubble's UI limitations
 

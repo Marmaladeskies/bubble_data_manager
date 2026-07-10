@@ -1,6 +1,6 @@
 # Bubble App Data Manager
 
-The default database admin UX in the bubble.io editor is terrible, and using Bubble to build admin pages with custom tables to manage your database is not much better. Bubble is not great at building tables for data, however nice tables are actually very easy to build with code.
+This a really simple, free template for replacing the 'App Data' tab of the bubble editor for basic database admin. The 'App Data' page is really awful, and using Bubble to build admin pages with custom tables to manage your database is both tedious and limited. Bubble is not great at building tables for data, however nice tables are actually very easy to build with code (AI).
 
 ![Screenshot](screenshots/default_view.png)
 
@@ -8,20 +8,19 @@ _This improved database manager is a single .html file that can be opened in any
 
 ## Features
 
-- Glitch-free, responsive UX for viewing and editing data tables that is much better than any other template
-- Fully view and edit your database on mobile without janky nonsense
-- Uses at least 10x less RAM than a bubble editor window in your browser and has more features
+- Simple, glitch-free, responsive UX for viewing and editing all of your data tables
+- Uses at least 10x-20x less RAM than a bubble editor window in your browser and has more features
 - Drag and drop column reordering and column positions can be saved permanently
-- Use today's date to create dynamic constraint views of your database that can be saved to always use the current date
-- Date/time picker popup for editing date typed fields
-- Easy text and JSON viewing popups. JSON editor helps avoid sytnax errors
-- Bulk edit a column for multiple rows with type safe dropdowns for your option sets and calendar picker for dates
+- Use 'today's date' to create dynamic constraint views of your database that can be saved to always use the current date
+- Inline row editing with a JSON editor popup that avoids sytnax errors and calendar picker for date typed fields
+- Bulk editing a column for multiple rows
 - Easily delete or duplicate multiple rows (or every row of a constraint view)
-- Export any or all data types to CSV files in their saved column order with one click. Don't have to export each data type individually
-- Automatically detects your app's data types, fields, and typing and populates the table and sidebar for you. Very little setup required
-- You have the code. You can throw this file in Cursor/Antigravity/Claude and tell your favorite AI any changes you want to make, and it will be done without wasting a minute clicking through whatever UI changes Bubble is currently experimenting with. Easier, faster, and none of Bubble's UI limitations
+- Export any or ALL data types (in your custom column order) to CSV files at once
+- Automatically detects your app's data types and fields and populates the table, columns, and sidebar for you. Very little setup required.
+- This project is a single .html file that you save locally and open on any browser you want to admin your database from. This html/js file will open on any device, in any browser, in any enviroment.
+- You have the code. Throw this single script in your favorite AI, tell it any changes you want to make, and it will be done without wasting a minute clicking through whatever UI changes Bubble is currently experimenting with. Easier, faster, and none of Bubble's UI limitations
 
-- Limitations:
+- Limitations of this script:
   - Will only load data types that have Data API enabled in Settings>API>Public API endpoints. (All columns will have read/write access regardless of privacy rules if the Data API is enabled for that data type because this uses an Admin API token, not a user token)
   - When you enter your API token, it is saved unencrypted in your browser so it is not secure if a hacker gains control of your browser. It can't be saved in your browser keychain because it is a local file, not a website
   - Option sets have to be loaded manually. This takes less <10 min

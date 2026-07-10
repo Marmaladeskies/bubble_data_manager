@@ -1513,6 +1513,12 @@
         <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" disabled style="display: none;">
           Cancel
         </button>
+        <button id="save-new-row-btn" class="btn btn-success" onclick="saveNewRow()" disabled style="display: none;">
+          Save New Row
+        </button>
+        <button id="cancel-new-row-btn" class="btn" onclick="cancelNewRow()" disabled style="display: none;">
+          Cancel
+        </button>
       </div>
     </div>
   </div>
@@ -2555,7 +2561,7 @@
         cb.checked = (dt.value === currentType) || (DATA_TYPES.length === 1);
 
         const span = document.createElement("span");
-        span.textContent = dt.label + (dt.value !== dt.label ? ` (${dt.value})` : "");
+        span.textContent = dt.label;
 
         labelEl.appendChild(cb);
         labelEl.appendChild(span);
@@ -3099,19 +3105,20 @@
       hiddenColumns.clear();
       selectedRows.clear();
       selectAllMatching = false;
+      isAddingNewRow = false;
       document.getElementById("all-matching-notice").style.display = "none";
       document.getElementById("all-matching-selected-notice").style.display = "none";
       updateSelectionBar();
 
       // Clear layout cache so it re-fetches for the new configuration
       if (!preventFetch) {
-      settingsRecord = null;
+        settingsRecord = null;
       }
 
       updateSidebarActiveState();
       if (!preventFetch) {
-      fetchAndRenderData();
-    }
+        fetchAndRenderData();
+      }
     }
 
     // --- REFRESH ACTION ---
@@ -3281,6 +3288,7 @@
           prevBtn.style.display = "";
           nextBtn.style.display = "";
         }
+        updateSelectionBar();
       } catch (error) {
         console.error("Fetch error:", error);
         container.innerHTML = `<div class="error">Failed to load data: ${escapeHTML(error.message)}</div>`;
@@ -4729,6 +4737,8 @@
       const bulkEditBtn = document.getElementById("bulk-edit-btn");
       const saveBtn = document.getElementById("save-selected-btn");
       const cancelBtn = document.getElementById("cancel-selected-btn");
+      const saveNewBtn = document.getElementById("save-new-row-btn");
+      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
       const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
@@ -4746,25 +4756,30 @@
         return r && r.classList.contains("editing-row") && r.classList.contains("has-edits");
       });
 
-      // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits)
-      if (count > 0 || hasEdits) {
-        if (countSpan) countSpan.textContent = count === 1 ? "1 row selected" : `${count} row${count !== 1 ? "s" : ""} selected`;
-        if (dupDelWrapper) dupDelWrapper.style.display = "flex";
-        if (duplicateBtn) duplicateBtn.disabled = false;
-        if (deleteBtn) deleteBtn.disabled = selectAllMatching;
+      // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits, or adding a new row)
+      if (count > 0 || hasEdits || isAddingNewRow) {   
+        if (count > 0) countSpan.textContent = count === 1 ? "1 row selected" : `${count} row${count !== 1 ? "s" : ""} selected`;
+        if (dupDelWrapper) dupDelWrapper.style.display = count > 0 || hasEdits ? "flex" : "none";
+        if (duplicateBtn) duplicateBtn.disabled = count === 0 && !hasEdits;
+        if (deleteBtn) deleteBtn.disabled = (count === 0 && !hasEdits) || selectAllMatching;
 
         if (saveBtn) { saveBtn.style.display = hasEdits ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
         if (cancelBtn) { cancelBtn.style.display = hasEdits ? "inline-block" : "none"; cancelBtn.disabled = !hasEdits; }
 
+        if (saveNewBtn) { saveNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; saveNewBtn.disabled = !isAddingNewRow; }
+        if (cancelNewBtn) { cancelNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; cancelNewBtn.disabled = !isAddingNewRow; }
+
         if (newrefreshBtns) newrefreshBtns.style.display = "none";
-        if (clearBtn) clearBtn.disabled = false;
+        if (clearBtn) clearBtn.disabled = count === 0 && !hasEdits;
       } else {
-        if (countSpan) countSpan.textContent = "0 rows selected";
+        if (countSpan) countSpan.textContent = "";
         if (dupDelWrapper) dupDelWrapper.style.display = "none";
         if (duplicateBtn) duplicateBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
         if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
         if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
+        if (saveNewBtn) { saveNewBtn.style.display = "none"; saveNewBtn.disabled = true; }
+        if (cancelNewBtn) { cancelNewBtn.style.display = "none"; cancelNewBtn.disabled = true; }
         if (newrefreshBtns) newrefreshBtns.style.display = "flex";
         if (clearBtn) clearBtn.disabled = true;
       }
@@ -5391,17 +5406,6 @@
         newRow.appendChild(td);
       });
 
-      // Action cell with Create/Cancel appended at the end of the row
-      const actionTd = document.createElement("td");
-      actionTd.className = "action-cell";
-      actionTd.innerHTML = `
-                <div style="display: flex; gap: 5px; flex-direction: column;">
-                    <button class="btn btn-success" style="padding: 4px; font-size: 12px;" onclick="saveNewRow()">Create</button>
-                    <button class="btn" style="padding: 4px; font-size: 12px;" onclick="cancelNewRow()">Cancel</button>
-                </div>
-            `;
-      newRow.appendChild(actionTd);
-
       // Prepend the new row to the top of the table
       tbody.insertBefore(newRow, tbody.firstChild);
 
@@ -5411,12 +5415,25 @@
       // Focus the first editable input
       const firstInput = newRow.querySelector("td[data-field] input");
       if (firstInput) firstInput.focus();
+
+      updateSelectionBar();
     }
 
     function cancelNewRow() {
       const newRow = document.getElementById("row-new");
       if (newRow) newRow.remove();
       isAddingNewRow = false;
+      const saveNewBtn = document.getElementById("save-new-row-btn");
+      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
+      if (saveNewBtn) {
+        saveNewBtn.style.display = "none";
+        saveNewBtn.disabled = true;
+      }
+      if (cancelNewBtn) {
+        cancelNewBtn.style.display = "none";
+        cancelNewBtn.disabled = true;
+      }
+      updateSelectionBar();
     }
 
     async function saveNewRow() {
@@ -5455,10 +5472,14 @@
 
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
-      const actionCell = newRow.querySelector(".action-cell");
-      const originalActions = actionCell.innerHTML;
-      actionCell.innerHTML =
-        '<span style="color: #28a745; font-size: 12px; font-weight: 500;">Creating...</span>';
+      const saveNewBtn = document.getElementById("save-new-row-btn");
+      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
+      const originalCreateText = saveNewBtn ? saveNewBtn.textContent : "Save New Row";
+      if (saveNewBtn) {
+        saveNewBtn.disabled = true;
+        saveNewBtn.textContent = "Creating...";
+      }
+      if (cancelNewBtn) cancelNewBtn.disabled = true;
 
       try {
         const response = await fetch(fetchUrl, {
@@ -5479,11 +5500,25 @@
 
         // Success — refresh the table to show the new row with its server-assigned ID
         isAddingNewRow = false;
+        if (saveNewBtn) {
+          saveNewBtn.style.display = "none";
+          saveNewBtn.disabled = true;
+          saveNewBtn.textContent = originalCreateText;
+        }
+        if (cancelNewBtn) {
+          cancelNewBtn.style.display = "none";
+          cancelNewBtn.disabled = true;
+        }
+        updateSelectionBar();
         await fetchAndRenderData();
       } catch (error) {
         console.error("Create row error:", error);
         alert(`Failed to create row: ${error.message}`);
-        actionCell.innerHTML = originalActions;
+        if (saveNewBtn) {
+          saveNewBtn.disabled = false;
+          saveNewBtn.textContent = originalCreateText;
+        }
+        if (cancelNewBtn) cancelNewBtn.disabled = false;
       }
     }
 

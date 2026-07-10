@@ -3050,7 +3050,7 @@
     }
 
     // --- DATA TYPE SWITCHING ---
-    function handleDataTypeChange() {
+    function handleDataTypeChange(preventFetch = false) {
       currentFilterName = null;
       // 0. Reset Column Edit Mode
       isEditingColumns = false;
@@ -3089,10 +3089,14 @@
       updateSelectionBar();
 
       // Clear layout cache so it re-fetches for the new configuration
-      settingsRecord = null;
+      if (!preventFetch) {
+        settingsRecord = null;
+      }
 
       updateSidebarActiveState();
-      fetchAndRenderData();
+      if (!preventFetch) {
+        fetchAndRenderData();
+      }
     }
 
     // --- REFRESH ACTION ---
@@ -5684,12 +5688,16 @@
       const selector = document.getElementById("data-type-selector");
       if (selector.value !== dataTypeValue) {
         selector.value = dataTypeValue;
-        handleDataTypeChange();
+        handleDataTypeChange(true);
       } else {
         // Reset state for current type if we're just loading a different filter
         currentCursor = 0;
         selectedRows.clear();
         updateSelectionBar();
+      }
+
+      if (!settingsRecord) {
+        await fetchSettings();
       }
 
       const allFilters = getSettingsEntry(SETTINGS_KEY_FILTER_DATA);

@@ -75,11 +75,15 @@
     }
 
     /* Version-aware header row colors */
-    body.version-live #table-container th {
+    body.version-live #table-container th,
+    body.version-live .sidebar-header,
+    body.version-live .data-types-collapsed-view {
       background-color: #d0ffcf;
     }
 
-    body.version-test #table-container th {
+    body.version-test #table-container th,
+    body.version-test .sidebar-header,
+    body.version-test .data-types-collapsed-view {
       background-color: #fff3cd;
     }
 
@@ -1720,14 +1724,17 @@
       const versionSelector = document.getElementById("version-selector");
       versionSelector.value = VERSION;
       const tableWrapper = document.querySelector(".sidebar-header");
+      const collapsedView = document.getElementById("data-types-collapsed-view");
       if (VERSION === "") {
         versionSelector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
+        if (collapsedView) collapsedView.style.backgroundColor = "#d0ffcf";
         document.body.classList.remove("version-test");
         document.body.classList.add("version-live");
       } else {
         versionSelector.className = "badge-test";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
+        if (collapsedView) collapsedView.style.backgroundColor = "#fff3cd";
         document.body.classList.remove("version-live");
         document.body.classList.add("version-test");
       }
@@ -1735,7 +1742,6 @@
       if (window.innerWidth <= 800) {
         console.log("Mobile view detected (" + window.innerWidth + "px), collapsing sidebar");
         const sidebar = document.getElementById("data-types-sidebar");
-        const collapsedView = document.getElementById("data-types-collapsed-view");
         const icon = document.getElementById("sidebar-toggle-icon");
         if (sidebar) sidebar.classList.add("collapsed");
         if (collapsedView) collapsedView.classList.add("active");
@@ -3059,7 +3065,7 @@
     }
 
     // --- DATA TYPE SWITCHING ---
-    function handleDataTypeChange() {
+    function handleDataTypeChange(preventFetch = false) {
       currentFilterName = null;
       // 0. Reset Column Edit Mode
       isEditingColumns = false;
@@ -3098,10 +3104,14 @@
       updateSelectionBar();
 
       // Clear layout cache so it re-fetches for the new configuration
+      if (!preventFetch) {
       settingsRecord = null;
+      }
 
       updateSidebarActiveState();
+      if (!preventFetch) {
       fetchAndRenderData();
+    }
     }
 
     // --- REFRESH ACTION ---
@@ -5517,14 +5527,17 @@
 
       // 2. Update the visual color style of the dropdown badge
       const tableWrapper = document.querySelector(".sidebar-header");
+      const collapsedView = document.getElementById("data-types-collapsed-view");
       if (VERSION === "") {
         selector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
+        if (collapsedView) collapsedView.style.backgroundColor = "#d0ffcf";
         document.body.classList.remove("version-test");
         document.body.classList.add("version-live");
       } else {
         selector.className = "badge-test";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#fff3cd";
+        if (collapsedView) collapsedView.style.backgroundColor = "#fff3cd";
         document.body.classList.remove("version-live");
         document.body.classList.add("version-test");
       }
@@ -5715,12 +5728,16 @@
       const selector = document.getElementById("data-type-selector");
       if (selector.value !== dataTypeValue) {
         selector.value = dataTypeValue;
-        handleDataTypeChange();
+        handleDataTypeChange(true);
       } else {
         // Reset state for current type if we're just loading a different filter
         currentCursor = 0;
         selectedRows.clear();
         updateSelectionBar();
+      }
+
+      if (!settingsRecord) {
+        await fetchSettings();
       }
 
       const allFilters = getSettingsEntry(SETTINGS_KEY_FILTER_DATA);

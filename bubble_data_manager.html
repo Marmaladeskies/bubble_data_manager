@@ -427,14 +427,14 @@
       background: #218838;
     }
 
-    #edit-action-buttons,
+    #bulk-action-button,
     #selection-buttons {
       justify-content: space-between;
       display: none;
       align-self: center;
     }
 
-    #selection-bar.active:not(.bulk-editing) #edit-action-buttons,
+    #selection-bar.active:not(.bulk-editing) #bulk-action-button,
     #selection-bar.active:not(.bulk-editing) #selection-buttons {
       display: flex;
       justify-items: left;
@@ -1152,7 +1152,7 @@
         box-sizing: border-box;
       }
 
-      #selection-bar #edit-action-buttons,
+      #selection-bar #bulk-action-button,
       #selection-bar #selection-buttons {
         flex-wrap: wrap !important;
         width: 100% !important;
@@ -1455,7 +1455,7 @@
     </div>
   </div>
   <div id="selection-bar" class="selection-bar">
-    <div id="edit-action-buttons" style="display: none; gap: 10px; align-items: center; justify-items: left;">
+    <div id="bulk-action-button" style="display: none; gap: 10px; align-items: center; justify-items: left;">
       <button id="bulk-edit-btn" class="btn btn-primary" style="background-color: #f08000; max-width: 300px;"
         onclick="showBulkEdit()" disabled>
         Bulk Edit >
@@ -4714,7 +4714,7 @@
       const deleteBtn = document.getElementById("delete-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
       const newrefreshBtns = document.getElementById("new-refresh-btns");
-      const editActionBtns = document.getElementById("edit-action-buttons");
+      const editActionBtns = document.getElementById("bulk-action-button");
       const dupDelWrapper = document.getElementById("dup-del-wrapper");
 
       const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
@@ -4727,11 +4727,9 @@
         return r && r.classList.contains("editing-row") && r.classList.contains("has-edits");
       });
 
-      if (count > 1 || hasEdits) {
-        bar.classList.add("active");
-        countSpan.textContent = `${count} row${count !== 1 ? "s" : ""} selected`;
-
-        if (bulkEditBtn) bulkEditBtn.disabled = count <= 1;
+      // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits)
+      if (count > 0 || hasEdits) {
+        if (countSpan) countSpan.textContent = count === 1 ? "1 row selected" : `${count} row${count !== 1 ? "s" : ""} selected`;
         if (dupDelWrapper) dupDelWrapper.style.display = "flex";
         if (duplicateBtn) duplicateBtn.disabled = false;
         if (deleteBtn) deleteBtn.disabled = selectAllMatching;
@@ -4739,26 +4737,33 @@
         if (saveBtn) { saveBtn.style.display = hasEdits ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
         if (cancelBtn) { cancelBtn.style.display = hasEdits ? "inline-block" : "none"; cancelBtn.disabled = !hasEdits; }
 
-        if (editActionBtns) {
-          editActionBtns.style.display = (count > 1 || hasEdits) && !bar.classList.contains("bulk-editing") ? "flex" : "none";
-        }
         if (newrefreshBtns) newrefreshBtns.style.display = "none";
         if (clearBtn) clearBtn.disabled = false;
       } else {
-        bar.classList.remove("active");
-        if (bar.classList.contains("bulk-editing")) {
-          hideBulkEdit();
-        }
-        countSpan.textContent = count === 1 ? "1 row selected" : "0 rows selected";
-        if (bulkEditBtn) bulkEditBtn.disabled = true;
+        if (countSpan) countSpan.textContent = "0 rows selected";
         if (dupDelWrapper) dupDelWrapper.style.display = "none";
         if (duplicateBtn) duplicateBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
         if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
         if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
-        if (editActionBtns) editActionBtns.style.display = "none";
         if (newrefreshBtns) newrefreshBtns.style.display = "flex";
-        if (clearBtn) clearBtn.disabled = count === 0;
+        if (clearBtn) clearBtn.disabled = true;
+      }
+
+      // Selection bar & its contents (require two rows to be selected before enabled)
+      if (count > 1) {
+        bar.classList.add("active");
+        if (bulkEditBtn) bulkEditBtn.disabled = false;
+        if (editActionBtns) {
+          editActionBtns.style.display = !bar.classList.contains("bulk-editing") ? "flex" : "none";
+        }
+      } else {
+        bar.classList.remove("active");
+        if (bar.classList.contains("bulk-editing")) {
+          hideBulkEdit();
+        }
+        if (bulkEditBtn) bulkEditBtn.disabled = true;
+        if (editActionBtns) editActionBtns.style.display = "none";
       }
     }
 

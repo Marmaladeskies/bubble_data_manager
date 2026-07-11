@@ -1769,14 +1769,12 @@
     const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
 
     // Optional: store persisent data
-    const APP_SETTINGS_TYPE = "specialdataconstants"; // data type that stores custom column data (lowercase, remove spaces)
-    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of APP_SETTINGS_TYPE field (text) where data will be saved
+    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of the settings object key in local storage
 
     // ---------------------
 
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
-    const SETTINGS_TYPE = localStorage.getItem('DEV_SETTINGS_TYPE') || APP_SETTINGS_TYPE;
 
     // --- INITIALIZATION ---
     async function initApp() {
@@ -3139,22 +3137,11 @@
 
     // --- FETCH CENTRALIZED COLUMN ORDER SETTINGS ---
     async function fetchSettings() {
-      try {
-        // Fetch the single constants record
-        const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}?limit=1`;
-        const response = await fetch(fetchUrl, {
-          headers: { Authorization: `Bearer ${API_KEY}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.response.results && data.response.results.length > 0) {
-            settingsRecord = data.response.results[0];
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load backend data constants:", err);
-      }
+      const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+      const savedData = localStorage.getItem(storageKey);
+      settingsRecord = {
+        [BUBBLE_DATA_MANAGER_SETTINGS]: savedData || "{}"
+      };
     }
 
     // --- DATA TYPE SWITCHING ---
@@ -5696,8 +5683,8 @@
         // Generate the new string-based orderMap
         const newMap = detectedHeaders;
 
-        // Send to Bubble, then reset button/link visibility
-        saveColumnOrderToBubble(newMap).then(() => {
+        // Send to localStorage, then reset button/link visibility
+        saveColumnOrderToLocalStorage(newMap).then(() => {
           if (editButtons) editButtons.style.display = "none";
           if (saveBtn) {
             saveBtn.innerText = "Save Column Order";
@@ -5766,11 +5753,6 @@
         return;
       }
 
-      if (!settingsRecord || !settingsRecord._id) {
-        alert("Settings record not found. Cannot save filter.");
-        return;
-      }
-
       const currentType = document.getElementById("data-type-selector").value;
 
       const filterSettings = {
@@ -5789,30 +5771,18 @@
       }
       existingFilters[name] = filterSettings;
       allFilters[currentType] = existingFilters;
-      const updatedSettings = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
-      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
       const btn = document.querySelector("button[onclick='saveFilterView()']");
       const originalText = btn.textContent;
       btn.textContent = "Saving...";
       btn.disabled = true;
 
       try {
-        const response = await fetch(fetchUrl, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),
-        });
+        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        localStorage.setItem(storageKey, updatedSettingsString);
+        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.body?.message || `HTTP Error: ${response.status}`);
-        }
-
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettings;
         nameInput.value = "";
         currentFilterName = name;
         const saveGroup = document.getElementById("save-constraint-group");
@@ -5822,7 +5792,7 @@
         alert(`View "${name}" saved successfully.`);
       } catch (error) {
         console.error("Save filter error:", error);
-        alert(`Failed to save filter to Bubble: ${error.message}`);
+        alert(`Failed to save filter: ${error.message}`);
       } finally {
         btn.textContent = originalText;
         btn.disabled = false;
@@ -5881,11 +5851,6 @@
     }
 
     async function deleteFilterView(dataTypeValue, filterName) {
-      if (!settingsRecord || !settingsRecord._id) {
-        alert("Settings record not found. Cannot delete filter.");
-        return;
-      }
-
       if (!confirm(`Delete saved view "${filterName}"? This cannot be undone.`)) return;
 
       const dt = DATA_TYPES.find((d) => d.value === dataTypeValue);
@@ -5897,25 +5862,13 @@
 
       delete existingFilters[filterName];
       allFilters[dataTypeValue] = existingFilters;
-      const updatedSettings = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
-      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
       try {
-        const response = await fetch(fetchUrl, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),
-        });
+        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        localStorage.setItem(storageKey, updatedSettingsString);
+        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
 
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.body?.message || `HTTP Error: ${response.status}`);
-        }
-
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettings;
         // If the deleted filter was active, clear the active filter name
         if (currentFilterName === filterName && dataTypeValue === document.getElementById("data-type-selector")?.value) {
           currentFilterName = null;
@@ -5929,46 +5882,22 @@
     }
 
     // --- SAVE COLUMN ORDER TO BUBBLE ---
-    async function saveColumnOrderToBubble(newMap) {
-      if (!settingsRecord || !settingsRecord._id) {
-        alert(
-          "Settings record not found in backend data constants. Cannot save layout.",
-        );
-        return;
-      }
-
+    async function saveColumnOrderToLocalStorage(newMap) {
       const currentType = document.getElementById("data-type-selector").value;
 
       // Load and update the column order entry in BUBBLE_DATA_MANAGER_SETTINGS["columnOrder"]
       const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
       allOrders[currentType] = newMap;
-      const updatedSettings = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
-
-      const fetchUrl = `${API_BASE_URL}${SETTINGS_TYPE}/${settingsRecord._id}`;
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
 
       try {
-        const response = await fetch(fetchUrl, {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ [BUBBLE_DATA_MANAGER_SETTINGS]: updatedSettings }),
-        });
-
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(
-            errData.body?.message || `HTTP Error: ${response.status}`,
-          );
-        }
-
-        // Update the local settings cache so it persists without a page refresh
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettings;
-        console.log("Layout saved to backend data constants successfully.");
+        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        localStorage.setItem(storageKey, updatedSettingsString);
+        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
+        console.log("Layout saved to local storage successfully.");
       } catch (error) {
         console.error("Save layout error:", error);
-        alert(`Failed to save layout to Bubble: ${error.message}`);
+        alert(`Failed to save layout: ${error.message}`);
       }
     }
 

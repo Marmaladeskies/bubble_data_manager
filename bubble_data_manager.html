@@ -342,7 +342,8 @@
       background: white;
       border-radius: 4px;
       font-weight: 500;
-      max-width: 125px;
+      max-width: 200px;
+      min-width: fit-content;
     }
 
     #edit-columns-link {
@@ -533,6 +534,12 @@
 
     #selection-count {
       font-size: 14px;
+      font-weight: 500;
+      color: #007bff;
+    }
+
+    #selection-count:empty {
+      display: none;
     }
 
     .save-cancel-buttons {
@@ -555,6 +562,14 @@
       color: #ffffff !important;
       border-color: #dee2e6 !important;
       cursor: not-allowed !important;
+    }
+
+    .page-info-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
     }
 
     #page-info {
@@ -1351,7 +1366,8 @@
         text-align: center;
       }
 
-      #page-info {
+      #page-info,
+      .page-info-group {
         flex: 1 1 100%;
         order: 1;
       }
@@ -1399,8 +1415,8 @@
 
       .action-buttons .btn {
         flex: 1 1 calc(50% - 10px);
-        min-width: 120px;
-        max-width: none;
+        min-width: fit-content;
+        max-width: 200;
       }
 
       #column-order-group {
@@ -1556,8 +1572,8 @@
   </div>
   <div id="action-buttons" class="action-buttons">
     <div class="action-group-left">
-      <button id="export-btn" class="btn" onclick="showExportModal()">
-        Export
+      <button id="export-btn" class="btn" style="color: rgb(255, 255, 255); background-color: #000000" onclick="showExportModal()">
+        Export Data
       </button>
       <div id="dup-del-wrapper" class="dup-del-wrapper">
         <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
@@ -1569,11 +1585,10 @@
       </div>
     </div>
     <div class="action-group-right">
-      <span id="selection-count"></span>
       <div class="save-cancel-buttons">
         <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
           style="display: none;">
-          Save
+          Save Changes
         </button>
         <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" disabled style="display: none;">
           Cancel
@@ -1606,7 +1621,10 @@
         <button id="prev-btn" class="btn" onclick="prevPage()" disabled style="display: none">
           Previous
         </button>
-        <span id="page-info">Loading...</span>
+        <span class="page-info-group">
+          <span id="page-info">Loading...</span>
+          <span id="selection-count"></span>
+        </span>
         <button id="next-btn" class="btn" onclick="nextPage()" disabled style="display: none">
           Next
         </button>
@@ -2954,7 +2972,7 @@
           const badge = document.createElement('span');
           badge.className = 'json-badge';
           badge.innerText = 'JSON';
-          badge.onclick = function() {
+          badge.onclick = function () {
             openJSONEditor(recordId, field, cell.getAttribute('data-json'));
           };
           cell.appendChild(badge);

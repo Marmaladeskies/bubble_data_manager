@@ -505,6 +505,40 @@
       width: 140px;
     }
 
+    .action-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      margin: 15px 0px;
+    }
+
+    .action-group-left {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .dup-del-wrapper {
+      display: none;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .action-group-right {
+      display: block;
+      margin-bottom: 0;
+      justify-self: right;
+    }
+
+    #selection-count {
+      font-size: 14px;
+    }
+
+    .save-cancel-buttons {
+      margin-top: 5px;
+    }
+
     .btn-primary {
       background: #007bff;
       color: white;
@@ -1335,6 +1369,40 @@
         min-width: fit-content;
       }
 
+      .action-buttons {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+      }
+
+      .action-group-left,
+      .action-group-right {
+        justify-content: center;
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      .action-group-right {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .save-cancel-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        width: 100%;
+      }
+
+      .action-buttons .btn {
+        flex: 1 1 calc(50% - 10px);
+        min-width: 120px;
+        max-width: none;
+      }
+
       #column-order-group {
         display: flex;
         flex-direction: column;
@@ -1486,26 +1554,23 @@
       </div>
     </div>
   </div>
-  <div id="action-buttons"
-    style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin: 15px 0px;">
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <button id="export-btn" class="btn" style="min-width: fit-content;" onclick="showExportModal()">
+  <div id="action-buttons" class="action-buttons">
+    <div class="action-group-left">
+      <button id="export-btn" class="btn" onclick="showExportModal()">
         Export
       </button>
-      <div id="dup-del-wrapper" style="display: none; gap: 10px; align-items: center;">
-        <button id="duplicate-selected-btn" class="btn btn-primary" style="min-width: fit-content"
-          onclick="duplicateSelectedRows()" disabled>
+      <div id="dup-del-wrapper" class="dup-del-wrapper">
+        <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
           Duplicate Row(s)
         </button>
-        <button id="delete-selected-btn" class="btn btn-danger" style="width: fit-content"
-          onclick="deleteSelectedRows()" disabled>
+        <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
           Delete
         </button>
       </div>
     </div>
-    <div style="display: block; margin-bottom: 0; justify-self: right">
-      <span id="selection-count" style="font-size: 14px"></span>
-      <div style="margin-top: 5px">
+    <div class="action-group-right">
+      <span id="selection-count"></span>
+      <div class="save-cancel-buttons">
         <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
           style="display: none;">
           Save

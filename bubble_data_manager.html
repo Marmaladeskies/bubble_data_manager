@@ -3590,10 +3590,6 @@
           <input type="text" class="constraint-value" placeholder="Enter exact search string..."
             oninput="toggleClearBtnElement(this); markConstraintsDirty();"
             onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
-          <button type="button" class="input-clear-btn" onclick="clearConstraintRowValue(this)"
-            title="Clear constraint filter" style="display: none">
-            ×
-          </button>
         </div>`;
       }
     }
@@ -4011,16 +4007,6 @@
       const btn = wrapper ? wrapper.querySelector(".input-clear-btn") : null;
       if (inputEl && btn) {
         btn.style.display = inputEl.value.length > 0 ? "flex" : "none";
-      }
-    }
-
-    function clearConstraintRowValue(btn) {
-      const wrapper = btn.closest(".input-wrapper");
-      const input = wrapper ? wrapper.querySelector(".constraint-value") : null;
-      if (input) {
-        input.value = "";
-        btn.style.display = "none";
-        markConstraintsDirty();
       }
     }
 
@@ -4779,7 +4765,7 @@
       });
 
       // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits, or adding a new row)
-      if (count > 0 || hasEdits || isAddingNewRow) {   
+      if (count > 0 || hasEdits || isAddingNewRow) {
         if (count > 0) countSpan.textContent = count === 1 ? "1 row selected" : `${count} row${count !== 1 ? "s" : ""} selected`;
         if (dupDelWrapper) dupDelWrapper.style.display = count > 0 || hasEdits ? "flex" : "none";
         if (duplicateBtn) duplicateBtn.disabled = count === 0 && !hasEdits;

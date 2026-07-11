@@ -28,6 +28,7 @@ _This improved database manager is a single .html file that can be opened in any
   - The search uses bubble's exact string match search which sucks, the keyword filter has better substring searching but only searches the current page (100 rows)
   - Table data changes need to be refreshed manually unless you want to add webhooks and a python server to this
   - Have not added the 'send this view to a backend wf' feature that bubble calls 'Bulk' on the 'App data' tab of the bubble editor, because that isn't a feature I use
+  - Have not created a way to manage more than one bubble app. Currently this will store the key for one app in local storage.
 
 ## Setup
 

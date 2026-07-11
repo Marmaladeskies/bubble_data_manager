@@ -42,10 +42,10 @@ Note: This does NOT require exposing your Swagger file, and it is generally reco
 
 ### Basic Setup
 
-- Download or copy [bubble_data_manager.html](bubble_data_manager.html) and insert your DOMAIN_NAME and API_TOKEN (Bubble Settings>API>Admin API Tokens) in the configuration section:
+- Download or copy [bubble_data_manager.html](bubble_data_manager.html) and open it in any browser. Enter your Bubble app's URL and API_TOKEN (Bubble Settings>API>Admin API Tokens) when prompted.
 
-- That's it. Open the bubble_data_manager.html in any browser, and enter your app URL and an API key. It will automatically connect to your database using your bubble API token and load all data types and fields that have the API access granted in your Bubble Settings. It will behave near exactly as if the page was part of your bubble app.
-- You can click 'edit column order' to drag and drop columns and create custom constraint and column filter views, but they will not be saved persistently until you follow the next step.
+- That's it. It will automatically connect to your database using your bubble API token and load all data types and fields and generate tables for every data type that has the API access granted in your Bubble Settings. It will behave near exactly as if the page was part of your bubble app.
+- You can click 'edit column order' to drag and drop columns and create custom constraint and column filter views.
 
 Edit rows right in the table view:
 ![Screenshot](screenshots/edit_row.png)
@@ -56,19 +56,16 @@ Create rows from the table view:
 Delete Rows:
 ![Screenshot](screenshots/delete_row.png)
 
-### Save Your Settings To Your Bubble Database
-  
-Custom column reordering and constraint filter views will reset on page reload unless a new field is created in your bubble database to store this data:
 
-- Designate a bubble data type to store these settings in a permanent row. 'Special Data Constants' is the default name. Whatever datatype you use should only have one row, and it must never be deleted. If you create a new data type don't forget to grant it API access in Settings>API.
+- Note that the live and test versions of your app will necessarily save different versions of your settings (because they many not have the same fields). You can setup and save settings for each branch manually or you can set everything up in your live branch and use a desktop browser's console to copy and paste the settings to the test branch:
 
-~~~javascript
-        const APP_SETTINGS_TYPE = "specialdataconstants"; // name of the data type where your app will store custom column data (lowercase, remove spaces)
 ~~~
-
-- Add a text field named 'bubble data manager settings' to the data type you configure as the APP_SETTINGS_TYPE.
-- That's it. Your contraint views and custom column reordering will be saved there and will load automatically
-- The live and test versions of your app will save different versions of your settings, so it is recommended to configure your constraint views and custom column orders in one version of your app, copy the data that is stored in the 'bubble data manager settings' field, and paste that data into other branches of your database.
+# Setup and save custom column ordering and constraint views
+# View your settings json data:
+localStorage.getItem('bubble_data_manager_settings_<yourdomain.com>');
+# Copy that json data output and insert it into this:
+localStorage.setItem('bubble_data_manager_settings_<your_url.com/test-version>', JSON.stringify({your_json_content}));
+~~~
 
 ### Load Option Sets
 
@@ -93,5 +90,6 @@ You can also edit [bubble_data_manager.html](bubble_data_manager.html) to change
 ~~~javascript
         let VERSION = ''; // Default database branch to load. Options are '/version-test' or '' (live database)
 ~~~
+
 ~~~javascript
         const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely

@@ -1767,12 +1767,8 @@
     const DOMAIN_NAME = "yourdomain.com";
     const API_TOKEN = "Your API Key";
     const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
-
-    // Optional: store persisent data
-    const BUBBLE_DATA_MANAGER_SETTINGS = "bubble data manager settings"; // name of the settings object key in local storage
-
     // ---------------------
-
+    const DATA_MANAGER_SETTINGS_NAME = "bubble_data_manager_settings"; // name of the settings object key in local storage
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
 
@@ -1919,15 +1915,15 @@
       field: null,
       isNewRow: false
     };
-    //Parse the BUBBLE_DATA_MANAGER_SETTINGS text field into an object. Returns {} if missing or unparseable.
+    //Parse the DATA_MANAGER_SETTINGS_NAME text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
-      const raw = settingsRecord && settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS];
+      const raw = settingsRecord && settingsRecord[DATA_MANAGER_SETTINGS_NAME];
       if (!raw) return {};
       try { return typeof raw === "string" ? JSON.parse(raw) : raw; } catch (e) { return {}; }
     }
 
     /**
-     * Read one named section from BUBBLE_DATA_MANAGER_SETTINGS.
+     * Read one named section from DATA_MANAGER_SETTINGS_NAME.
      * Returns {} if the section is missing.
      */
     function getSettingsEntry(key) {
@@ -1935,7 +1931,7 @@
     }
 
     /**
-     * Write one named section into BUBBLE_DATA_MANAGER_SETTINGS and return the
+     * Write one named section into DATA_MANAGER_SETTINGS_NAME and return the
      * full serialized string (for use in a PATCH body and local cache).
      */
     function setSettingsEntry(key, value) {
@@ -3137,10 +3133,10 @@
 
     // --- FETCH CENTRALIZED COLUMN ORDER SETTINGS ---
     async function fetchSettings() {
-      const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+      const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
       const savedData = localStorage.getItem(storageKey);
       settingsRecord = {
-        [BUBBLE_DATA_MANAGER_SETTINGS]: savedData || "{}"
+        [DATA_MANAGER_SETTINGS_NAME]: savedData || "{}"
       };
     }
 
@@ -3284,8 +3280,8 @@
         // --- DATABASE-DRIVEN COLUMN REORDERING ---
         let activeOrderMap = null;
 
-        // Look for this data type's order inside BUBBLE_DATA_MANAGER_SETTINGS[0]
-        if (settingsRecord && settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS]) {
+        // Look for this data type's order inside DATA_MANAGER_SETTINGS_NAME[0]
+        if (settingsRecord && settingsRecord[DATA_MANAGER_SETTINGS_NAME]) {
           const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
           const rawMap = allOrders[currentType];
           if (rawMap) {
@@ -5760,7 +5756,7 @@
         constraints: currentConstraints,
       };
 
-      // Load and update the filter data entry in BUBBLE_DATA_MANAGER_SETTINGS["filterData"]
+      // Load and update the filter data entry in DATA_MANAGER_SETTINGS_NAME["filterData"]
       const allFilters = getSettingsEntry(SETTINGS_KEY_FILTER_DATA);
       const existingFilters = allFilters[currentType] || {};
 
@@ -5779,9 +5775,9 @@
       btn.disabled = true;
 
       try {
-        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
         localStorage.setItem(storageKey, updatedSettingsString);
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
+        settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
 
         nameInput.value = "";
         currentFilterName = name;
@@ -5865,9 +5861,9 @@
       const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
       try {
-        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
         localStorage.setItem(storageKey, updatedSettingsString);
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
+        settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
 
         // If the deleted filter was active, clear the active filter name
         if (currentFilterName === filterName && dataTypeValue === document.getElementById("data-type-selector")?.value) {
@@ -5885,15 +5881,15 @@
     async function saveColumnOrderToLocalStorage(newMap) {
       const currentType = document.getElementById("data-type-selector").value;
 
-      // Load and update the column order entry in BUBBLE_DATA_MANAGER_SETTINGS["columnOrder"]
+      // Load and update the column order entry in DATA_MANAGER_SETTINGS_NAME["columnOrder"]
       const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
       allOrders[currentType] = newMap;
       const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
 
       try {
-        const storageKey = `bubble_data_manager_settings_${DOMAIN}${VERSION}`;
+        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
         localStorage.setItem(storageKey, updatedSettingsString);
-        settingsRecord[BUBBLE_DATA_MANAGER_SETTINGS] = updatedSettingsString;
+        settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
         console.log("Layout saved to local storage successfully.");
       } catch (error) {
         console.error("Save layout error:", error);

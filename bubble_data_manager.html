@@ -1604,7 +1604,8 @@
   </div>
   <div id="action-buttons" class="action-buttons">
     <div class="action-group-left">
-      <button id="export-btn" class="btn" style="color: rgb(255, 255, 255); background-color: #000000" onclick="showExportModal()">
+      <button id="export-btn" class="btn" style="color: rgb(255, 255, 255); background-color: #000000"
+        onclick="showExportModal()">
         Export Data
       </button>
       <button id="edit-selected-btn" class="btn btn-primary" onclick="enterEditModeForSelected()" disabled>
@@ -4313,7 +4314,7 @@
       });
 
       row.classList.add("editing-row");
-        updateSelectionBar();
+      updateSelectionBar();
     }
 
     function cancelEditRow(recordId) {
@@ -4336,7 +4337,7 @@
       if (actionCell) {
         actionCell.remove();
       }
-        updateSelectionBar();
+      updateSelectionBar();
     }
 
     async function saveRow(recordId) {

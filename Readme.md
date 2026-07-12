@@ -1,34 +1,33 @@
 # Bubble App Data Manager
 
-This a really simple, free template for replacing the 'App Data' tab of the bubble editor for basic database admin. The 'App Data' page is really awful, and using Bubble to build admin pages with custom tables to manage your database is both tedious and limited. Bubble is not great at building tables for data, however nice tables are actually very easy to build with code (AI).
+This a simple template for replacing the 'App Data' tab of the bubble editor for basic database admin. The 'App Data' page is really awful, and using Bubble to build admin pages with custom tables to manage your database is both tedious and limited. Bubble is not great at building tables for data, however nice tables are very easy and reliably built with AI.
 
 ![Screenshot](screenshots/default_view.png)
 
-_This improved database manager is a single .html file that can be opened in any browser to manage your bubble database, just like you're using a webpage, with very little setup. This is all frontend code and does not require a python server or any setup beyond editing the [bubble_data_manager.html](bubble_data_manager.html) file to use your app URL and API key. That's it. There are some more advanced features that can be added with less than 10 minutes of setup._
+_This improved database manager is a single .html file that can be opened in any browser on any device to manage your bubble database, just like you're using a webpage. This is all frontend code and does not require a python server or any setup beyond adding your app URL and API key when prompted. It is recommended to import your option sets so they appear in dropdowns and don't need to be typed out._
 
 ## Features
 
 - Simple, glitch-free, responsive UX for viewing and editing all of your data tables
+- Automatically detects your app's data types and fields and populates everything for you
 - Uses at least 10x-20x less RAM than a bubble editor window in your browser and has more features
 - Drag and drop column reordering and column positions can be saved permanently
-- Use 'today's date' to create dynamic constraint views of your database that can be saved to always use the current date
+- Use 'today's date' to create dynamic constraint views of your database that can be saved to always use the current date/time
 - Inline row editing with a JSON editor popup that avoids sytnax errors and calendar picker for date typed fields
 - Bulk editing a column for multiple rows
 - Easily delete or duplicate multiple rows (or every row of a constraint view)
 - Export any or ALL data types (in your custom column order) to CSV files at once
-- Automatically detects your app's data types and fields and populates the table, columns, and sidebar for you. Very little setup required.
-- This project is a single .html file that you save locally and open on any browser you want to admin your database from. This html/js file will open on any device, in any browser, in any enviroment.
+- This file relies only on standard html and javascript and will open in any browser, on any device, in any enviroment. Works great on mobile.
 - You have the code. Throw this single script in your favorite AI, tell it any changes you want to make, and it will be done without wasting a minute clicking through whatever UI changes Bubble is currently experimenting with. Easier, faster, and none of Bubble's UI limitations
 
 - Limitations of this script:
   - Will only load data types that have Data API enabled in Settings>API>Public API endpoints. (All columns will have read/write access regardless of privacy rules if the Data API is enabled for that data type because this uses an Admin API token, not a user token)
-  - When you enter your API token, it is saved unencrypted in your browser so it is not secure if a hacker gains control of your browser. It can't be saved in your browser keychain because it is a local file, not a website
-  - Option sets have to be loaded manually. This takes less <10 min
-  - Slugs fields cannot be edited by API
+  - When you enter your API token, it is saved unencrypted in your browser so it is not secure if a hacker gains control of your browser. It can't be saved in your browser keychain because it is a local file, not a website. If you want to run a python enviroment you could easily avoid this.
+  - Option sets have to be loaded manually. This takes less <10 min. Bubble does not have an options set API, but again you could probably scrape them if you add a python enviroment to this.
+  - Bubble does not allow editing Slug fields via API
   - The search uses bubble's exact string match search which sucks, the keyword filter has better substring searching but only searches the current page (100 rows)
-  - Table data changes need to be refreshed manually unless you want to add webhooks and a python server to this
+  - Table data changes need to be refreshed manually unless you want to refresh the table on a timer or add a python environment...
   - Have not added the 'send this view to a backend wf' feature that bubble calls 'Bulk' on the 'App data' tab of the bubble editor, because that isn't a feature I use
-  - Have not created a way to manage more than one bubble app. Currently this will store the key for one app in local storage.
 
 ## Setup
 

@@ -25,6 +25,8 @@
       margin-top: 5px;
       border: 1px solid #ddd;
       border-radius: 4px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     table {
@@ -592,6 +594,36 @@
       background: #edd4d4;
       color: #571515;
       font-weight: 500;
+    }
+
+    .type-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .badge-boolean-yes {
+      background-color: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-boolean-no {
+      background-color: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-option {
+      background-color: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-date {
+      background-color: #f3f4f6;
+      color: #374151;
+      border: 1px solid #e5e7eb;
     }
 
     .remove-constraint-btn {
@@ -2907,18 +2939,25 @@
       let isJSON = false;
       let jsonValue = "";
       let isFile = false;
+      let isHTML = false;
 
       // Convert boolean true/false to yes/no
-      if (
-        typeof value === "boolean" ||
-        (isBooleanField(currentType, field) &&
-          (value === "true" || value === "false"))
-      ) {
-        displayValue = (value === true || value === "true") ? "yes" : "no";
+      if (isBooleanField(currentType, field)) {
+        const isTrue = (value === true || value === "true");
+        displayValue = `<span class="type-badge ${isTrue ? 'badge-boolean-yes' : 'badge-boolean-no'}">${isTrue ? 'yes' : 'no'}</span>`;
+        isHTML = true;
       }
       // Handle missing values cleanly
       else if (value === null || value === undefined) {
         displayValue = "";
+      }
+      else if (getOptionSetForField(currentType, field)) {
+        displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
+        isHTML = true;
+      }
+      else if (isDateField(currentType, field)) {
+        displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
+        isHTML = true;
       }
       // Bubble often returns linked data or geographic addresses as objects/arrays
       else if (typeof value === "object") {
@@ -2995,7 +3034,11 @@
         cell.setAttribute('data-raw-value', value);
         cell.innerHTML = displayValue;
       } else {
-        cell.innerText = displayValue;
+        if (isHTML) {
+          cell.innerHTML = displayValue;
+        } else {
+          cell.innerText = displayValue;
+        }
       }
     }
 

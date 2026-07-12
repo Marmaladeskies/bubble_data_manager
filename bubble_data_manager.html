@@ -1539,7 +1539,7 @@
       </div>
       <div id="column-filter-list" class="column-filter-list"></div>
     </div>
-    <div id="constraint-filter-group" class="constraint-filter-group">
+    <fieldset id="constraint-filter-group" class="constraint-filter-group" style="min-width: 0;">
       <div class="column-filter-header">
         <div style="display: flex; align-items: center; gap: 15px;">
           <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
@@ -1564,7 +1564,7 @@
           </button>
         </div>
       </div>
-    </div>
+    </fieldset>
   </div>
   <div id="data-types-collapsed-view" class="data-types-collapsed-view">
     <label for="data-types-dropdown"
@@ -4313,6 +4313,7 @@
       });
 
       row.classList.add("editing-row");
+        updateSelectionBar();
     }
 
     function cancelEditRow(recordId) {
@@ -4335,6 +4336,7 @@
       if (actionCell) {
         actionCell.remove();
       }
+        updateSelectionBar();
     }
 
     async function saveRow(recordId) {
@@ -4895,6 +4897,26 @@
       const hasEdits = !!document.querySelector(".has-edits");
 
       if (leftActions) leftActions.style.display = (isEditing || isAddingNewRow) ? "none" : "flex";
+      // Disable editing both the keyword table-filter and constraint-filter-group during isEditing
+      const tableFilterInput = document.getElementById("table-filter");
+      const clearFilterBtn = document.getElementById("clear-filter-btn");
+      const tableFilterWrapper = tableFilterInput?.closest(".input-wrapper");
+      const constraintFilterGroup = document.getElementById("constraint-filter-group");
+      if (tableFilterInput) {
+        tableFilterInput.disabled = isEditing;
+      }
+      if (clearFilterBtn) {
+        clearFilterBtn.disabled = isEditing;
+      }
+      if (tableFilterWrapper) {
+        tableFilterWrapper.style.opacity = isEditing ? "0.5" : "";
+        tableFilterWrapper.style.pointerEvents = isEditing ? "none" : "";
+      }
+      if (constraintFilterGroup) {
+        constraintFilterGroup.disabled = isEditing;
+        constraintFilterGroup.style.opacity = isEditing ? "0.5" : "";
+        constraintFilterGroup.style.pointerEvents = isEditing ? "none" : "";
+      }
 
       // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits, or adding a new row)
       if (count > 0 || hasEdits || isAddingNewRow) {

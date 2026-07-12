@@ -1607,6 +1607,9 @@
       <button id="export-btn" class="btn" style="color: rgb(255, 255, 255); background-color: #000000" onclick="showExportModal()">
         Export Data
       </button>
+      <button id="edit-selected-btn" class="btn btn-primary" onclick="enterEditModeForSelected()" disabled>
+        Edit Row(s)
+      </button>
       <div id="dup-del-wrapper" class="dup-del-wrapper">
         <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
           Duplicate Row(s)
@@ -2362,16 +2365,6 @@
     // --- JSON EDITOR FUNCTIONS ---
 
     function openJSONEditor(recordId, field, initialValue, isNewRow = false) {
-      if (!isNewRow) {
-        const row = document.getElementById(`row-${recordId}`);
-        if (row && !row.classList.contains("editing-row")) {
-          // Check the row's checkbox and toggle selection to enter edit mode
-          const cb = row.querySelector('.select-cell input[type="checkbox"]');
-          if (cb) cb.checked = true;
-          toggleRowSelection(recordId, true);
-        }
-      }
-
       currentlyEditingJSON = {
         recordId,
         field,
@@ -2428,9 +2421,22 @@
       const jsonStr = JSON.stringify(currentlyEditingJSON.data);
       const rowId = currentlyEditingJSON.isNewRow ? 'row-new' : `row-${currentlyEditingJSON.recordId}`;
       const row = document.getElementById(rowId);
+
       if (row) {
-        const cell = row.querySelector(`td[data-field="${currentlyEditingJSON.field}"]`);
+        const field = currentlyEditingJSON.field;
+        const cell = row.querySelector(`td[data-field="${field}"]`);
         if (cell) {
+          if (!row.classList.contains("editing-row")) {
+            // Row not in edit mode; automatically enter edit mode so changes can be saved.
+            // Check the row's checkbox and toggle selection
+            const cb = row.querySelector('.select-cell input[type="checkbox"]');
+            if (cb && !cb.checked) {
+              cb.checked = true;
+              toggleRowSelection(currentlyEditingJSON.recordId, true);
+            }
+            editRow(currentlyEditingJSON.recordId);
+          }
+
           const hiddenInput = cell.querySelector('input[type="hidden"]');
           if (hiddenInput) {
             hiddenInput.value = jsonStr;
@@ -2618,8 +2624,20 @@
       const rowId = currentlyEditingText.isNewRow ? 'row-new' : `row-${currentlyEditingText.recordId}`;
       const row = document.getElementById(rowId);
       if (row) {
-        const cell = row.querySelector(`td[data-field="${currentlyEditingText.field}"]`);
+        const field = currentlyEditingText.field;
+        const cell = row.querySelector(`td[data-field="${field}"]`);
         if (cell) {
+          if (!row.classList.contains("editing-row")) {
+            // Row not in edit mode; automatically enter edit mode so changes can be saved.
+            // Check the row's checkbox and toggle selection
+            const cb = row.querySelector('.select-cell input[type="checkbox"]');
+            if (cb && !cb.checked) {
+              cb.checked = true;
+              toggleRowSelection(currentlyEditingText.recordId, true);
+            }
+            editRow(currentlyEditingText.recordId);
+          }
+
           const hiddenInput = cell.querySelector('input[type="hidden"]');
           const preview = cell.querySelector('.text-preview');
           if (hiddenInput) {
@@ -4143,6 +4161,19 @@
     }
 
     // --- CLIENT SIDE ROW EDITING ---
+    function enterEditModeForSelected() {
+      const ids = Array.from(selectedRows.keys());
+      if (ids.length === 0) return;
+
+      ids.forEach((id) => {
+        const row = document.getElementById(`row-${id}`);
+        if (row && !row.classList.contains("editing-row")) {
+          editRow(id);
+        }
+      });
+      updateSelectionBar();
+    }
+
     function editRow(recordId) {
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
@@ -4472,12 +4503,6 @@
       if (isChecked) {
         const record = cachedRecords.find(r => r._id === recordId);
         if (record) selectedRows.set(recordId, record);
-
-        // Auto-enter edit mode when selected
-        const row = document.getElementById(`row-${recordId}`);
-        if (row && !row.classList.contains("editing-row")) {
-          editRow(recordId);
-        }
       } else {
         selectedRows.delete(recordId);
         if (selectAllMatching) {
@@ -4858,20 +4883,18 @@
       const cancelNewBtn = document.getElementById("cancel-new-row-btn");
       const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
+      const editBtn = document.getElementById("edit-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
       const newrefreshBtns = document.getElementById("new-refresh-btns");
       const editActionBtns = document.getElementById("bulk-action-button");
       const dupDelWrapper = document.getElementById("dup-del-wrapper");
+      const leftActions = document.querySelector(".action-group-left");
 
       const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
-      const isEditing = Array.from(selectedRows.keys()).some((id) => {
-        const r = document.getElementById(`row-${id}`);
-        return r && r.classList.contains("editing-row");
-      });
-      const hasEdits = Array.from(selectedRows.keys()).some((id) => {
-        const r = document.getElementById(`row-${id}`);
-        return r && r.classList.contains("editing-row") && r.classList.contains("has-edits");
-      });
+      const isEditing = !!document.querySelector(".editing-row");
+      const hasEdits = !!document.querySelector(".has-edits");
+
+      if (leftActions) leftActions.style.display = (isEditing || isAddingNewRow) ? "none" : "flex";
 
       // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits, or adding a new row)
       if (count > 0 || hasEdits || isAddingNewRow) {
@@ -4879,9 +4902,10 @@
         if (dupDelWrapper) dupDelWrapper.style.display = count > 0 || hasEdits ? "flex" : "none";
         if (duplicateBtn) duplicateBtn.disabled = count === 0 && !hasEdits;
         if (deleteBtn) deleteBtn.disabled = (count === 0 && !hasEdits) || selectAllMatching;
+        if (editBtn) editBtn.disabled = count === 0 || selectAllMatching;
 
-        if (saveBtn) { saveBtn.style.display = hasEdits ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
-        if (cancelBtn) { cancelBtn.style.display = hasEdits ? "inline-block" : "none"; cancelBtn.disabled = !hasEdits; }
+        if (saveBtn) { saveBtn.style.display = isEditing ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
+        if (cancelBtn) { cancelBtn.style.display = isEditing ? "inline-block" : "none"; cancelBtn.disabled = !isEditing; }
 
         if (saveNewBtn) { saveNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; saveNewBtn.disabled = !isAddingNewRow; }
         if (cancelNewBtn) { cancelNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; cancelNewBtn.disabled = !isAddingNewRow; }

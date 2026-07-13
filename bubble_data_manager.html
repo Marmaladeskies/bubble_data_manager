@@ -8,9 +8,19 @@
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      padding: 20px;
+      padding: 5px 20px 20px 20px;
       /* Disable swipe gestures: */
       overscroll-behavior: none;
+    }
+
+    h1 {
+      margin: 0px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background-color: #ffffff;
+      padding: 5px 0px;
+      border-bottom: #000000 solid 1px;
     }
 
     /* Table and Scroll Styles */
@@ -180,7 +190,7 @@
       align-items: center;
     }
 
-    .controls {
+    .page-controls {
       display: flex;
       justify-content: space-between;
       align-self: center;
@@ -365,15 +375,15 @@
       color: #0056b3;
     }
 
-    #column-edit-buttons {
+    .save-cancel-group {
       display: none;
       gap: 6px;
       margin-top: 0;
       align-items: center;
     }
 
-    #save-columns-btn,
-    #cancel-columns-btn {
+    #unified-save-btn,
+    #unified-cancel-btn {
       padding: 6px 12px;
       font-weight: 500;
       max-width: 200px;
@@ -442,13 +452,13 @@
       align-self: center;
     }
 
-    #selection-bar.active:not(.bulk-editing) #bulk-action-button,
-    #selection-bar.active:not(.bulk-editing) #selection-buttons {
+    #bulk-bar.active:not(.bulk-editing) #bulk-action-button,
+    #bulk-bar.active:not(.bulk-editing) #selection-buttons {
       display: flex;
       justify-items: left;
     }
 
-    #selection-bar.bulk-editing #bulk-edit-container {
+    #bulk-bar.bulk-editing #bulk-edit-container {
       display: flex;
       border-width: 1px;
       border-style: solid;
@@ -456,7 +466,7 @@
       padding: 10px 15px;
     }
 
-    .selection-bar {
+    .bulk-bar {
       display: none;
       flex-wrap: wrap;
       align-items: center;
@@ -468,7 +478,7 @@
       margin-top: 15px;
     }
 
-    .selection-bar.active {
+    .bulk-bar.active {
       display: flex;
       background: #fff3cd;
       border: 1px solid #ffc107;
@@ -504,7 +514,7 @@
       cursor: pointer;
     }
 
-    .selection-bar .btn {
+    .bulk-bar .btn {
       width: 140px;
     }
 
@@ -528,12 +538,6 @@
       align-items: center;
     }
 
-    .action-group-right {
-      display: block;
-      margin-bottom: 0;
-      justify-self: right;
-    }
-
     #selection-count {
       font-size: 14px;
       font-weight: 500;
@@ -542,10 +546,6 @@
 
     #selection-count:empty {
       display: none;
-    }
-
-    .save-cancel-buttons {
-      margin-top: 5px;
     }
 
     .btn-primary {
@@ -645,6 +645,18 @@
     }
 
     /* Version Indicator Dropdown Badge */
+    #domain-display {
+      font-size: 20px;
+      font-weight: 500;
+      color: #555;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    #domain-display:empty {
+      display: none;
+    }
+
     select#version-selector {
       font-size: 20px;
       padding: 4px 32px 4px 10px;
@@ -1229,8 +1241,8 @@
 
     @media (max-width: 925px) {
 
-      #selection-bar,
-      .selection-bar {
+      #bulk-bar,
+      .bulk-bar {
         flex-direction: column;
         justify-self: left;
         justify-content: left !important;
@@ -1239,41 +1251,41 @@
         box-sizing: border-box;
       }
 
-      #selection-bar #bulk-action-button,
-      #selection-bar #selection-buttons {
+      #bulk-bar #bulk-action-button,
+      #bulk-bar #selection-buttons {
         flex-wrap: wrap !important;
         width: 100% !important;
         gap: 8px !important;
       }
 
-      #selection-bar #bulk-edit-container {
+      #bulk-bar #bulk-edit-container {
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 12px !important;
         box-sizing: border-box !important;
       }
 
-      #selection-bar #bulk-edit-bar {
+      #bulk-bar #bulk-edit-bar {
         flex-wrap: wrap !important;
         gap: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
       }
 
-      #selection-bar #bulk-edit-bar span {
+      #bulk-bar #bulk-edit-bar span {
         flex: 1 1 100% !important;
         width: 100% !important;
         white-space: normal !important;
       }
 
-      #selection-bar #bulk-edit-field {
+      #bulk-bar #bulk-edit-field {
         flex: 1 1 100% !important;
         max-width: 100% !important;
         width: 100% !important;
         box-sizing: border-box !important;
       }
 
-      #selection-bar #bulk-edit-value-container {
+      #bulk-bar #bulk-edit-value-container {
         flex: 1 1 100% !important;
         min-width: 0 !important;
         max-width: 100% !important;
@@ -1281,21 +1293,21 @@
         box-sizing: border-box !important;
       }
 
-      #selection-bar #bulk-edit-value-container input,
-      #selection-bar #bulk-edit-value-container select {
+      #bulk-bar #bulk-edit-value-container input,
+      #bulk-bar #bulk-edit-value-container select {
         width: 100% !important;
         max-width: 100% !important;
         box-sizing: border-box !important;
       }
 
-      #selection-bar #bulk-edit-actions {
+      #bulk-bar #bulk-edit-actions {
         flex-wrap: wrap !important;
         width: 100% !important;
         gap: 8px !important;
       }
 
-      #selection-bar button,
-      .selection-bar button {
+      #bulk-bar button,
+      .bulk-bar button {
         flex: 1 1 calc(50% - 5px) !important;
         min-width: fit-content !important;
       }
@@ -1315,6 +1327,11 @@
         align-items: center;
         gap: 10px;
         margin-top: 10px;
+      }
+
+      #domain-display {
+        margin-left: 0;
+        font-size: 16px;
       }
 
       select#version-selector {
@@ -1391,7 +1408,7 @@
         max-width: fit-content;
       }
 
-      .controls {
+      .page-controls {
         flex-wrap: wrap;
         gap: 12px;
         justify-content: space-between;
@@ -1404,15 +1421,15 @@
         order: 1;
       }
 
-      .controls button {
+      .page-controls button {
         flex: 1 1 calc(50% - 6px);
       }
 
-      .selection-bar {
+      .bulk-bar {
         flex-wrap: wrap;
       }
 
-      .selection-bar button {
+      .bulk-bar button {
         flex: 1 1 calc(50% - 5px);
         min-width: fit-content;
       }
@@ -1424,25 +1441,12 @@
       }
 
       .action-group-left,
-      .action-group-right {
+      .save-cancel-group {
         justify-content: center;
         width: 100%;
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
-      }
-
-      .action-group-right {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .save-cancel-buttons {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: center;
-        width: 100%;
       }
 
       .action-buttons .btn {
@@ -1461,7 +1465,7 @@
       }
 
       #edit-columns-link,
-      #column-edit-buttons {
+      .save-cancel-group {
         margin-top: 10px;
       }
 
@@ -1520,6 +1524,7 @@
 <body>
   <h1>
     Bubble Data Manager
+    <span id="domain-display"></span>
     <select id="version-selector" class="badge-test" onchange="handleVersionChange()">
       <option value="/version-test">Test Version</option>
       <option value="">Live</option>
@@ -1527,7 +1532,7 @@
   </h1>
   <select id="data-type-selector" style="display: none;" onchange="handleDataTypeChange()"></select>
   <div id="filters-container"
-    style="border: 2px solid #333; border-radius: 8px; padding: 10px 15px 15px 15px; background-color: #fafafa;">
+    style="border: 2px solid #333; border-radius: 8px; margin-top: 10px; padding: 10px 15px 15px 15px; background-color: #fafafa;">
     <span style="font-size: 15x; font-weight: 700; color: #222;">CONSTRAINTS</span>
     <div id="column-filter-group" class="column-filter-group">
       <div class="column-filter-header">
@@ -1583,7 +1588,7 @@
       <select id="data-types-dropdown" onchange="selectDataTypeFromSidebar(this.value)"></select>
     </div>
   </div>
-  <div id="selection-bar" class="selection-bar">
+  <div id="bulk-bar" class="bulk-bar">
     <div id="bulk-action-button" style="display: none; gap: 10px; align-items: center; justify-items: left;">
       <button id="bulk-edit-btn" class="btn btn-primary" style="background-color: #f08000; max-width: 300px;"
         onclick="showBulkEdit()" disabled>
@@ -1608,32 +1613,15 @@
         onclick="showExportModal()">
         Export Data
       </button>
-      <button id="edit-selected-btn" class="btn btn-primary" onclick="enterEditModeForSelected()" disabled>
-        Edit Row(s)
-      </button>
       <div id="dup-del-wrapper" class="dup-del-wrapper">
+        <button id="edit-selected-btn" class="btn btn-primary" onclick="enterEditModeForSelected()" disabled>
+          Edit Row(s)
+        </button>
         <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
           Duplicate Row(s)
         </button>
         <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
           Delete
-        </button>
-      </div>
-    </div>
-    <div class="action-group-right">
-      <div class="save-cancel-buttons">
-        <button id="save-selected-btn" class="btn btn-success" onclick="saveSelectedRows()" disabled
-          style="display: none;">
-          Save Changes
-        </button>
-        <button id="cancel-selected-btn" class="btn" onclick="cancelSelectedRows()" disabled style="display: none;">
-          Cancel
-        </button>
-        <button id="save-new-row-btn" class="btn btn-success" onclick="saveNewRow()" disabled style="display: none;">
-          Save New Row
-        </button>
-        <button id="cancel-new-row-btn" class="btn" onclick="cancelNewRow()" disabled style="display: none;">
-          Cancel
         </button>
       </div>
     </div>
@@ -1653,7 +1641,7 @@
       <div id="data-types-list" class="data-types-list"></div>
     </div>
     <div style="flex: 1; min-width: 0;">
-      <div class="controls">
+      <div class="page-controls">
         <button id="prev-btn" class="btn" onclick="prevPage()" disabled style="display: none">
           Previous
         </button>
@@ -1701,14 +1689,6 @@
             event.preventDefault();
             toggleColumnEditMode();
           ">Edit Column Order</a>
-          <div id="column-edit-buttons">
-            <button type="button" id="save-columns-btn" class="btn btn-primary" onclick="toggleColumnEditMode()">
-              Save Column Order
-            </button>
-            <button type="button" id="cancel-columns-btn" class="btn" onclick="cancelColumnEditMode()">
-              Cancel
-            </button>
-          </div>
         </div>
         <div id="new-refresh-btns" class="new-refresh-btns">
           <button id="add-row-btn" class="icon-btn btn-success" onclick="addNewRow()" title="Add New Row">
@@ -1725,6 +1705,14 @@
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
+          </button>
+        </div>
+        <div id="save-cancel-group" class="save-cancel-group" style="display: none;">
+          <button type="button" id="unified-save-btn" class="btn btn-success" onclick="handleUnifiedSave()">
+            Save
+          </button>
+          <button type="button" id="unified-cancel-btn" class="btn" onclick="handleUnifiedCancel()">
+            Cancel
           </button>
         </div>
       </div>
@@ -1826,9 +1814,18 @@
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
 
+    function updateDomainDisplay(domain) {
+      const span = document.getElementById("domain-display");
+      if (span) {
+        span.textContent = domain || "";
+      }
+    }
+
     // --- INITIALIZATION ---
     async function initApp() {
+      updateDomainDisplay(localStorage.getItem('home'));
       [DOMAIN, API_KEY] = await initializeWithValidKey();
+      updateDomainDisplay(DOMAIN);
       API_BASE_URL = `https://${DOMAIN}${VERSION}/api/1.1/obj/`;
       const fetchedTypes = await fetchDataTypesFromBubble();
       rebuildDataTypes(fetchedTypes);
@@ -1891,11 +1888,13 @@
               console.error("The provided text could not be parsed into a valid URL.");
               alert("Invalid URL format. Please refresh and try again.");
               DOMAIN = null;
+              updateDomainDisplay(null);
             }
           }
           else {
             console.warn("No URL entered. You are not connected to a Bubble app.");
             window.alert(`No URL entered. You are not connected to a Bubble app.`);
+            updateDomainDisplay(null);
             return [null, null];
           }
         }
@@ -1935,10 +1934,12 @@
             localStorage.removeItem('cached_pref');
             DOMAIN = null;
             API_KEY = null;
+            updateDomainDisplay(null);
             continue;
           }
           else if (response.ok || response.status === 404 || response.status === 400) {
             console.log("Domain and API Key are valid.");
+            updateDomainDisplay(DOMAIN);
             return [DOMAIN, API_KEY];
           }
           else {
@@ -1946,6 +1947,7 @@
             window.alert(`Received an unexpected response from ${DOMAIN}. Are you sure this is a Bubble app?`);
             localStorage.removeItem('home');
             DOMAIN = null;
+            updateDomainDisplay(null);
             continue;
           }
         } catch (error) {
@@ -1953,6 +1955,7 @@
           window.alert(`Could not connect to ${DOMAIN}. The URL may be misspelled, offline, or not a Bubble application.`);
           localStorage.removeItem('home');
           DOMAIN = null;
+          updateDomainDisplay(null);
           continue;
         }
       }
@@ -2442,7 +2445,7 @@
           if (hiddenInput) {
             hiddenInput.value = jsonStr;
             row.classList.add('has-edits');
-            updateSelectionBar();
+            updatebulkBar();
           }
         }
       }
@@ -2649,7 +2652,7 @@
           }
           cell.setAttribute('title', textVal);
           row.classList.add('has-edits');
-          updateSelectionBar();
+          updatebulkBar();
         }
       }
 
@@ -2960,15 +2963,15 @@
       let isFile = false;
       let isHTML = false;
 
+      // Handle missing values cleanly
+      if (value === null || value === undefined || value === "") {
+        displayValue = "";
+      }
       // Convert boolean true/false to yes/no
-      if (isBooleanField(currentType, field)) {
-        const isTrue = (value === true || value === "true");
+      else if (isBooleanField(currentType, field)) {
+        const isTrue = (value === true || value === "true" || value === "yes" || (typeof value === "string" && value.toLowerCase() === "yes"));
         displayValue = `<span class="type-badge ${isTrue ? 'badge-boolean-yes' : 'badge-boolean-no'}">${isTrue ? 'yes' : 'no'}</span>`;
         isHTML = true;
-      }
-      // Handle missing values cleanly
-      else if (value === null || value === undefined) {
-        displayValue = "";
       }
       else if (getOptionSetForField(currentType, field)) {
         displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
@@ -3225,17 +3228,7 @@
       currentFilterName = null;
       // 0. Reset Column Edit Mode
       isEditingColumns = false;
-      const editLink = document.getElementById("edit-columns-link");
-      if (editLink) editLink.style.display = "";
-      const editButtons = document.getElementById("column-edit-buttons");
-      if (editButtons) editButtons.style.display = "none";
-      const saveBtn = document.getElementById("save-columns-btn");
-      if (saveBtn) {
-        saveBtn.innerText = "Save Column Order";
-        saveBtn.disabled = false;
-      }
-      const cancelBtn = document.getElementById("cancel-columns-btn");
-      if (cancelBtn) cancelBtn.disabled = false;
+      setTableActionState('normal');
 
       // 1. Reset Pagination & Sorting
       currentCursor = 0;
@@ -3258,7 +3251,7 @@
       isAddingNewRow = false;
       document.getElementById("all-matching-notice").style.display = "none";
       document.getElementById("all-matching-selected-notice").style.display = "none";
-      updateSelectionBar();
+      updatebulkBar();
 
       // Clear layout cache so it re-fetches for the new configuration
       if (!preventFetch) {
@@ -3438,7 +3431,7 @@
           prevBtn.style.display = "";
           nextBtn.style.display = "";
         }
-        updateSelectionBar();
+        updatebulkBar();
       } catch (error) {
         console.error("Fetch error:", error);
         container.innerHTML = `<div class="error">Failed to load data: ${escapeHTML(error.message)}</div>`;
@@ -4172,7 +4165,7 @@
           editRow(id);
         }
       });
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function editRow(recordId) {
@@ -4314,7 +4307,7 @@
       });
 
       row.classList.add("editing-row");
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function cancelEditRow(recordId) {
@@ -4324,10 +4317,23 @@
       row.classList.remove("has-edits");
       const cells = row.querySelectorAll("td[data-field]");
 
-      // Revert inputs back to plain text
+      const currentType =
+        document.getElementById("data-type-selector")?.value || "";
+      const record = cachedRecords.find((r) => String(r._id) === String(recordId));
+
+      // Revert inputs back to original content and color coding
       cells.forEach((cell) => {
         if (cell.hasAttribute("data-original")) {
-          cell.innerText = cell.getAttribute("data-original");
+          const field = cell.getAttribute("data-field");
+          let originalValue = cell.getAttribute("data-original");
+          if (record && field in record) {
+            originalValue = record[field];
+          } else if (cell.hasAttribute("data-json") && typeof originalValue === "string") {
+            try {
+              originalValue = JSON.parse(originalValue);
+            } catch (e) { }
+          }
+          setCellContent(cell, originalValue, field, recordId, currentType);
           cell.removeAttribute("data-original");
         }
       });
@@ -4337,7 +4343,7 @@
       if (actionCell) {
         actionCell.remove();
       }
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     async function saveRow(recordId) {
@@ -4525,7 +4531,7 @@
         row.classList.toggle("row-selected", isChecked);
       }
       updateSelectAllCheckbox();
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function toggleSelectAll(isChecked) {
@@ -4575,7 +4581,7 @@
         selectAllMatching = false;
       }
 
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function selectAllMatchingRecords() {
@@ -4584,11 +4590,11 @@
       const selectedNotice = document.getElementById("all-matching-selected-notice");
       selectedNotice.style.display = "block";
       document.getElementById("total-matching-selected-count").textContent = totalMatchingCount;
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function showBulkEdit() {
-      const bar = document.getElementById("selection-bar");
+      const bar = document.getElementById("bulk-bar");
       const container = document.getElementById("bulk-edit-container");
       const fieldSelect = document.getElementById("bulk-edit-field");
 
@@ -4622,7 +4628,7 @@
     }
 
     function hideBulkEdit() {
-      const bar = document.getElementById("selection-bar");
+      const bar = document.getElementById("bulk-bar");
       const container = document.getElementById("bulk-edit-container");
 
       if (!container) return;
@@ -4633,7 +4639,7 @@
       document.getElementById("bulk-edit-bar").style.display = "none";
       document.getElementById("bulk-edit-actions").style.display = "none";
 
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function toggleBulkEditDateInput(selectEl) {
@@ -4876,19 +4882,100 @@
       selectAllCb.checked = allChecked;
     }
 
-    function updateSelectionBar() {
-      const bar = document.getElementById("selection-bar");
+    function setTableActionState(mode, options = {}) {
+      const unifiedGroup = document.getElementById("save-cancel-group");
+      const saveBtn = document.getElementById("unified-save-btn");
+      const cancelBtn = document.getElementById("unified-cancel-btn");
+      const newRefreshBtns = document.getElementById("new-refresh-btns");
+      const editLink = document.getElementById("edit-columns-link");
+      const bulkBar = document.getElementById("bulk-bar");
+      const actionBtns = document.getElementById("action-buttons");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
+
+      if (!unifiedGroup || !saveBtn || !cancelBtn) return;
+
+      if (mode === 'edit_columns') {
+        unifiedGroup.style.display = "flex";
+        if (newRefreshBtns) newRefreshBtns.style.display = "none";
+        if (bulkBar) bulkBar.style.display = "none";
+        if (actionBtns) {
+          actionBtns.style.display = "flex";
+          actionBtns.style.visibility = "hidden";
+        }
+
+        saveBtn.textContent = options.saveText || "Save Column Order";
+        saveBtn.className = "btn btn-primary";
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.saveDisabled : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
+      } else if (mode === 'edit_rows') {
+        unifiedGroup.style.display = "flex";
+        if (newRefreshBtns) newRefreshBtns.style.display = "none";
+        if (editLink) editLink.style.display = "";
+        if (bulkBar) bulkBar.style.display = count > 1 ? "flex" : "none";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+
+        saveBtn.textContent = options.saveText || "Save Changes";
+        saveBtn.className = "btn btn-success";
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.saveDisabled : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
+      } else if (mode === 'add_row') {
+        unifiedGroup.style.display = "flex";
+        if (newRefreshBtns) newRefreshBtns.style.display = "none";
+        if (editLink) editLink.style.display = "";
+        if (bulkBar) bulkBar.style.display = "none";
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+
+        saveBtn.textContent = options.saveText || "Save New Row";
+        saveBtn.className = "btn btn-success";
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.prevBtn : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
+      } else {
+        // mode === 'normal'
+        unifiedGroup.style.display = "none";
+        if (newRefreshBtns) newRefreshBtns.style.display = "flex";
+        if (editLink) editLink.style.display = "";
+        if (bulkBar) bulkBar.style.display = count > 1 ? "flex" : "none";
+        if (actionBtns) {
+          actionBtns.style.visibility = "visible";
+          actionBtns.style.display = "flex";
+          if (prevBtn) prevBtn.disabled = false;
+          if (nextBtn) nextBtn.disabled = false;
+        }
+      }
+    }
+
+    function handleUnifiedSave() {
+      if (isEditingColumns) {
+        toggleColumnEditMode();
+      } else if (isAddingNewRow) {
+        saveNewRow();
+      } else if (document.querySelector(".editing-row")) {
+        saveSelectedRows();
+      }
+    }
+
+    function handleUnifiedCancel() {
+      if (isEditingColumns) {
+        cancelColumnEditMode();
+      } else if (isAddingNewRow) {
+        cancelNewRow();
+      } else if (document.querySelector(".editing-row")) {
+        cancelSelectedRows();
+      }
+    }
+
+    function updatebulkBar() {
+      const bar = document.getElementById("bulk-bar");
       const countSpan = document.getElementById("selection-count");
       const bulkEditBtn = document.getElementById("bulk-edit-btn");
-      const saveBtn = document.getElementById("save-selected-btn");
-      const cancelBtn = document.getElementById("cancel-selected-btn");
-      const saveNewBtn = document.getElementById("save-new-row-btn");
-      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
       const duplicateBtn = document.getElementById("duplicate-selected-btn");
       const deleteBtn = document.getElementById("delete-selected-btn");
       const editBtn = document.getElementById("edit-selected-btn");
       const clearBtn = document.getElementById("clear-selection-btn");
-      const newrefreshBtns = document.getElementById("new-refresh-btns");
       const editActionBtns = document.getElementById("bulk-action-button");
       const dupDelWrapper = document.getElementById("dup-del-wrapper");
       const leftActions = document.querySelector(".action-group-left");
@@ -4926,25 +5013,12 @@
         if (duplicateBtn) duplicateBtn.disabled = count === 0 && !hasEdits;
         if (deleteBtn) deleteBtn.disabled = (count === 0 && !hasEdits) || selectAllMatching;
         if (editBtn) editBtn.disabled = count === 0 || selectAllMatching;
-
-        if (saveBtn) { saveBtn.style.display = isEditing ? "inline-block" : "none"; saveBtn.disabled = !hasEdits; }
-        if (cancelBtn) { cancelBtn.style.display = isEditing ? "inline-block" : "none"; cancelBtn.disabled = !isEditing; }
-
-        if (saveNewBtn) { saveNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; saveNewBtn.disabled = !isAddingNewRow; }
-        if (cancelNewBtn) { cancelNewBtn.style.display = isAddingNewRow ? "inline-block" : "none"; cancelNewBtn.disabled = !isAddingNewRow; }
-
-        if (newrefreshBtns) newrefreshBtns.style.display = "none";
         if (clearBtn) clearBtn.disabled = count === 0 && !hasEdits;
       } else {
         if (countSpan) countSpan.textContent = "";
         if (dupDelWrapper) dupDelWrapper.style.display = "none";
         if (duplicateBtn) duplicateBtn.disabled = true;
         if (deleteBtn) deleteBtn.disabled = true;
-        if (saveBtn) { saveBtn.style.display = "none"; saveBtn.disabled = true; }
-        if (cancelBtn) { cancelBtn.style.display = "none"; cancelBtn.disabled = true; }
-        if (saveNewBtn) { saveNewBtn.style.display = "none"; saveNewBtn.disabled = true; }
-        if (cancelNewBtn) { cancelNewBtn.style.display = "none"; cancelNewBtn.disabled = true; }
-        if (newrefreshBtns) newrefreshBtns.style.display = "flex";
         if (clearBtn) clearBtn.disabled = true;
       }
 
@@ -4963,6 +5037,16 @@
         if (bulkEditBtn) bulkEditBtn.disabled = true;
         if (editActionBtns) editActionBtns.style.display = "none";
       }
+
+      if (isEditingColumns) {
+        setTableActionState('edit_columns');
+      } else if (isAddingNewRow) {
+        setTableActionState('add_row');
+      } else if (isEditing) {
+        setTableActionState('edit_rows', { saveDisabled: !hasEdits });
+      } else {
+        setTableActionState('normal');
+      }
     }
 
     async function saveSelectedRows() {
@@ -4977,14 +5061,7 @@
       );
       if (!confirmed) return;
 
-      const saveBtn = document.getElementById("save-selected-btn");
-      const cancelBtn = document.getElementById("cancel-selected-btn");
-      const originalSaveText = saveBtn ? saveBtn.textContent : "Save Changes";
-      if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = "Saving...";
-      }
-      if (cancelBtn) cancelBtn.disabled = true;
+      setTableActionState('edit_rows', { saveText: "Saving...", saveDisabled: true, cancelDisabled: true });
 
       let successCount = 0;
       let failCount = 0;
@@ -5135,11 +5212,7 @@
         }
       }
 
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.textContent = originalSaveText;
-      }
-      if (cancelBtn) cancelBtn.disabled = false;
+      if (failCount > 0) setTableActionState('edit_rows', { saveText: "Save Changes", saveDisabled: false, cancelDisabled: false });
 
       if (failCount > 0) {
         alert(
@@ -5156,7 +5229,7 @@
           cancelEditRow(recordId);
         }
       });
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function clearSelection() {
@@ -5175,7 +5248,7 @@
         if (cb) cb.checked = false;
       });
       updateSelectAllCheckbox();
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     async function fetchAllMatchingRows() {
@@ -5325,7 +5398,7 @@
       } finally {
         duplicateBtn.disabled = false;
         duplicateBtn.textContent = originalText;
-        updateSelectionBar();
+        updatebulkBar();
       }
     }
 
@@ -5339,7 +5412,7 @@
       if (!confirmed) return;
 
       const currentType = document.getElementById("data-type-selector").value;
-      const bar = document.getElementById("selection-bar");
+      const bar = document.getElementById("bulk-bar");
       const countSpan = document.getElementById("selection-count");
       const idsToDelete = Array.from(selectedRows.keys());
 
@@ -5580,24 +5653,14 @@
       const firstInput = newRow.querySelector("td[data-field] input");
       if (firstInput) firstInput.focus();
 
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     function cancelNewRow() {
       const newRow = document.getElementById("row-new");
       if (newRow) newRow.remove();
       isAddingNewRow = false;
-      const saveNewBtn = document.getElementById("save-new-row-btn");
-      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
-      if (saveNewBtn) {
-        saveNewBtn.style.display = "none";
-        saveNewBtn.disabled = true;
-      }
-      if (cancelNewBtn) {
-        cancelNewBtn.style.display = "none";
-        cancelNewBtn.disabled = true;
-      }
-      updateSelectionBar();
+      updatebulkBar();
     }
 
     async function saveNewRow() {
@@ -5636,14 +5699,7 @@
 
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
-      const saveNewBtn = document.getElementById("save-new-row-btn");
-      const cancelNewBtn = document.getElementById("cancel-new-row-btn");
-      const originalCreateText = saveNewBtn ? saveNewBtn.textContent : "Save New Row";
-      if (saveNewBtn) {
-        saveNewBtn.disabled = true;
-        saveNewBtn.textContent = "Creating...";
-      }
-      if (cancelNewBtn) cancelNewBtn.disabled = true;
+      setTableActionState('add_row', { saveText: "Creating...", saveDisabled: true, cancelDisabled: true });
 
       try {
         const response = await fetch(fetchUrl, {
@@ -5664,25 +5720,12 @@
 
         // Success — refresh the table to show the new row with its server-assigned ID
         isAddingNewRow = false;
-        if (saveNewBtn) {
-          saveNewBtn.style.display = "none";
-          saveNewBtn.disabled = true;
-          saveNewBtn.textContent = originalCreateText;
-        }
-        if (cancelNewBtn) {
-          cancelNewBtn.style.display = "none";
-          cancelNewBtn.disabled = true;
-        }
-        updateSelectionBar();
+        updatebulkBar();
         await fetchAndRenderData();
       } catch (error) {
         console.error("Create row error:", error);
         alert(`Failed to create row: ${error.message}`);
-        if (saveNewBtn) {
-          saveNewBtn.disabled = false;
-          saveNewBtn.textContent = originalCreateText;
-        }
-        if (cancelNewBtn) cancelNewBtn.disabled = false;
+        setTableActionState('add_row', { saveText: "Save New Row", saveDisabled: false, cancelDisabled: false });
       }
     }
 
@@ -5760,42 +5803,22 @@
 
     function toggleColumnEditMode() {
       isEditingColumns = !isEditingColumns;
-      const editLink = document.getElementById("edit-columns-link");
-      const editButtons = document.getElementById("column-edit-buttons");
-      const saveBtn = document.getElementById("save-columns-btn");
-      const cancelBtn = document.getElementById("cancel-columns-btn");
       const container = document.getElementById("table-container");
 
       if (isEditingColumns) {
         // Turn ON Edit Mode
         preEditHeadersBackup = [...detectedHeaders];
-        if (editLink) editLink.style.display = "none";
-        if (editButtons) editButtons.style.display = "flex";
-        if (saveBtn) {
-          saveBtn.innerText = "Save Column Order";
-          saveBtn.disabled = false;
-        }
-        if (cancelBtn) cancelBtn.disabled = false;
+        setTableActionState('edit_columns');
       } else {
         // Turn OFF Edit Mode (Save)
-        if (saveBtn) {
-          saveBtn.innerText = "Saving...";
-          saveBtn.disabled = true;
-        }
-        if (cancelBtn) cancelBtn.disabled = true;
+        setTableActionState('edit_columns', { saveText: "Saving...", saveDisabled: true, cancelDisabled: true });
 
         // Generate the new string-based orderMap
         const newMap = detectedHeaders;
 
         // Send to localStorage, then reset button/link visibility
         saveColumnOrderToLocalStorage(newMap).then(() => {
-          if (editButtons) editButtons.style.display = "none";
-          if (saveBtn) {
-            saveBtn.innerText = "Save Column Order";
-            saveBtn.disabled = false;
-          }
-          if (cancelBtn) cancelBtn.disabled = false;
-          if (editLink) editLink.style.display = "";
+          setTableActionState('normal');
         });
       }
 
@@ -5807,13 +5830,9 @@
       isEditingColumns = false;
       detectedHeaders = [...preEditHeadersBackup];
       populateColumnFilterGroup(detectedHeaders);
-      const editLink = document.getElementById("edit-columns-link");
-      const editButtons = document.getElementById("column-edit-buttons");
       const container = document.getElementById("table-container");
 
-      if (editButtons) editButtons.style.display = "none";
-      if (editLink) editLink.style.display = "";
-
+      setTableActionState('normal');
       renderTable(cachedRecords, detectedHeaders, container);
     }
 
@@ -5915,7 +5934,7 @@
         // Reset state for current type if we're just loading a different filter
         currentCursor = 0;
         selectedRows.clear();
-        updateSelectionBar();
+        updatebulkBar();
       }
 
       if (!settingsRecord) {
@@ -6045,7 +6064,7 @@
         const row = e.target.closest('.editing-row');
         if (row) {
           row.classList.add('has-edits');
-          updateSelectionBar();
+          updatebulkBar();
         }
       });
 
@@ -6054,7 +6073,7 @@
         const row = e.target.closest('.editing-row');
         if (row) {
           row.classList.add('has-edits');
-          updateSelectionBar();
+          updatebulkBar();
         }
       });
     })();

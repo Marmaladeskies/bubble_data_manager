@@ -645,16 +645,24 @@
     }
 
     /* Version Indicator Dropdown Badge */
-    #domain-display {
+    select#app-selector {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
       font-size: 20px;
       font-weight: 500;
       color: #555;
       margin-left: 10px;
       vertical-align: middle;
-    }
-
-    #domain-display:empty {
-      display: none;
+      border: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23444444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      padding-right: 28px;
+      cursor: pointer;
+      outline: none;
+      max-width: 300px;
+      text-overflow: ellipsis;
     }
 
     select#version-selector {
@@ -1329,9 +1337,10 @@
         margin-top: 10px;
       }
 
-      #domain-display {
+      select#app-selector {
         margin-left: 0;
         font-size: 16px;
+        max-width: 200px;
       }
 
       select#version-selector {
@@ -1524,7 +1533,7 @@
 <body>
   <h1>
     Bubble Data Manager
-    <span id="domain-display"></span>
+    <select id="app-selector" onchange="handleAppChange()"></select>
     <select id="version-selector" class="badge-test" onchange="handleVersionChange()">
       <option value="/version-test">Test Version</option>
       <option value="">Live</option>
@@ -1814,18 +1823,136 @@
     const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
     const SETTINGS_KEY_FILTER_DATA = "filterData";
 
-    function updateDomainDisplay(domain) {
-      const span = document.getElementById("domain-display");
-      if (span) {
-        span.textContent = domain || "";
+    function getAppStorageKeys(index) {
+      if (index === 1) {
+        return { domain: 'home', apiKey: 'cached_pref' };
+      }
+      return { domain: `home${index}`, apiKey: `api${index}` };
+    }
+
+    function getAllApps() {
+      const apps = [];
+      let index = 1;
+      while (true) {
+        const keys = getAppStorageKeys(index);
+        const domain = localStorage.getItem(keys.domain);
+        const apiKey = localStorage.getItem(keys.apiKey);
+        if (domain && apiKey) {
+          apps.push({ index, domain, apiKey });
+          index++;
+        } else {
+          break;
+        }
+      }
+      return apps;
+    }
+
+    function populateAppSelector() {
+      const selector = document.getElementById("app-selector");
+      if (!selector) return;
+
+      selector.innerHTML = "";
+      const apps = getAllApps();
+      const currentIndex = parseInt(localStorage.getItem('current_app_index') || '1');
+
+      apps.forEach(app => {
+        const option = document.createElement("option");
+        option.value = app.index;
+        option.textContent = app.domain;
+        if (app.index === currentIndex) {
+          option.selected = true;
+        }
+        selector.appendChild(option);
+      });
+
+      const divider = document.createElement("option");
+      divider.disabled = true;
+      divider.textContent = "──────────";
+      selector.appendChild(divider);
+
+      const connectOption = document.createElement("option");
+      connectOption.value = "connect_new";
+      connectOption.textContent = "Connect another app...";
+      selector.appendChild(connectOption);
+    }
+
+    async function handleAppChange() {
+      const selector = document.getElementById("app-selector");
+      const val = selector.value;
+
+      if (val === "connect_new") {
+        await connectNewApp();
+      } else {
+        localStorage.setItem('current_app_index', val);
+        location.reload();
+      }
+    }
+
+    async function connectNewApp() {
+      const apps = getAllApps();
+      const nextIndex = apps.length + 1;
+      const keys = getAppStorageKeys(nextIndex);
+
+      let domain = null;
+      let apiKey = null;
+
+      while (true) {
+        let rawInput = window.prompt("Enter the new Bubble app's URL:");
+        if (!rawInput) {
+          populateAppSelector(); // Reset selector
+          return;
+        }
+
+        let cleanedInput = rawInput.trim();
+        if (!cleanedInput.startsWith('http://') && !cleanedInput.startsWith('https://')) {
+          cleanedInput = 'https://' + cleanedInput;
+        }
+        try {
+          const parsedUrl = new URL(cleanedInput);
+          domain = parsedUrl.hostname;
+        } catch (error) {
+          alert("Invalid URL format. Please try again.");
+          continue;
+        }
+
+        apiKey = window.prompt(`Enter the API key for ${domain}:`);
+        if (!apiKey) {
+          populateAppSelector(); // Reset selector
+          return;
+        }
+
+        // Validate
+        const testUrl = `https://${domain}/api/1.1/obj/auth_validation_dummy?limit=1`;
+        try {
+          const response = await fetch(testUrl, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
+          });
+
+          if (response.status === 401) {
+            alert(`The API key entered is not valid for ${domain}`);
+            continue;
+          } else if (response.ok || response.status === 404 || response.status === 400) {
+            localStorage.setItem(keys.domain, domain);
+            localStorage.setItem(keys.apiKey, apiKey);
+            localStorage.setItem('current_app_index', nextIndex);
+            location.reload();
+            return;
+          } else {
+            alert(`Received an unexpected response from ${domain}. Are you sure this is a Bubble app?`);
+            continue;
+          }
+        } catch (error) {
+          alert(`Could not connect to ${domain}. The URL may be misspelled, offline, or not a Bubble application.`);
+          continue;
+        }
       }
     }
 
     // --- INITIALIZATION ---
     async function initApp() {
-      updateDomainDisplay(localStorage.getItem('home'));
+      populateAppSelector();
       [DOMAIN, API_KEY] = await initializeWithValidKey();
-      updateDomainDisplay(DOMAIN);
       API_BASE_URL = `https://${DOMAIN}${VERSION}/api/1.1/obj/`;
       const fetchedTypes = await fetchDataTypesFromBubble();
       rebuildDataTypes(fetchedTypes);
@@ -1868,11 +1995,13 @@
     }
 
     async function initializeWithValidKey() {
-      let DOMAIN = localStorage.getItem('home');
-      let API_KEY = localStorage.getItem('cached_pref');
+      const currentIndex = parseInt(localStorage.getItem('current_app_index') || '1');
+      const keys = getAppStorageKeys(currentIndex);
+      let currentDomain = localStorage.getItem(keys.domain);
+      let currentApiKey = localStorage.getItem(keys.apiKey);
 
       while (true) {
-        if (!DOMAIN) {
+        if (!currentDomain) {
           let rawInput = window.prompt("Enter your Bubble app's URL:");
           if (rawInput) {
             let cleanedInput = rawInput.trim();
@@ -1881,20 +2010,19 @@
             }
             try {
               const parsedUrl = new URL(cleanedInput);
-              DOMAIN = parsedUrl.hostname;
-              localStorage.setItem('home', DOMAIN);
-              console.log(`Domain saved to localStorage: ${DOMAIN}`);
+              currentDomain = parsedUrl.hostname;
+              localStorage.setItem(keys.domain, currentDomain);
+              console.log(`Domain saved to localStorage: ${currentDomain}`);
+              populateAppSelector();
             } catch (error) {
               console.error("The provided text could not be parsed into a valid URL.");
               alert("Invalid URL format. Please refresh and try again.");
-              DOMAIN = null;
-              updateDomainDisplay(null);
+              currentDomain = null;
             }
           }
           else {
             console.warn("No URL entered. You are not connected to a Bubble app.");
             window.alert(`No URL entered. You are not connected to a Bubble app.`);
-            updateDomainDisplay(null);
             return [null, null];
           }
         }
@@ -1902,10 +2030,10 @@
           console.log("DOMAIN loaded from localStorage.");
         }
 
-        if (!API_KEY) {
-          API_KEY = window.prompt("Enter your Bubble app's API key to connect to your app:");
-          if (API_KEY) {
-            localStorage.setItem('cached_pref', API_KEY);
+        if (!currentApiKey) {
+          currentApiKey = window.prompt(`Enter your API key for ${currentDomain} to connect to your app:`);
+          if (currentApiKey) {
+            localStorage.setItem(keys.apiKey, currentApiKey);
             console.log("API Key saved to localStorage.");
           } else {
             console.warn("No API key entered. You are not connected to a Bubble app.");
@@ -1917,45 +2045,44 @@
         }
 
         // use a non-existent endpoint to test the API key:
-        const testUrl = `https://${DOMAIN}${VERSION}/api/1.1/obj/auth_validation_dummy?limit=1`;
+        const testUrl = `https://${currentDomain}${VERSION}/api/1.1/obj/auth_validation_dummy?limit=1`;
         try {
           const response = await fetch(testUrl, {
             method: 'GET',
             headers: {
-              'Authorization': `Bearer ${API_KEY}`
+              'Authorization': `Bearer ${currentApiKey}`
             }
           });
 
           // 401 means the key was explicitly rejected.
           if (response.status === 401) {
             console.warn("Invalid API Key. Authentication failed.");
-            window.alert(`The API key entered is not valid for ${DOMAIN}`);
-            localStorage.removeItem('home');
-            localStorage.removeItem('cached_pref');
-            DOMAIN = null;
-            API_KEY = null;
-            updateDomainDisplay(null);
+            window.alert(`The API key entered is not valid for ${currentDomain}`);
+            localStorage.removeItem(keys.domain);
+            localStorage.removeItem(keys.apiKey);
+            currentDomain = null;
+            currentApiKey = null;
+            populateAppSelector();
             continue;
           }
           else if (response.ok || response.status === 404 || response.status === 400) {
             console.log("Domain and API Key are valid.");
-            updateDomainDisplay(DOMAIN);
-            return [DOMAIN, API_KEY];
+            return [currentDomain, currentApiKey];
           }
           else {
             console.warn(`Unexpected status code: ${response.status}`);
-            window.alert(`Received an unexpected response from ${DOMAIN}. Are you sure this is a Bubble app?`);
-            localStorage.removeItem('home');
-            DOMAIN = null;
-            updateDomainDisplay(null);
+            window.alert(`Received an unexpected response from ${currentDomain}. Are you sure this is a Bubble app?`);
+            localStorage.removeItem(keys.domain);
+            currentDomain = null;
+            populateAppSelector();
             continue;
           }
         } catch (error) {
           console.error("Network error during validation:", error);
-          window.alert(`Could not connect to ${DOMAIN}. The URL may be misspelled, offline, or not a Bubble application.`);
-          localStorage.removeItem('home');
-          DOMAIN = null;
-          updateDomainDisplay(null);
+          window.alert(`Could not connect to ${currentDomain}. The URL may be misspelled, offline, or not a Bubble application.`);
+          localStorage.removeItem(keys.domain);
+          currentDomain = null;
+          populateAppSelector();
           continue;
         }
       }

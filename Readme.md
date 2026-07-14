@@ -19,10 +19,11 @@ _This improved database manager is a single .html file that can be opened in any
 - Export any or ALL data types (in your custom column order) to CSV files at once
 - This file relies only on standard html and javascript and will open in any browser, on any device, in any enviroment. Works great on mobile.
 - You have the code. Throw this single script in your favorite AI, tell it any changes you want to make, and it will be done without wasting a minute clicking through whatever UI changes Bubble is currently experimenting with. Easier, faster, and none of Bubble's UI limitations
+- Manage multiple bubble apps, with one click to change between all of the bubble app databases that you admin
 
 - Limitations of this script:
   - Will only load data types that have Data API enabled in Settings>API>Public API endpoints. (All columns will have read/write access regardless of privacy rules if the Data API is enabled for that data type because this uses an Admin API token, not a user token)
-  - When you enter your API token, it is saved unencrypted in your browser so it is not secure if a hacker gains control of your browser. It can't be saved in your browser keychain because it is a local file, not a website. If you want to run a python enviroment you could easily avoid this.
+  - When you enter your API token, it is saved unencrypted in your browser so it is not secure if a hacker gains control of your browser. It can't be saved in your browser keychain because it is a local file, not a hosted website. For my use case this is fine, because I don't want to constantly enter my API key in cookies that expire, but the security could be upgraded if you moved the keys from localstorage to a cookie. You could add a bubble user login and store a bubble session token as cookie (which would then obey your privacy rules), but you still won't be able to save the password in the browser keychain and it will have to be rentered when the cookie expires.
   - Option sets have to be loaded manually. This takes less <10 min. Bubble does not have an options set API, but again you could probably scrape them if you add a python enviroment to this.
   - Bubble does not allow editing Slug fields via API
   - The search uses bubble's exact string match search which sucks, the keyword filter has better substring searching but only searches the current page (100 rows)
@@ -55,17 +56,6 @@ Create rows from the table view:
 Delete Rows:
 ![Screenshot](screenshots/delete_row.png)
 
-
-- Note that the live and test versions of your app will necessarily save different versions of your settings (because they many not have the same fields). You can setup and save settings for each branch manually or you can set everything up in your live branch and use a desktop browser's console to copy and paste the settings to the test branch:
-
-~~~
-# Setup and save custom column ordering and constraint views
-# View your settings json data:
-localStorage.getItem('bubble_data_manager_settings_<yourdomain.com>');
-# Copy that json data output and insert it into this:
-localStorage.setItem('bubble_data_manager_settings_<your_url.com/test-version>', JSON.stringify({your_json_content}));
-~~~
-
 ### Load Option Sets
 
 Loading your app's option sets requires one extra step. This is not strictly necessary, but it makes it easier to edit fields that use option sets. [Everything works without importing option sets, but if you choose not to add option sets, editing fields that use option sets requires typing out option names exactly correct (or else saving changes will fail with an error message).]
@@ -92,3 +82,13 @@ You can also edit [bubble_data_manager.html](bubble_data_manager.html) to change
 
 ~~~javascript
         const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
+~~~
+
+ You can backup your saved settings by entering the following commands in your browser console:
+
+~~~javascript
+// View your settings json data:
+localStorage.getItem('bubble_data_manager_settings_<yourdomain.com>');
+// Import that json data output again:
+localStorage.setItem('bubble_data_manager_settings_<your_url.com/test-version>', JSON.stringify({your_json_content}));
+~~~

@@ -16,11 +16,11 @@
     h1 {
       margin: 0px;
       position: sticky;
+      border-bottom: #000000 solid 1px;
       top: 0;
       z-index: 100;
       background-color: #ffffff;
       padding: 5px 0px;
-      border-bottom: #000000 solid 1px;
     }
 
     /* Table and Scroll Styles */
@@ -1991,6 +1991,10 @@
         if (icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
       }
 
+      const activeType = document.getElementById("data-type-selector")?.value || "";
+      if (cachedTypeColumns && cachedTypeColumns[activeType]) {
+        detectedHeaders = [...cachedTypeColumns[activeType]];
+      }
       fetchAndRenderData();
     }
 
@@ -2099,6 +2103,10 @@
       field: null,
       isNewRow: false
     };
+    function getSettingsStorageKey() {
+      return `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}`;
+    }
+
     //Parse the DATA_MANAGER_SETTINGS_NAME text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
       const raw = settingsRecord && settingsRecord[DATA_MANAGER_SETTINGS_NAME];
@@ -2380,6 +2388,10 @@
       ) {
         selector.value = preferredValue;
         dropdown.value = preferredValue;
+      }
+      const activeType = selector.value || "";
+      if (cachedTypeColumns && cachedTypeColumns[activeType]) {
+        detectedHeaders = [...cachedTypeColumns[activeType]];
       }
       renderDataTypeSidebar();
     }
@@ -3343,7 +3355,7 @@
 
     // --- FETCH CENTRALIZED COLUMN ORDER SETTINGS ---
     async function fetchSettings() {
-      const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
+      const storageKey = getSettingsStorageKey();
       const savedData = localStorage.getItem(storageKey);
       settingsRecord = {
         [DATA_MANAGER_SETTINGS_NAME]: savedData || "{}"
@@ -3361,6 +3373,15 @@
       currentCursor = 0;
       sortField = "Created Date";
       sortDescending = true;
+
+      // Update detectedHeaders immediately to the schema columns of the newly selected data type
+      // before resetting constraint dropdowns, ensuring new rows reflect the active type's fields.
+      const activeType = document.getElementById("data-type-selector")?.value || "";
+      if (cachedTypeColumns && cachedTypeColumns[activeType]) {
+        detectedHeaders = [...cachedTypeColumns[activeType]];
+      } else {
+        detectedHeaders = [];
+      }
 
       // 2. Reset Search Constraints
       currentConstraints = [];
@@ -3406,6 +3427,22 @@
       svgIcon.classList.remove("spin");
     }
 
+    function getResolvedConstraints(constraints) {
+      if (!constraints || !Array.isArray(constraints)) return [];
+      const currentType = document.getElementById("data-type-selector")?.value || "";
+      const knownHeaders = cachedTypeColumns[currentType] || [];
+      return constraints
+        .filter(c => {
+          if (!c || !c.key) return false;
+          if (c.key === "_id" || c.key.toLowerCase() === "unique id") return true;
+          if (knownHeaders.length === 0) return true; // Pass through if schema metadata is not yet loaded
+          return knownHeaders.includes(c.key);
+        })
+        .map(c =>
+          c.value === "current date/time" ? { ...c, value: new Date().toISOString() } : c
+        );
+    }
+
     async function fetchAndRenderData() {
       const container = document.getElementById("table-container");
       const pageInfo = document.getElementById("page-info");
@@ -3435,10 +3472,7 @@
 
         // Append Constraints
         if (currentConstraints.length > 0) {
-          // Resolve the "current date/time" sentinel to an actual ISO timestamp at fetch time
-          const resolvedConstraints = currentConstraints.map(c =>
-            c.value === "current date/time" ? { ...c, value: new Date().toISOString() } : c
-          );
+          const resolvedConstraints = getResolvedConstraints(currentConstraints);
           const constraintsJson = JSON.stringify(resolvedConstraints);
           // encodeURIComponent ensures special characters like brackets and quotes don't break the URL
           fetchUrl += `&constraints=${encodeURIComponent(constraintsJson)}`;
@@ -3517,7 +3551,7 @@
 
         // Dynamically populate drop-down fields strictly once
         const constraintSelects = document.querySelectorAll("#constraints-list .constraint-field");
-        constraintSelects.forEach(select => populateConstraintFields(detectedHeaders, select));
+        constraintSelects.forEach(select => populateConstraintFields(detectedHeaders, select, select.value));
         populateColumnFilterGroup(detectedHeaders);
 
         // Clear the local text input when turning pages/requerying, then render
@@ -3592,15 +3626,10 @@
       }
     }
 
-    function populateConstraintFields(headers, select) {
+    function populateConstraintFields(headers, select, selectedKey = null) {
       if (!select) return;
-      const currentValue = select.value;
+      const currentValue = selectedKey || select.value;
       select.innerHTML = "";
-
-      const allOption = document.createElement("option");
-      allOption.value = "any_field";
-      allOption.text = "All Fields";
-      select.appendChild(allOption);
 
       const sortedHeaders = [...headers].sort((a, b) =>
         a.replace(/_/g, " ").trim().toLowerCase().localeCompare(b.replace(/_/g, " ").trim().toLowerCase())
@@ -3617,10 +3646,21 @@
         select.appendChild(option);
       });
 
+      if (currentValue && !headers.includes(currentValue)) {
+        const option = document.createElement("option");
+        option.value = currentValue;
+        const cleanHeader = currentValue.replace(/_/g, " ").trim();
+        const friendly = getFieldFriendlyType(activeType, currentValue);
+        option.text = `${cleanHeader} (${friendly} - Other Version)`;
+        option.style.textTransform = "capitalize";
+        option.style.fontStyle = "italic";
+        select.appendChild(option);
+      }
+
       if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
         select.value = currentValue;
-      } else {
-        select.value = "any_field";
+      } else if (select.options.length > 0) {
+        select.value = select.options[0].value;
       }
     }
 
@@ -3757,12 +3797,13 @@
       const optionValues = getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
       const isDate = isDateField(currentType, field);
+      const currentOp = rowEl.querySelector(".constraint-operator")?.value || "";
 
       // Clear current contents
       container.innerHTML = "";
-      container.style.flexDirection = isDate ? "column" : "row";
+      container.style.flexDirection = isDate && currentOp !== "in" && currentOp !== "not in" ? "column" : "row";
 
-      if (isBool) {
+      if (isBool && !NO_VALUE_OPERATORS.includes(currentOp)) {
         // Render a <select> dropdown for yes/no fields
         const select = document.createElement("select");
         select.className = "constraint-value";
@@ -3784,7 +3825,7 @@
         select.onchange = () => markConstraintsDirty();
 
         container.appendChild(select);
-      } else if (optionValues && optionValues.length > 0) {
+      } else if (optionValues && optionValues.length > 0 && currentOp !== "in" && currentOp !== "not in") {
         const select = document.createElement("select");
         select.className = "constraint-value";
         select.onchange = () => markConstraintsDirty();
@@ -3805,7 +3846,7 @@
         });
 
         container.appendChild(select);
-      } else if (isDate) {
+      } else if (isDate && currentOp !== "in" && currentOp !== "not in") {
         const select = document.createElement("select");
         select.className = "constraint-value constraint-date-selector";
         select.style.width = "100%";
@@ -3832,10 +3873,17 @@
         dateInput.oninput = () => markConstraintsDirty();
         container.appendChild(dateInput);
       } else {
-        // Restore original text input HTML
+        // Restore text input HTML with dynamic placeholder depending on operator
+        let ph = "Enter search value...";
+        if (currentOp === "contains" || currentOp === "does not contain") ph = "Enter substring or keyword...";
+        else if (currentOp === "contains case sensitive" || currentOp === "does not contain case sensitive") ph = "Enter exact case-sensitive substring...";
+        else if (currentOp === "in" || currentOp === "not in") ph = "Enter comma-separated items (e.g. item1, item2)...";
+        else if (currentOp.includes("num") || currentOp.includes("greater") || currentOp.includes("less")) ph = "Enter number...";
+        else if (currentOp === "equals" || currentOp === "not equals") ph = "Enter exact value...";
+
         container.innerHTML = `
         <div class="input-wrapper" style="flex: 1; width: 100%;">
-          <input type="text" class="constraint-value" placeholder="Enter exact search string..."
+          <input type="text" class="constraint-value" placeholder="${ph}"
             oninput="toggleClearBtnElement(this); markConstraintsDirty();"
             onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
         </div>`;
@@ -3886,10 +3934,13 @@
       row.appendChild(valAndBtnWrapper);
 
       // Initial population
-      populateConstraintFields(detectedHeaders, fieldSelect);
+      const activeType = document.getElementById("data-type-selector")?.value || "";
+      const activeSchemaCols = cachedTypeColumns[activeType] || [];
+      const headersToUse = (detectedHeaders && detectedHeaders.length > 0 && (activeSchemaCols.length === 0 || activeSchemaCols.some(col => detectedHeaders.includes(col)))) ? detectedHeaders : activeSchemaCols;
+      populateConstraintFields(headersToUse, fieldSelect, constraintData ? constraintData.key : null);
 
       if (constraintData) {
-        fieldSelect.value = constraintData.key === "any field" ? "any_field" : constraintData.key;
+        fieldSelect.value = constraintData.key;
         updateConstraintOperators(fieldSelect.value, row);
 
         // Map constraint_type and value back to operator value
@@ -3907,9 +3958,15 @@
         else if (type === "is_empty") operatorSelect.value = "is empty or null";
         else if (type === "is_not_empty") operatorSelect.value = "is not empty or null";
         else if (type === "not equal") operatorSelect.value = isNumber ? "num not equals" : isDate ? "not equals" : "not equals";
+        else if (type === "in") operatorSelect.value = "in";
+        else if (type === "not in") operatorSelect.value = "not in";
         else if (type === "greater than") {
           if (isDate) {
-            operatorSelect.value = "date greater than";
+            if (typeof val === "string" && val.endsWith(".999Z")) {
+              operatorSelect.value = "date greater than or equal";
+            } else {
+              operatorSelect.value = "date greater than";
+            }
           } else if (typeof val === "number" && String(val).includes("9999999")) {
             operatorSelect.value = "num greater than or equal";
           } else {
@@ -3917,7 +3974,11 @@
           }
         } else if (type === "less than") {
           if (isDate) {
-            operatorSelect.value = "date less than";
+            if (typeof val === "string" && val.endsWith(".001Z")) {
+              operatorSelect.value = "date less than or equal";
+            } else {
+              operatorSelect.value = "date less than";
+            }
           } else if (typeof val === "number" && String(val).includes("0000001")) {
             operatorSelect.value = "num less than or equal";
           } else {
@@ -3942,13 +4003,31 @@
             } else {
               valueInput.value = "specific date";
               const datePicker = row.querySelector(".constraint-date-picker");
-              if (datePicker) {
-                datePicker.value = formatToDateTimeLocal(constraintData.value);
+              if (datePicker && constraintData.value) {
+                let dateVal = constraintData.value;
+                if (operatorSelect.value === "date greater than or equal" && typeof dateVal === "string" && dateVal.endsWith(".999Z")) {
+                  dateVal = new Date(new Date(dateVal).getTime() + 1).toISOString();
+                } else if (operatorSelect.value === "date less than or equal" && typeof dateVal === "string" && dateVal.endsWith(".001Z")) {
+                  dateVal = new Date(new Date(dateVal).getTime() - 1).toISOString();
+                }
+                datePicker.value = formatToDateTimeLocal(dateVal);
                 datePicker.style.display = "block";
               }
             }
+          } else if (operatorSelect.value === "in" || operatorSelect.value === "not in") {
+            if (Array.isArray(constraintData.value)) {
+              valueInput.value = constraintData.value.join(", ");
+            } else {
+              valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+            }
           } else {
-            valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+            let displayVal = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+            if (operatorSelect.value === "num greater than or equal" && typeof displayVal === "number") {
+              displayVal = Math.round((displayVal + 0.0000001) * 1e6) / 1e6;
+            } else if (operatorSelect.value === "num less than or equal" && typeof displayVal === "number") {
+              displayVal = Math.round((displayVal - 0.0000001) * 1e6) / 1e6;
+            }
+            valueInput.value = displayVal;
           }
           if (valueInput.oninput) valueInput.oninput();
         }
@@ -4001,7 +4080,7 @@
       // Resolve type using schema metadata first (same priority as populateConstraintFields),
       const activeType = document.getElementById("data-type-selector")?.value || "";
       let type = "string";
-      if (field && field !== "any_field") {
+      if (field) {
         if (isBooleanField(activeType, field)) {
           type = "boolean";
         } else if (isDateField(activeType, field)) {
@@ -4041,6 +4120,8 @@
           { value: "num greater than or equal", label: "≥" },
           { value: "num less than", label: "<" },
           { value: "num less than or equal", label: "≤" },
+          { value: "in", label: "in (comma-separated)" },
+          { value: "not in", label: "not in (comma-separated)" },
           { value: "is empty or null", label: "is empty or null" },
           { value: "is not empty or null", label: "is not empty or null" },
         ];
@@ -4049,7 +4130,11 @@
           { value: "equals", label: "=" },
           { value: "not equals", label: "<>" },
           { value: "date greater than", label: "after" },
+          { value: "date greater than or equal", label: "on or after" },
           { value: "date less than", label: "before" },
+          { value: "date less than or equal", label: "on or before" },
+          { value: "is empty or null", label: "is empty or null" },
+          { value: "is not empty or null", label: "is not empty or null" },
         ];
       } else {
         ops = [
@@ -4059,6 +4144,8 @@
           { value: "does not contain case sensitive", label: "does not contain (case sensitive)" },
           { value: "equals", label: "=" },
           { value: "not equals", label: "<>" },
+          { value: "in", label: "in (comma-separated)" },
+          { value: "not in", label: "not in (comma-separated)" },
           { value: "is empty or null", label: "is empty or null" },
           { value: "is not empty or null", label: "is not empty or null" },
         ];
@@ -4081,7 +4168,18 @@
     function toggleConstraintValueInput(operator, rowEl) {
       const valueInput = rowEl.querySelector(".constraint-value");
       const clearBtn = rowEl.querySelector(".input-clear-btn");
+      const valueContainer = rowEl.querySelector(".constraint-value-container");
       const isDisabled = NO_VALUE_OPERATORS.includes(operator);
+
+      if (valueContainer) {
+        if (isDisabled) {
+          valueContainer.style.display = "none";
+        } else {
+          const isDateCol = valueContainer.querySelector(".constraint-date-selector") || valueContainer.querySelector(".constraint-date-picker");
+          valueContainer.style.display = isDateCol ? "flex" : "block";
+        }
+      }
+
       if (valueInput) {
         valueInput.disabled = isDisabled;
         valueInput.style.opacity = isDisabled ? "0.4" : "";
@@ -4089,6 +4187,32 @@
         if (isDisabled) {
           valueInput.value = "";
           if (clearBtn) clearBtn.style.display = "none";
+        } else if (valueInput.tagName === "INPUT" && valueInput.type === "text") {
+          if (operator === "contains" || operator === "does not contain") {
+            valueInput.placeholder = "Enter substring or keyword...";
+          } else if (operator === "contains case sensitive" || operator === "does not contain case sensitive") {
+            valueInput.placeholder = "Enter exact case-sensitive substring...";
+          } else if (operator === "in" || operator === "not in") {
+            valueInput.placeholder = "Enter comma-separated items (e.g. apple, banana)...";
+          } else if (operator.includes("num") || operator.includes("greater") || operator.includes("less")) {
+            valueInput.placeholder = "Enter number...";
+          } else if (operator === "equals" || operator === "not equals") {
+            valueInput.placeholder = "Enter exact value...";
+          } else {
+            valueInput.placeholder = "Enter search value...";
+          }
+        }
+      }
+
+      const field = rowEl.querySelector(".constraint-field")?.value;
+      const activeType = document.getElementById("data-type-selector")?.value || "";
+      const optionValues = getOptionSetForField(activeType, field);
+      if (optionValues && optionValues.length > 0 && !isDisabled) {
+        const isCurrentlySelect = valueInput && valueInput.tagName === "SELECT";
+        if ((operator === "in" || operator === "not in") && isCurrentlySelect) {
+          updateConstraintInput(field, rowEl);
+        } else if ((operator !== "in" && operator !== "not in") && !isCurrentlySelect) {
+          updateConstraintInput(field, rowEl);
         }
       }
     }
@@ -4142,7 +4266,7 @@
           // if value is "current date/time", we keep it as is and resolve in fetchAndRenderData
         }
 
-        // Skip rows without a field selected (though field should usually be "any_field" by default)
+        // Skip rows without a field selected
         if (!field) return;
 
         // Operators that require a non‑empty value
@@ -4151,7 +4275,7 @@
           return; // Skip this constraint if it needs a value but none provided
         }
 
-        const key = field === "any_field" ? "any field" : field;
+        const key = field;
         let constraintType;
         let constraintValue = typeof value === "string" ? value.trim() : value;
         if (operator === "contains") {
@@ -4179,6 +4303,18 @@
             try {
               constraintValue = new Date(value.trim()).toISOString();
             } catch (e) { }
+          }
+        } else if (operator === "in" || operator === "not in") {
+          constraintType = operator === "in" ? "in" : "not in";
+          if (typeof value === "string") {
+            const parts = value.split(",").map(v => v.trim()).filter(v => v !== "");
+            const activeType = document.getElementById("data-type-selector")?.value || "";
+            const isNum = getFieldMeta(activeType, field)?.type === "number" || getExpectedType(field) === "number";
+            constraintValue = isNum ? parts.map(p => parseFloat(p)).filter(n => !isNaN(n)) : parts;
+          } else if (Array.isArray(value)) {
+            constraintValue = value;
+          } else {
+            constraintValue = [value];
           }
         } else if (operator === "is yes") {
           constraintType = "equals";
@@ -4211,12 +4347,34 @@
           } catch (e) {
             constraintValue = value.trim();
           }
+        } else if (operator === "date greater than or equal") {
+          constraintType = "greater than";
+          if (value === "current date/time") {
+            constraintValue = "current date/time";
+          } else {
+            try {
+              constraintValue = new Date(new Date(value.trim()).getTime() - 1).toISOString();
+            } catch (e) {
+              constraintValue = value.trim();
+            }
+          }
         } else if (operator === "date less than") {
           constraintType = "less than";
           try {
             constraintValue = new Date(value.trim()).toISOString();
           } catch (e) {
             constraintValue = value.trim();
+          }
+        } else if (operator === "date less than or equal") {
+          constraintType = "less than";
+          if (value === "current date/time") {
+            constraintValue = "current date/time";
+          } else {
+            try {
+              constraintValue = new Date(new Date(value.trim()).getTime() + 1).toISOString();
+            } catch (e) {
+              constraintValue = value.trim();
+            }
           }
         } else {
           // Fallback
@@ -5387,7 +5545,8 @@
       while (remaining > 0) {
         let fetchUrl = `${API_BASE_URL}${currentType}?cursor=${cursor}`;
         if (currentConstraints.length > 0) {
-          fetchUrl += `&constraints=${encodeURIComponent(JSON.stringify(currentConstraints))}`;
+          const resolvedConstraints = getResolvedConstraints(currentConstraints);
+          fetchUrl += `&constraints=${encodeURIComponent(JSON.stringify(resolvedConstraints))}`;
         }
         if (sortField) {
           fetchUrl += `&sort_field=${encodeURIComponent(sortField)}&descending=${sortDescending}`;
@@ -6019,6 +6178,7 @@
         const overwrite = confirm(`A filter named "${name}" already exists. Overwrite it?`);
         if (!overwrite) return;
       }
+
       existingFilters[name] = filterSettings;
       allFilters[currentType] = existingFilters;
       const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
@@ -6029,7 +6189,7 @@
       btn.disabled = true;
 
       try {
-        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
+        const storageKey = getSettingsStorageKey();
         localStorage.setItem(storageKey, updatedSettingsString);
         settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
 
@@ -6115,7 +6275,7 @@
       const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
       try {
-        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
+        const storageKey = getSettingsStorageKey();
         localStorage.setItem(storageKey, updatedSettingsString);
         settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
 
@@ -6137,11 +6297,13 @@
 
       // Load and update the column order entry in DATA_MANAGER_SETTINGS_NAME["columnOrder"]
       const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
-      allOrders[currentType] = newMap;
+      const existingOrder = Array.isArray(allOrders[currentType]) ? allOrders[currentType] : [];
+      const missingHeaders = existingOrder.filter((h) => !detectedHeaders.includes(h));
+      allOrders[currentType] = [...newMap, ...missingHeaders];
       const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
 
       try {
-        const storageKey = `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}${VERSION}`;
+        const storageKey = getSettingsStorageKey();
         localStorage.setItem(storageKey, updatedSettingsString);
         settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
         console.log("Layout saved to local storage successfully.");

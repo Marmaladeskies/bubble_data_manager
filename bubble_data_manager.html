@@ -1744,7 +1744,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeTextEditor()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveTextEditor()">Save Text</button>
+        <button type="button" class="btn btn-primary" onclick="saveTextEditor()">Confirm</button>
       </div>
     </div>
   </div>
@@ -1767,7 +1767,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn" onclick="closeJSONEditor()">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="saveJSONEditor()">Save JSON</button>
+        <button type="button" class="btn btn-primary" onclick="saveJSONEditor()">Confirm</button>
       </div>
     </div>
   </div>
@@ -4461,7 +4461,7 @@
         sortDescending = !sortDescending;
       } else {
         sortField = field;
-        sortDescending = false;
+        sortDescending = true;
       }
       currentCursor = 0;
       fetchAndRenderData();

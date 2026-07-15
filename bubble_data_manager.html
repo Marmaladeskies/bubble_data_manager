@@ -2342,6 +2342,28 @@
     }
 
     /**
+     * Returns a human-readable timezone label for UI display alongside local date pickers.
+     * E.g.: "Local Time: America/Chicago (UTC-05:00)"
+     */
+    function getLocalTimeZoneLabel() {
+      try {
+        const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        const offsetMin = -new Date().getTimezoneOffset();
+        const sign = offsetMin >= 0 ? "+" : "-";
+        const absMin = Math.abs(offsetMin);
+        const hours = String(Math.floor(absMin / 60)).padStart(2, "0");
+        const mins = String(absMin % 60).padStart(2, "0");
+        const offsetStr = `UTC${sign}${hours}:${mins}`;
+        if (tzName) {
+          return `Local Time: ${tzName} (${offsetStr})`;
+        }
+        return `Local Time (${offsetStr})`;
+      } catch (e) {
+        return "Local Browser Timezone";
+      }
+    }
+
+    /**
      * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
      */
     function formatToDateTimeLocal(dateStr) {
@@ -3783,9 +3805,13 @@
 
     function toggleConstraintDateInput(selectEl) {
       const container = selectEl.closest(".constraint-value-container");
-      const datePicker = container.querySelector(".constraint-date-picker");
+      const datePicker = container?.querySelector(".constraint-date-picker");
+      const tzHint = container?.querySelector(".constraint-date-tz-hint");
       if (datePicker) {
         datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
+      }
+      if (tzHint) {
+        tzHint.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
     }
 
@@ -3872,6 +3898,15 @@
         dateInput.style.marginTop = "5px";
         dateInput.oninput = () => markConstraintsDirty();
         container.appendChild(dateInput);
+
+        const tzHint = document.createElement("div");
+        tzHint.className = "constraint-date-tz-hint date-tz-hint";
+        tzHint.style.display = "none";
+        tzHint.style.fontSize = "11px";
+        tzHint.style.color = "#666";
+        tzHint.style.marginTop = "2px";
+        tzHint.innerText = getLocalTimeZoneLabel();
+        container.appendChild(tzHint);
       } else {
         // Restore text input HTML with dynamic placeholder depending on operator
         let ph = "Enter search value...";
@@ -4003,6 +4038,7 @@
             } else {
               valueInput.value = "specific date";
               const datePicker = row.querySelector(".constraint-date-picker");
+              const tzHint = row.querySelector(".constraint-date-tz-hint");
               if (datePicker && constraintData.value) {
                 let dateVal = constraintData.value;
                 if (operatorSelect.value === "date greater than or equal" && typeof dateVal === "string" && dateVal.endsWith(".999Z")) {
@@ -4012,6 +4048,9 @@
                 }
                 datePicker.value = formatToDateTimeLocal(dateVal);
                 datePicker.style.display = "block";
+              }
+              if (tzHint && constraintData.value) {
+                tzHint.style.display = "block";
               }
             }
           } else if (operatorSelect.value === "in" || operatorSelect.value === "not in") {
@@ -4514,6 +4553,16 @@
           input.style.boxSizing = "border-box";
           input.style.padding = "4px";
           cell.appendChild(input);
+
+          const tzHint = document.createElement("div");
+          tzHint.className = "date-tz-hint";
+          tzHint.style.fontSize = "10px";
+          tzHint.style.color = "#666";
+          tzHint.style.marginTop = "2px";
+          tzHint.style.whiteSpace = "normal";
+          tzHint.style.lineHeight = "1.2";
+          tzHint.innerText = getLocalTimeZoneLabel();
+          cell.appendChild(tzHint);
         } else if (optionValues && optionValues.length > 0) {
           // Render a <select> dropdown for option set fields
           const select = document.createElement("select");
@@ -4930,8 +4979,12 @@
     function toggleBulkEditDateInput(selectEl) {
       const container = selectEl.closest("#bulk-edit-value-container");
       const datePicker = container?.querySelector(".bulk-edit-date-picker");
+      const tzHint = container?.querySelector(".bulk-edit-date-tz-hint");
       if (datePicker) {
         datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
+      }
+      if (tzHint) {
+        tzHint.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
     }
 
@@ -5026,6 +5079,15 @@
         dateInput.style.boxSizing = "border-box";
         dateInput.style.padding = "8px";
         valueContainer.appendChild(dateInput);
+
+        const tzHint = document.createElement("div");
+        tzHint.className = "bulk-edit-date-tz-hint date-tz-hint";
+        tzHint.style.display = "none";
+        tzHint.style.fontSize = "11px";
+        tzHint.style.color = "#666";
+        tzHint.style.marginTop = "4px";
+        tzHint.innerText = getLocalTimeZoneLabel();
+        valueContainer.appendChild(tzHint);
       } else {
         valueContainer.innerHTML = `
         <div class="input-wrapper" style="flex: 1; width: 100%;">
@@ -5866,6 +5928,16 @@
             input.style.boxSizing = "border-box";
             input.style.padding = "4px";
             td.appendChild(input);
+
+            const tzHint = document.createElement("div");
+            tzHint.className = "date-tz-hint";
+            tzHint.style.fontSize = "10px";
+            tzHint.style.color = "#666";
+            tzHint.style.marginTop = "2px";
+            tzHint.style.whiteSpace = "normal";
+            tzHint.style.lineHeight = "1.2";
+            tzHint.innerText = getLocalTimeZoneLabel();
+            td.appendChild(tzHint);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
             const select = document.createElement("select");

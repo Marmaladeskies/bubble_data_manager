@@ -3701,8 +3701,11 @@
                           </th>`;
 
       // Generate Data Headers (Conditionally Draggable)
+      const headerToIndexMap = new Map();
+      detectedHeaders.forEach((h, i) => headerToIndexMap.set(h, i));
+
       visibleHeaders.forEach((header) => {
-        const origIdx = detectedHeaders.indexOf(header);
+        const origIdx = headerToIndexMap.get(header);
         const cleanHeader = header.replace(/_/g, " ").trim();
         let sortIcon = "";
         if (sortField === header) {

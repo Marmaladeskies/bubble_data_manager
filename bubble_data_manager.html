@@ -1,15 +1,13 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Bubble Data Manager</title>
   <style>
     body {
-      font-family:
-        system-ui,
-        -apple-system,
-        sans-serif;
+      font-family: system-ui, -apple-system, sans-serif;
       padding: 5px 20px 20px 20px;
       /* Disable swipe gestures: */
       overscroll-behavior: none;
@@ -38,9 +36,7 @@
       border: 1px solid #ddd;
       border-radius: 4px;
       background-color: #ffffff;
-      box-shadow:
-        0 4px 6px -1px rgba(0, 0, 0, 0.1),
-        0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
     table {
@@ -491,6 +487,7 @@
       padding: 10px;
     }
 
+
     #bulk-edit-container {
       display: none;
       align-items: center;
@@ -815,9 +812,7 @@
       border-radius: 6px;
       display: flex;
       flex-direction: column;
-      transition:
-        width 0.25s ease,
-        min-width 0.25s ease;
+      transition: width 0.25s ease, min-width 0.25s ease;
       overflow: hidden;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
@@ -990,10 +985,7 @@
       cursor: pointer;
       border-radius: 3px;
       opacity: 0;
-      transition:
-        opacity 0.15s ease,
-        color 0.15s ease,
-        background 0.15s ease;
+      transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
       padding: 0;
     }
 
@@ -1206,9 +1198,7 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 10px;
       padding: 6px;
-      box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.55),
-        0 2px 8px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
       transform: translateX(-50%) translateY(-100%);
       margin-top: -10px;
       max-width: 260px;
@@ -1258,6 +1248,7 @@
     }
 
     @media (max-width: 925px) {
+
       #bulk-bar,
       .bulk-bar {
         flex-direction: column;
@@ -1373,6 +1364,7 @@
       .constraint-bar {
         flex-wrap: wrap;
         gap: 0px;
+
       }
 
       .constraint-bar label {
@@ -1499,7 +1491,7 @@
         gap: 12px;
       }
 
-      .table-filter-container > div:first-child {
+      .table-filter-container>div:first-child {
         width: 100%;
       }
 
@@ -1542,125 +1534,46 @@
   <h1>
     Bubble Data Manager
     <select id="app-selector" onchange="handleAppChange()"></select>
-    <select
-      id="version-selector"
-      class="badge-test"
-      onchange="handleVersionChange()"
-    >
+    <select id="version-selector" class="badge-test" onchange="handleVersionChange()">
       <option value="/version-test">Test Version</option>
       <option value="">Live</option>
     </select>
   </h1>
-  <select
-    id="data-type-selector"
-    style="display: none"
-    onchange="handleDataTypeChange()"
-  ></select>
-  <div
-    id="filters-container"
-    style="
-      border: 2px solid #333;
-      border-radius: 8px;
-      margin-top: 10px;
-      padding: 10px 15px 15px 15px;
-      background-color: #fafafa;
-    "
-  >
-    <span style="font-size: 15x; font-weight: 700; color: #222"
-      >CONSTRAINTS</span
-    >
+  <select id="data-type-selector" style="display: none;" onchange="handleDataTypeChange()"></select>
+  <div id="filters-container"
+    style="border: 2px solid #333; border-radius: 8px; margin-top: 10px; padding: 10px 15px 15px 15px; background-color: #fafafa;">
+    <span style="font-size: 15x; font-weight: 700; color: #222;">CONSTRAINTS</span>
     <div id="column-filter-group" class="column-filter-group">
       <div class="column-filter-header">
-        <span style="font-size: 13px; font-weight: 500; color: #222"
-          >Select Columns To Display:</span
-        >
+        <span style="font-size: 13px; font-weight: 500; color: #222;">Select Columns To Display:</span>
         <div class="column-filter-actions">
-          <a
-            href="#"
-            id="select-all-link"
-            class="select-links"
-            onclick="selectAllColumnsFilter()"
-            >select all</a
-          >
-          <a
-            href="#"
-            id="deselect-all-link"
-            class="select-links"
-            onclick="deselectAllColumnsFilter()"
-            >deselect all</a
-          >
+          <a href="#" id="select-all-link" class="select-links" onclick="selectAllColumnsFilter()">select all</a>
+          <a href="#" id="deselect-all-link" class="select-links" onclick="deselectAllColumnsFilter()">deselect all</a>
         </div>
       </div>
       <div id="column-filter-list" class="column-filter-list"></div>
     </div>
-    <fieldset
-      id="constraint-filter-group"
-      class="constraint-filter-group"
-      style="min-width: 0"
-    >
+    <fieldset id="constraint-filter-group" class="constraint-filter-group" style="min-width: 0;">
       <div class="column-filter-header">
-        <div style="display: flex; align-items: center; gap: 15px">
-          <span style="font-size: 14px; font-weight: 500; color: #222"
-            >Filter by Constraint:</span
-          >
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <span style="font-size: 14px; font-weight: 500; color: #222;">Filter by Constraint:</span>
         </div>
       </div>
-      <div
-        id="constraints-list"
-        style="display: flex; flex-direction: column; gap: 10px"
-      ></div>
-      <button
-        type="button"
-        class="btn"
-        style="padding: 4px 10px; margin: 5px; font-size: 12px"
-        onclick="
-          resetFilterNameInput();
-          markConstraintsDirty();
-          addConstraintRow();
-        "
-      >
-        + Add Constraint
-      </button>
-      <div
-        class="constraint-actions"
-        style="
-          display: flex;
-          gap: 10px;
-          margin-top: 5px;
-          flex-wrap: wrap;
-          align-items: center;
-        "
-      >
-        <button
-          id="apply-constraints-btn"
-          type="button"
-          class="btn btn-primary btn-applied"
-          disabled
-          onclick="applyConstraintFilter()"
-          style="max-width: fit-content; margin-left: 5px"
-        >
+      <div id="constraints-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      <button type="button" class="btn" style="padding: 4px 10px; margin: 5px; font-size: 12px;"
+        onclick="resetFilterNameInput(); markConstraintsDirty(); addConstraintRow()">+ Add
+        Constraint</button>
+      <div class="constraint-actions"
+        style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; align-items: center;">
+        <button id="apply-constraints-btn" type="button" class="btn btn-primary btn-applied" disabled
+          onclick="applyConstraintFilter()" style="max-width: fit-content; margin-left: 5px">
           Apply Constraints
         </button>
-        <div
-          id="save-constraint-group"
-          style="display: none; align-items: center; gap: 10px"
-        >
-          <span style="font-size: 13px; font-weight: 500; color: #444"
-            >Name this view:</span
-          >
-          <input
-            type="text"
-            id="save-filter-name"
-            placeholder="Filter Name..."
-          />
-          <button
-            id="save-view-btn"
-            type="button"
-            class="btn btn-success"
-            onclick="saveFilterView()"
-            style="padding: 4px 12px; font-size: 13px; max-width: fit-content"
-            disabled
-          >
+        <div id="save-constraint-group" style="display: none; align-items: center; gap: 10px;">
+          <span style="font-size: 13px; font-weight: 500; color: #444;">Name this view:</span>
+          <input type="text" id="save-filter-name" placeholder="Filter Name...">
+          <button id="save-view-btn" type="button" class="btn btn-success" onclick="saveFilterView()"
+            style="padding: 4px 12px; font-size: 13px; max-width: fit-content;" disabled>
             Save Columns & Constraints
           </button>
         </div>
@@ -1668,139 +1581,55 @@
     </fieldset>
   </div>
   <div id="data-types-collapsed-view" class="data-types-collapsed-view">
-    <label
-      for="data-types-dropdown"
-      style="
-        display: block;
-        text-align: center;
-        padding: 5px;
-        font-size: 0.9rem;
-        font-weight: 400;
-        white-space: nowrap;
-        opacity: 0.75;
-      "
-      >DATA TYPE</label
-    >
+    <label for="data-types-dropdown"
+      style="display: block; text-align: center; padding:5px;font-size:0.9rem;font-weight:400;white-space:nowrap;opacity:0.75">DATA
+      TYPE</label>
     <div style="gap: 10px; margin-top: 5px; display: flex">
-      <button
-        type="button"
-        class="collapsed-expand-btn"
-        onclick="toggleDataTypeSidebar()"
-        title="Expand Data Types panel"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
+      <button type="button" class="collapsed-expand-btn" onclick="toggleDataTypeSidebar()"
+        title="Expand Data Types panel">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <line x1="3" y1="6" x2="21" y2="6"></line>
           <line x1="3" y1="12" x2="21" y2="12"></line>
           <line x1="3" y1="18" x2="21" y2="18"></line>
         </svg>
       </button>
-      <select
-        id="data-types-dropdown"
-        onchange="selectDataTypeFromSidebar(this.value)"
-      ></select>
+      <select id="data-types-dropdown" onchange="selectDataTypeFromSidebar(this.value)"></select>
     </div>
   </div>
   <div id="bulk-bar" class="bulk-bar">
-    <div
-      id="bulk-action-button"
-      style="
-        display: none;
-        gap: 10px;
-        align-items: center;
-        justify-items: left;
-      "
-    >
-      <button
-        id="bulk-edit-btn"
-        class="btn btn-primary"
-        style="background-color: #f08000; max-width: 300px"
-        onclick="showBulkEdit()"
-        disabled
-      >
+    <div id="bulk-action-button" style="display: none; gap: 10px; align-items: center; justify-items: left;">
+      <button id="bulk-edit-btn" class="btn btn-primary" style="background-color: #f08000; max-width: 300px;"
+        onclick="showBulkEdit()" disabled>
         Bulk Edit >
       </button>
     </div>
-    <div
-      id="bulk-edit-container"
-      style="
-        width: 100%;
-        justify-content: space-between;
-        gap: 12px;
-        margin-top: 10px;
-      "
-    >
-      <div
-        id="bulk-edit-bar"
-        style="display: none; align-items: center; gap: 8px; flex: 1"
-      >
-        <span style="white-space: nowrap; font-weight: 600"
-          >Bulk Edit Field:</span
-        >
-        <select
-          id="bulk-edit-field"
-          onchange="updateBulkEditValueInput()"
-          style="max-width: 200px"
-        ></select>
-        <div
-          id="bulk-edit-value-container"
-          style="flex: 1; min-width: 200px; display: flex"
-        ></div>
+    <div id="bulk-edit-container" style="width: 100%; justify-content: space-between; gap: 12px; margin-top: 10px;">
+      <div id="bulk-edit-bar" style="display: none; align-items: center; gap: 8px; flex: 1;">
+        <span style="white-space: nowrap; font-weight: 600;">Bulk Edit Field:</span>
+        <select id="bulk-edit-field" onchange="updateBulkEditValueInput()" style="max-width: 200px;"></select>
+        <div id="bulk-edit-value-container" style="flex: 1; min-width: 200px; display: flex;"></div>
       </div>
-      <div id="bulk-edit-actions" style="display: none; gap: 8px">
-        <button
-          id="apply-bulk-edit-btn"
-          class="btn btn-success"
-          onclick="applyBulkEdit()"
-        >
-          Apply Bulk Edit
-        </button>
+      <div id="bulk-edit-actions" style="display: none; gap: 8px;">
+        <button id="apply-bulk-edit-btn" class="btn btn-success" onclick="applyBulkEdit()">Apply Bulk Edit</button>
         <button class="btn" onclick="hideBulkEdit()">Cancel</button>
       </div>
     </div>
   </div>
   <div id="action-buttons" class="action-buttons">
     <div class="action-group-left">
-      <button
-        id="export-btn"
-        class="btn"
-        style="color: rgb(255, 255, 255); background-color: #000000"
-        onclick="showExportModal()"
-      >
+      <button id="export-btn" class="btn" style="color: rgb(255, 255, 255); background-color: #000000"
+        onclick="showExportModal()">
         Export Data
       </button>
       <div id="dup-del-wrapper" class="dup-del-wrapper">
-        <button
-          id="edit-selected-btn"
-          class="btn btn-primary"
-          onclick="enterEditModeForSelected()"
-          disabled
-        >
+        <button id="edit-selected-btn" class="btn btn-primary" onclick="enterEditModeForSelected()" disabled>
           Edit Row(s)
         </button>
-        <button
-          id="duplicate-selected-btn"
-          class="btn btn-primary"
-          onclick="duplicateSelectedRows()"
-          disabled
-        >
+        <button id="duplicate-selected-btn" class="btn btn-primary" onclick="duplicateSelectedRows()" disabled>
           Duplicate Row(s)
         </button>
-        <button
-          id="delete-selected-btn"
-          class="btn btn-danger"
-          onclick="deleteSelectedRows()"
-          disabled
-        >
+        <button id="delete-selected-btn" class="btn btn-danger" onclick="deleteSelectedRows()" disabled>
           Delete
         </button>
       </div>
@@ -1808,429 +1637,180 @@
   </div>
   <div class="main-table-wrapper">
     <div id="data-types-sidebar" class="data-types-sidebar">
-      <div
-        class="sidebar-header"
-        onclick="toggleDataTypeSidebar()"
-        title="Click to toggle Data Types panel"
-      >
+      <div class="sidebar-header" onclick="toggleDataTypeSidebar()" title="Click to toggle Data Types panel">
         <span class="sidebar-title">Data Type:</span>
         <button type="button" class="sidebar-toggle-btn">
-          <svg
-            id="sidebar-toggle-icon"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            transform="rotate(-90)"
-          >
+          <svg id="sidebar-toggle-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            transform="rotate(-90)">
             <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
         </button>
       </div>
       <div id="data-types-list" class="data-types-list"></div>
     </div>
-    <div style="flex: 1; min-width: 0">
+    <div style="flex: 1; min-width: 0;">
       <div class="page-controls">
-        <button
-          id="prev-btn"
-          class="btn"
-          onclick="prevPage()"
-          disabled
-          style="display: none"
-        >
+        <button id="prev-btn" class="btn" onclick="prevPage()" disabled style="display: none">
           Previous
         </button>
         <span class="page-info-group">
           <span id="page-info">Loading...</span>
           <span id="selection-count"></span>
         </span>
-        <button
-          id="next-btn"
-          class="btn"
-          onclick="nextPage()"
-          disabled
-          style="display: none"
-        >
+        <button id="next-btn" class="btn" onclick="nextPage()" disabled style="display: none">
           Next
         </button>
       </div>
       <div id="all-matching-notice" class="selection-notice">
-        All <span id="current-page-count">0</span> rows on this page are
-        selected.
-        <a
-          href="#"
-          onclick="
-            event.preventDefault();
-            selectAllMatchingRecords();
-          "
-        >
-          Select all <span id="total-matching-count-notice">0</span> records
-          that match this filter
+        All <span id="current-page-count">0</span> rows on this page are selected.
+        <a href="#" onclick="event.preventDefault(); selectAllMatchingRecords();">
+          Select all <span id="total-matching-count-notice">0</span> records that match this filter
         </a>
       </div>
       <div id="all-matching-selected-notice" class="selection-notice">
-        All <span id="total-matching-selected-count">0</span> records that
-        match this filter are selected.
-        <a
-          href="#"
-          onclick="
-            event.preventDefault();
-            clearSelection();
-          "
-        >
+        All <span id="total-matching-selected-count">0</span> records that match this filter are selected.
+        <a href="#" onclick="event.preventDefault(); clearSelection();">
           Clear selection
         </a>
       </div>
-      <div
-        class="table-filter-container"
-        style="justify-content: space-between"
-      >
-        <div
-          style="
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-            align-items: flex-start;
-          "
-        >
+      <div class="table-filter-container" style="justify-content: space-between">
+        <div style="
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          align-items: flex-start;
+        ">
           <div class="input-wrapper" style="width: 400px; max-width: 400px">
-            <input
-              type="text"
-              id="table-filter"
-              class="filter-input"
-              oninput="
-                applyClientFilter();
-                toggleClearBtn('table-filter', 'clear-filter-btn');
-              "
-              placeholder="Filter current view by keyword (all fields)..."
-            />
-            <button
-              type="button"
-              id="clear-filter-btn"
-              class="input-clear-btn"
-              onclick="clearClientFilter()"
-              title="Clear filter"
-              style="display: none"
-            >
+            <input type="text" id="table-filter" class="filter-input" oninput="
+              applyClientFilter();
+              toggleClearBtn('table-filter', 'clear-filter-btn');
+            " placeholder="Filter current view by keyword (all fields)..." />
+            <button type="button" id="clear-filter-btn" class="input-clear-btn" onclick="clearClientFilter()"
+              title="Clear filter" style="display: none">
               ×
             </button>
           </div>
-          <span style="font-size: 12px; color: #666"
-            >Filters this page of results only. This filter is not
-            saved.</span
-          >
+          <span style="font-size: 12px; color: #666">Filters this page of results only. This filter is not saved.</span>
         </div>
         <div id="column-order-group">
-          <a
-            href="#"
-            id="edit-columns-link"
-            onclick="
-              event.preventDefault();
-              toggleColumnEditMode();
-            "
-            >Edit Column Order</a
-          >
+          <a href="#" id="edit-columns-link" onclick="
+            event.preventDefault();
+            toggleColumnEditMode();
+          ">Edit Column Order</a>
         </div>
         <div id="new-refresh-btns" class="new-refresh-btns">
-          <button
-            id="add-row-btn"
-            class="icon-btn btn-success"
-            onclick="addNewRow()"
-            title="Add New Row"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <button id="add-row-btn" class="icon-btn btn-success" onclick="addNewRow()" title="Add New Row">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
             Add New Row
           </button>
-          <button
-            id="refresh-btn"
-            class="icon-btn"
-            onclick="triggerRefresh()"
-            title="Refresh Table Data"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
+          <button id="refresh-btn" class="icon-btn" onclick="triggerRefresh()" title="Refresh Table Data">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
             </svg>
           </button>
         </div>
-        <div
-          id="save-cancel-group"
-          class="save-cancel-group"
-          style="display: none"
-        >
-          <button
-            type="button"
-            id="unified-save-btn"
-            class="btn btn-success"
-            onclick="handleUnifiedSave()"
-          >
+        <div id="save-cancel-group" class="save-cancel-group" style="display: none;">
+          <button type="button" id="unified-save-btn" class="btn btn-success" onclick="handleUnifiedSave()">
             Save
           </button>
-          <button
-            type="button"
-            id="unified-cancel-btn"
-            class="btn"
-            onclick="handleUnifiedCancel()"
-          >
+          <button type="button" id="unified-cancel-btn" class="btn" onclick="handleUnifiedCancel()">
             Cancel
           </button>
         </div>
       </div>
       <div id="table-container"></div>
-      <div id="img-hover-popup">
-        <img id="img-hover-popup-img" src="" alt="Preview" />
-      </div>
+      <div id="img-hover-popup"><img id="img-hover-popup-img" src="" alt="Preview"></div>
     </div>
   </div>
 
   <!-- Text Editor Modal -->
-  <div
-    id="text-editor-modal"
-    class="modal-overlay"
-    onclick="if (event.target === this) closeTextEditor();"
-  >
+  <div id="text-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeTextEditor()">
     <div class="modal-container">
       <div class="modal-header">
         <h3 id="text-modal-title">Edit Text Field</h3>
-        <button
-          type="button"
-          class="icon-btn"
-          onclick="closeTextEditor()"
-          style="border: none; font-size: 24px"
-        >
-          ×
-        </button>
+        <button type="button" class="icon-btn" onclick="closeTextEditor()"
+          style="border:none; font-size: 24px;">×</button>
       </div>
       <div class="modal-body">
-        <textarea
-          id="text-editor-textarea"
-          style="
-            width: 100%;
-            height: 400px;
-            font-family: inherit;
-            font-size: 14px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            padding: 10px;
-            box-sizing: border-box;
-            resize: vertical;
-          "
-        ></textarea>
+        <textarea id="text-editor-textarea"
+          style="width: 100%; height: 400px; font-family: inherit; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; padding: 10px; box-sizing: border-box; resize: vertical;"></textarea>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn" onclick="closeTextEditor()">
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          onclick="saveTextEditor()"
-        >
-          Confirm
-        </button>
+        <button type="button" class="btn" onclick="closeTextEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveTextEditor()">Confirm</button>
       </div>
     </div>
   </div>
 
   <!-- JSON Editor Modal -->
-  <div
-    id="json-editor-modal"
-    class="modal-overlay"
-    onclick="if (event.target === this) closeJSONEditor();"
-  >
+  <div id="json-editor-modal" class="modal-overlay" onclick="if(event.target === this) closeJSONEditor()">
     <div class="modal-container">
       <div class="modal-header">
         <h3 id="json-modal-title">Edit JSON Field</h3>
-        <button
-          type="button"
-          class="icon-btn"
-          onclick="closeJSONEditor()"
-          style="border: none; font-size: 24px"
-        >
-          ×
-        </button>
+        <button type="button" class="icon-btn" onclick="closeJSONEditor()"
+          style="border:none; font-size: 24px;">×</button>
       </div>
       <div class="modal-tabs">
-        <div
-          id="tab-nested"
-          class="modal-tab active"
-          onclick="switchJSONTab('nested')"
-        >
-          Nested View
-        </div>
-        <div id="tab-raw" class="modal-tab" onclick="switchJSONTab('raw')">
-          Raw Source
-        </div>
+        <div id="tab-nested" class="modal-tab active" onclick="switchJSONTab('nested')">Nested View</div>
+        <div id="tab-raw" class="modal-tab" onclick="switchJSONTab('raw')">Raw Source</div>
       </div>
       <div class="modal-body">
         <div id="json-nested-container"></div>
-        <textarea
-          id="json-raw-editor"
-          style="display: none"
-          oninput="syncRawToNested()"
-        ></textarea>
+        <textarea id="json-raw-editor" style="display: none;" oninput="syncRawToNested()"></textarea>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn" onclick="closeJSONEditor()">
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          onclick="saveJSONEditor()"
-        >
-          Confirm
-        </button>
+        <button type="button" class="btn" onclick="closeJSONEditor()">Cancel</button>
+        <button type="button" class="btn btn-primary" onclick="saveJSONEditor()">Confirm</button>
       </div>
     </div>
   </div>
 
   <!-- Export Modal -->
-  <div
-    id="export-modal"
-    class="modal-overlay"
-    onclick="if (event.target === this) closeExportModal();"
-  >
-    <div class="modal-container" style="max-width: 550px">
+  <div id="export-modal" class="modal-overlay" onclick="if(event.target === this) closeExportModal()">
+    <div class="modal-container" style="max-width: 550px;">
       <div class="modal-header">
         <h3 id="export-modal-title">Export Data to CSV</h3>
-        <button
-          type="button"
-          class="icon-btn"
-          onclick="closeExportModal()"
-          style="border: none; font-size: 24px"
-        >
-          ×
-        </button>
+        <button type="button" class="icon-btn" onclick="closeExportModal()"
+          style="border:none; font-size: 24px;">×</button>
       </div>
-      <div class="modal-body" style="max-height: 60vh; overflow-y: auto">
-        <div
-          style="
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-          "
-        >
-          <span style="font-weight: 600; font-size: 14px; color: #333"
-            >Select Data Types to Export:</span
-          >
-          <div style="display: flex; gap: 6px">
-            <button
-              type="button"
-              class="btn"
-              style="padding: 4px 10px; font-size: 12px; max-width: none"
-              onclick="selectAllExportTypes(true)"
-            >
-              Select All
-            </button>
-            <button
-              type="button"
-              class="btn"
-              style="padding: 4px 10px; font-size: 12px; max-width: none"
-              onclick="selectAllExportTypes(false)"
-            >
-              Deselect All
-            </button>
+      <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 600; font-size: 14px; color: #333;">Select Data Types to Export:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
+              onclick="selectAllExportTypes(true)">Select All</button>
+            <button type="button" class="btn" style="padding: 4px 10px; font-size: 12px; max-width: none;"
+              onclick="selectAllExportTypes(false)">Deselect All</button>
           </div>
         </div>
-        <div
-          id="export-types-list"
-          style="display: flex; flex-direction: column; gap: 6px"
-        ></div>
-        <div
-          id="export-progress-container"
-          style="
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
-          "
-        >
-          <div
-            style="
-              font-weight: 500;
-              font-size: 13px;
-              margin-bottom: 6px;
-              color: #495057;
-            "
-            id="export-progress-status"
-          >
-            Starting export...
-          </div>
-          <div
-            style="
-              width: 100%;
-              background: #e9ecef;
-              border-radius: 4px;
-              height: 8px;
-              overflow: hidden;
-            "
-          >
-            <div
-              id="export-progress-bar"
-              style="
-                width: 0%;
-                background: #007bff;
-                height: 100%;
-                transition: width 0.2s ease;
-              "
-            ></div>
+        <div id="export-types-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+        <div id="export-progress-container"
+          style="display: none; margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef;">
+          <div style="font-weight: 500; font-size: 13px; margin-bottom: 6px; color: #495057;"
+            id="export-progress-status">Starting export...</div>
+          <div style="width: 100%; background: #e9ecef; border-radius: 4px; height: 8px; overflow: hidden;">
+            <div id="export-progress-bar"
+              style="width: 0%; background: #007bff; height: 100%; transition: width 0.2s ease;"></div>
           </div>
         </div>
       </div>
       <div class="modal-footer">
-        <button
-          type="button"
-          id="export-cancel-btn"
-          class="btn"
-          onclick="closeExportModal()"
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          id="export-download-btn"
-          class="btn btn-primary"
-          onclick="startExportToCSV()"
-        >
-          Download CSV
-        </button>
+        <button type="button" id="export-cancel-btn" class="btn" onclick="closeExportModal()">Cancel</button>
+        <button type="button" id="export-download-btn" class="btn btn-primary" onclick="startExportToCSV()">Download
+          CSV</button>
       </div>
     </div>
   </div>
 
   <script>
+
     // --- CONFIGURATION ---
     let VERSION = ""; // Default database to load: test = '/version-test' ; live = ''
     let DOMAIN, API_KEY, API_BASE_URL;
@@ -2245,7 +1825,7 @@
 
     function getAppStorageKeys(index) {
       if (index === 1) {
-        return { domain: "home", apiKey: "cached_pref" };
+        return { domain: 'home', apiKey: 'cached_pref' };
       }
       return { domain: `home${index}`, apiKey: `api${index}` };
     }
@@ -2273,11 +1853,9 @@
 
       selector.innerHTML = "";
       const apps = getAllApps();
-      const currentIndex = parseInt(
-        localStorage.getItem("current_app_index") || "1",
-      );
+      const currentIndex = parseInt(localStorage.getItem('current_app_index') || '1');
 
-      apps.forEach((app) => {
+      apps.forEach(app => {
         const option = document.createElement("option");
         option.value = app.index;
         option.textContent = app.domain;
@@ -2305,7 +1883,7 @@
       if (val === "connect_new") {
         await connectNewApp();
       } else {
-        localStorage.setItem("current_app_index", val);
+        localStorage.setItem('current_app_index', val);
         location.reload();
       }
     }
@@ -2326,11 +1904,8 @@
         }
 
         let cleanedInput = rawInput.trim();
-        if (
-          !cleanedInput.startsWith("http://") &&
-          !cleanedInput.startsWith("https://")
-        ) {
-          cleanedInput = "https://" + cleanedInput;
+        if (!cleanedInput.startsWith('http://') && !cleanedInput.startsWith('https://')) {
+          cleanedInput = 'https://' + cleanedInput;
         }
         try {
           const parsedUrl = new URL(cleanedInput);
@@ -2350,33 +1925,25 @@
         const testUrl = `https://${domain}/api/1.1/obj/auth_validation_dummy?limit=1`;
         try {
           const response = await fetch(testUrl, {
-            method: "GET",
-            headers: { Authorization: `Bearer ${apiKey}` },
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` }
           });
 
           if (response.status === 401) {
             alert(`The API key entered is not valid for ${domain}`);
             continue;
-          } else if (
-            response.ok ||
-            response.status === 404 ||
-            response.status === 400
-          ) {
+          } else if (response.ok || response.status === 404 || response.status === 400) {
             localStorage.setItem(keys.domain, domain);
             localStorage.setItem(keys.apiKey, apiKey);
-            localStorage.setItem("current_app_index", nextIndex);
+            localStorage.setItem('current_app_index', nextIndex);
             location.reload();
             return;
           } else {
-            alert(
-              `Received an unexpected response from ${domain}. Are you sure this is a Bubble app?`,
-            );
+            alert(`Received an unexpected response from ${domain}. Are you sure this is a Bubble app?`);
             continue;
           }
         } catch (error) {
-          alert(
-            `Could not connect to ${domain}. The URL may be misspelled, offline, or not a Bubble application.`,
-          );
+          alert(`Could not connect to ${domain}. The URL may be misspelled, offline, or not a Bubble application.`);
           continue;
         }
       }
@@ -2400,9 +1967,7 @@
       const versionSelector = document.getElementById("version-selector");
       versionSelector.value = VERSION;
       const tableWrapper = document.querySelector(".sidebar-header");
-      const collapsedView = document.getElementById(
-        "data-types-collapsed-view",
-      );
+      const collapsedView = document.getElementById("data-types-collapsed-view");
       if (VERSION === "") {
         versionSelector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
@@ -2418,21 +1983,15 @@
       }
 
       if (window.innerWidth <= 800) {
-        console.log(
-          "Mobile view detected (" +
-            window.innerWidth +
-            "px), collapsing sidebar",
-        );
+        console.log("Mobile view detected (" + window.innerWidth + "px), collapsing sidebar");
         const sidebar = document.getElementById("data-types-sidebar");
         const icon = document.getElementById("sidebar-toggle-icon");
         if (sidebar) sidebar.classList.add("collapsed");
         if (collapsedView) collapsedView.classList.add("active");
-        if (icon)
-          icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
+        if (icon) icon.innerHTML = '<polyline points="9 18 15 12 9 6"></polyline>';
       }
 
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       if (cachedTypeColumns && cachedTypeColumns[activeType]) {
         detectedHeaders = [...cachedTypeColumns[activeType]];
       }
@@ -2440,9 +1999,7 @@
     }
 
     async function initializeWithValidKey() {
-      const currentIndex = parseInt(
-        localStorage.getItem("current_app_index") || "1",
-      );
+      const currentIndex = parseInt(localStorage.getItem('current_app_index') || '1');
       const keys = getAppStorageKeys(currentIndex);
       let currentDomain = localStorage.getItem(keys.domain);
       let currentApiKey = localStorage.getItem(keys.apiKey);
@@ -2452,11 +2009,8 @@
           let rawInput = window.prompt("Enter your Bubble app's URL:");
           if (rawInput) {
             let cleanedInput = rawInput.trim();
-            if (
-              !cleanedInput.startsWith("http://") &&
-              !cleanedInput.startsWith("https://")
-            ) {
-              cleanedInput = "https://" + cleanedInput;
+            if (!cleanedInput.startsWith('http://') && !cleanedInput.startsWith('https://')) {
+              cleanedInput = 'https://' + cleanedInput;
             }
             try {
               const parsedUrl = new URL(cleanedInput);
@@ -2465,39 +2019,29 @@
               console.log(`Domain saved to localStorage: ${currentDomain}`);
               populateAppSelector();
             } catch (error) {
-              console.error(
-                "The provided text could not be parsed into a valid URL.",
-              );
+              console.error("The provided text could not be parsed into a valid URL.");
               alert("Invalid URL format. Please refresh and try again.");
               currentDomain = null;
             }
-          } else {
-            console.warn(
-              "No URL entered. You are not connected to a Bubble app.",
-            );
-            window.alert(
-              `No URL entered. You are not connected to a Bubble app.`,
-            );
+          }
+          else {
+            console.warn("No URL entered. You are not connected to a Bubble app.");
+            window.alert(`No URL entered. You are not connected to a Bubble app.`);
             return [null, null];
           }
-        } else {
+        }
+        else {
           console.log("DOMAIN loaded from localStorage.");
         }
 
         if (!currentApiKey) {
-          currentApiKey = window.prompt(
-            `Enter your API key for ${currentDomain} to connect to your app:`,
-          );
+          currentApiKey = window.prompt(`Enter your API key for ${currentDomain} to connect to your app:`);
           if (currentApiKey) {
             localStorage.setItem(keys.apiKey, currentApiKey);
             console.log("API Key saved to localStorage.");
           } else {
-            console.warn(
-              "No API key entered. You are not connected to a Bubble app.",
-            );
-            window.alert(
-              `No API key entered. You are not connected to a Bubble app.`,
-            );
+            console.warn("No API key entered. You are not connected to a Bubble app.");
+            window.alert(`No API key entered. You are not connected to a Bubble app.`);
             return [null, null];
           }
         } else {
@@ -2508,36 +2052,30 @@
         const testUrl = `https://${currentDomain}${VERSION}/api/1.1/obj/auth_validation_dummy?limit=1`;
         try {
           const response = await fetch(testUrl, {
-            method: "GET",
+            method: 'GET',
             headers: {
-              Authorization: `Bearer ${currentApiKey}`,
-            },
+              'Authorization': `Bearer ${currentApiKey}`
+            }
           });
 
           // 401 means the key was explicitly rejected.
           if (response.status === 401) {
             console.warn("Invalid API Key. Authentication failed.");
-            window.alert(
-              `The API key entered is not valid for ${currentDomain}`,
-            );
+            window.alert(`The API key entered is not valid for ${currentDomain}`);
             localStorage.removeItem(keys.domain);
             localStorage.removeItem(keys.apiKey);
             currentDomain = null;
             currentApiKey = null;
             populateAppSelector();
             continue;
-          } else if (
-            response.ok ||
-            response.status === 404 ||
-            response.status === 400
-          ) {
+          }
+          else if (response.ok || response.status === 404 || response.status === 400) {
             console.log("Domain and API Key are valid.");
             return [currentDomain, currentApiKey];
-          } else {
+          }
+          else {
             console.warn(`Unexpected status code: ${response.status}`);
-            window.alert(
-              `Received an unexpected response from ${currentDomain}. Are you sure this is a Bubble app?`,
-            );
+            window.alert(`Received an unexpected response from ${currentDomain}. Are you sure this is a Bubble app?`);
             localStorage.removeItem(keys.domain);
             currentDomain = null;
             populateAppSelector();
@@ -2545,9 +2083,7 @@
           }
         } catch (error) {
           console.error("Network error during validation:", error);
-          window.alert(
-            `Could not connect to ${currentDomain}. The URL may be misspelled, offline, or not a Bubble application.`,
-          );
+          window.alert(`Could not connect to ${currentDomain}. The URL may be misspelled, offline, or not a Bubble application.`);
           localStorage.removeItem(keys.domain);
           currentDomain = null;
           populateAppSelector();
@@ -2560,12 +2096,12 @@
       recordId: null,
       field: null,
       isNewRow: false,
-      data: null,
+      data: null
     };
     let currentlyEditingText = {
       recordId: null,
       field: null,
-      isNewRow: false,
+      isNewRow: false
     };
     function getSettingsStorageKey() {
       return `${DATA_MANAGER_SETTINGS_NAME}_${DOMAIN}`;
@@ -2573,14 +2109,9 @@
 
     //Parse the DATA_MANAGER_SETTINGS_NAME text field into an object. Returns {} if missing or unparseable.
     function parseAllSettings() {
-      const raw =
-        settingsRecord && settingsRecord[DATA_MANAGER_SETTINGS_NAME];
+      const raw = settingsRecord && settingsRecord[DATA_MANAGER_SETTINGS_NAME];
       if (!raw) return {};
-      try {
-        return typeof raw === "string" ? JSON.parse(raw) : raw;
-      } catch (e) {
-        return {};
-      }
+      try { return typeof raw === "string" ? JSON.parse(raw) : raw; } catch (e) { return {}; }
     }
 
     /**
@@ -2803,13 +2334,8 @@
       }
 
       // Fallback: check cachedRecords for likely date string
-      const val =
-        cachedRecords.length > 0 ? cachedRecords[0][fieldDisplayName] : null;
-      if (
-        typeof val === "string" &&
-        !isNaN(Date.parse(val)) &&
-        (val.includes("T") || val.includes("-"))
-      ) {
+      const val = cachedRecords.length > 0 ? cachedRecords[0][fieldDisplayName] : null;
+      if (typeof val === "string" && !isNaN(Date.parse(val)) && (val.includes("T") || val.includes("-"))) {
         return true;
       }
       return false;
@@ -2901,8 +2427,7 @@
       DATA_TYPES.forEach((dt) => {
         const item = document.createElement("div");
         item.className =
-          "data-type-item" +
-          (dt.value === currentVal && !currentFilterName ? " active" : "");
+          "data-type-item" + (dt.value === currentVal && !currentFilterName ? " active" : "");
         item.setAttribute("data-type-value", dt.value);
         item.textContent = dt.label;
         item.title = dt.label;
@@ -2917,38 +2442,32 @@
         if (allFiltersObj[dt.value]) {
           try {
             const filters = allFiltersObj[dt.value];
-            Object.keys(filters)
-              .sort()
-              .forEach((filterName) => {
-                const filterItem = document.createElement("div");
-                filterItem.className =
-                  "saved-filter-item" +
-                  (dt.value === currentVal && currentFilterName === filterName
-                    ? " active"
-                    : "");
-                filterItem.title = `Load view: ${filterName}`;
-                filterItem.onclick = (e) => {
-                  e.stopPropagation();
-                  loadFilterView(dt.value, filterName);
-                };
+            Object.keys(filters).sort().forEach((filterName) => {
+              const filterItem = document.createElement("div");
+              filterItem.className = "saved-filter-item" + (dt.value === currentVal && currentFilterName === filterName ? " active" : "");
+              filterItem.title = `Load view: ${filterName}`;
+              filterItem.onclick = (e) => {
+                e.stopPropagation();
+                loadFilterView(dt.value, filterName);
+              };
 
-                const filterLabel = document.createElement("span");
-                filterLabel.className = "saved-filter-label";
-                filterLabel.textContent = filterName;
-                filterItem.appendChild(filterLabel);
+              const filterLabel = document.createElement("span");
+              filterLabel.className = "saved-filter-label";
+              filterLabel.textContent = filterName;
+              filterItem.appendChild(filterLabel);
 
-                const deleteBtn = document.createElement("button");
-                deleteBtn.className = "saved-filter-delete-btn";
-                deleteBtn.title = `Delete view: ${filterName}`;
-                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
-                deleteBtn.onclick = (e) => {
-                  e.stopPropagation();
-                  deleteFilterView(dt.value, filterName);
-                };
-                filterItem.appendChild(deleteBtn);
+              const deleteBtn = document.createElement("button");
+              deleteBtn.className = "saved-filter-delete-btn";
+              deleteBtn.title = `Delete view: ${filterName}`;
+              deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+              deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteFilterView(dt.value, filterName);
+              };
+              filterItem.appendChild(deleteBtn);
 
-                listEl.appendChild(filterItem);
-              });
+              listEl.appendChild(filterItem);
+            });
           } catch (e) {
             console.error(`Error parsing filters for ${dt.label}:`, e);
           }
@@ -2965,10 +2484,7 @@
 
       // Update data type items
       listEl.querySelectorAll(".data-type-item").forEach((item) => {
-        if (
-          item.getAttribute("data-type-value") === currentVal &&
-          !currentFilterName
-        ) {
+        if (item.getAttribute("data-type-value") === currentVal && !currentFilterName) {
           item.classList.add("active");
         } else {
           item.classList.remove("active");
@@ -2990,9 +2506,7 @@
 
     function toggleDataTypeSidebar() {
       const sidebar = document.getElementById("data-types-sidebar");
-      const collapsedView = document.getElementById(
-        "data-types-collapsed-view",
-      );
+      const collapsedView = document.getElementById("data-types-collapsed-view");
       const icon = document.getElementById("sidebar-toggle-icon");
       if (!sidebar) return;
       sidebar.classList.toggle("collapsed");
@@ -3020,62 +2534,49 @@
         recordId,
         field,
         isNewRow,
-        data: null,
+        data: null
       };
 
       try {
-        currentlyEditingJSON.data = initialValue
-          ? typeof initialValue === "string"
-            ? JSON.parse(initialValue)
-            : initialValue
-          : {};
+        currentlyEditingJSON.data = initialValue ? (typeof initialValue === 'string' ? JSON.parse(initialValue) : initialValue) : {};
       } catch (e) {
         console.error("Failed to parse JSON:", e);
         currentlyEditingJSON.data = {};
       }
 
-      document.getElementById("json-modal-title").innerText =
-        `Edit JSON: ${field}`;
-      document.getElementById("json-raw-editor").value = JSON.stringify(
-        currentlyEditingJSON.data,
-        null,
-        2,
-      );
+      document.getElementById('json-modal-title').innerText = `Edit JSON: ${field}`;
+      document.getElementById('json-raw-editor').value = JSON.stringify(currentlyEditingJSON.data, null, 2);
 
-      switchJSONTab("nested");
-      document.getElementById("json-editor-modal").style.display = "flex";
+      switchJSONTab('nested');
+      document.getElementById('json-editor-modal').style.display = 'flex';
     }
 
     function closeJSONEditor() {
-      document.getElementById("json-editor-modal").style.display = "none";
+      document.getElementById('json-editor-modal').style.display = 'none';
     }
 
     function switchJSONTab(tab) {
-      const nestedTab = document.getElementById("tab-nested");
-      const rawTab = document.getElementById("tab-raw");
-      const nestedContainer = document.getElementById(
-        "json-nested-container",
-      );
-      const rawEditor = document.getElementById("json-raw-editor");
+      const nestedTab = document.getElementById('tab-nested');
+      const rawTab = document.getElementById('tab-raw');
+      const nestedContainer = document.getElementById('json-nested-container');
+      const rawEditor = document.getElementById('json-raw-editor');
 
-      if (tab === "nested") {
-        nestedTab.classList.add("active");
-        rawTab.classList.remove("active");
-        nestedContainer.style.display = "block";
-        rawEditor.style.display = "none";
+      if (tab === 'nested') {
+        nestedTab.classList.add('active');
+        rawTab.classList.remove('active');
+        nestedContainer.style.display = 'block';
+        rawEditor.style.display = 'none';
         renderNestedView(currentlyEditingJSON.data, nestedContainer);
       } else {
-        nestedTab.classList.remove("active");
-        rawTab.classList.add("active");
-        nestedContainer.style.display = "none";
-        rawEditor.style.display = "block";
+        nestedTab.classList.remove('active');
+        rawTab.classList.add('active');
+        nestedContainer.style.display = 'none';
+        rawEditor.style.display = 'block';
       }
     }
 
     function saveJSONEditor() {
-      const isRawView = document
-        .getElementById("tab-raw")
-        .classList.contains("active");
+      const isRawView = document.getElementById('tab-raw').classList.contains('active');
       if (isRawView) {
         syncRawToNested();
       } else {
@@ -3083,9 +2584,7 @@
       }
 
       const jsonStr = JSON.stringify(currentlyEditingJSON.data);
-      const rowId = currentlyEditingJSON.isNewRow
-        ? "row-new"
-        : `row-${currentlyEditingJSON.recordId}`;
+      const rowId = currentlyEditingJSON.isNewRow ? 'row-new' : `row-${currentlyEditingJSON.recordId}`;
       const row = document.getElementById(rowId);
 
       if (row) {
@@ -3095,9 +2594,7 @@
           if (!row.classList.contains("editing-row")) {
             // Row not in edit mode; automatically enter edit mode so changes can be saved.
             // Check the row's checkbox and toggle selection
-            const cb = row.querySelector(
-              '.select-cell input[type="checkbox"]',
-            );
+            const cb = row.querySelector('.select-cell input[type="checkbox"]');
             if (cb && !cb.checked) {
               cb.checked = true;
               toggleRowSelection(currentlyEditingJSON.recordId, true);
@@ -3108,7 +2605,7 @@
           const hiddenInput = cell.querySelector('input[type="hidden"]');
           if (hiddenInput) {
             hiddenInput.value = jsonStr;
-            row.classList.add("has-edits");
+            row.classList.add('has-edits');
             updatebulkBar();
           }
         }
@@ -3118,80 +2615,79 @@
     }
 
     function renderNestedView(data, container) {
-      container.innerHTML = "";
+      container.innerHTML = '';
       if (data === null || data === undefined) {
-        container.innerHTML = "<em>null</em>";
+        container.innerHTML = '<em>null</em>';
         return;
       }
 
       const isArray = Array.isArray(data);
-      const isObject = typeof data === "object" && data !== null;
+      const isObject = typeof data === 'object' && data !== null;
 
       if (isArray || isObject) {
-        const rootNode = document.createElement("div");
-        rootNode.className = "json-tree-node";
+        const rootNode = document.createElement('div');
+        rootNode.className = 'json-tree-node';
 
-        const openChar = isArray ? "[" : "{";
-        const closeChar = isArray ? "]" : "}";
+        const openChar = isArray ? '[' : '{';
+        const closeChar = isArray ? ']' : '}';
 
-        const header = document.createElement("div");
+        const header = document.createElement('div');
         header.innerHTML = `<span class="json-toggle">▼</span> ${openChar}`;
-        header.querySelector(".json-toggle").onclick = (e) => {
+        header.querySelector('.json-toggle').onclick = (e) => {
           const content = header.nextElementSibling;
-          if (content.style.display === "none") {
-            content.style.display = "block";
-            e.target.innerText = "▼";
+          if (content.style.display === 'none') {
+            content.style.display = 'block';
+            e.target.innerText = '▼';
           } else {
-            content.style.display = "none";
-            e.target.innerText = "▶";
+            content.style.display = 'none';
+            e.target.innerText = '▶';
           }
         };
         rootNode.appendChild(header);
 
-        const content = document.createElement("div");
-        content.style.paddingLeft = "15px";
+        const content = document.createElement('div');
+        content.style.paddingLeft = '15px';
 
         const keys = Object.keys(data);
-        keys.forEach((key) => {
-          const row = document.createElement("div");
-          row.className = "json-key-val";
+        keys.forEach(key => {
+          const row = document.createElement('div');
+          row.className = 'json-key-val';
 
           if (!isArray) {
-            const keySpan = document.createElement("span");
-            keySpan.className = "json-key";
+            const keySpan = document.createElement('span');
+            keySpan.className = 'json-key';
             keySpan.innerText = `"${key}": `;
             row.appendChild(keySpan);
           }
 
           const val = data[key];
-          if (typeof val === "object" && val !== null) {
-            const subContainer = document.createElement("div");
+          if (typeof val === 'object' && val !== null) {
+            const subContainer = document.createElement('div');
             row.appendChild(subContainer);
             renderNestedView(val, subContainer);
           } else {
-            const input = document.createElement("input");
-            input.type = "text";
-            input.className = "json-value-input";
-            input.value = typeof val === "string" ? val : JSON.stringify(val);
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'json-value-input';
+            input.value = typeof val === 'string' ? val : JSON.stringify(val);
             input.onchange = (e) => {
               let newVal = e.target.value;
               try {
                 // Try to parse as JSON for numbers/booleans/objects, otherwise keep as string
-                if (newVal === "true") newVal = true;
-                else if (newVal === "false") newVal = false;
-                else if (newVal === "null") newVal = null;
-                else if (!isNaN(newVal) && newVal.trim() !== "")
-                  newVal = Number(newVal);
-              } catch (err) {}
+                if (newVal === 'true') newVal = true;
+                else if (newVal === 'false') newVal = false;
+                else if (newVal === 'null') newVal = null;
+                else if (!isNaN(newVal) && newVal.trim() !== '') newVal = Number(newVal);
+              } catch (err) { }
               data[key] = newVal;
               syncNestedToRaw();
             };
             row.appendChild(input);
           }
 
-          const removeBtn = document.createElement("button");
-          removeBtn.className = "json-remove-btn";
-          removeBtn.innerText = "×";
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'json-remove-btn';
+          removeBtn.innerText = '×';
           removeBtn.onclick = () => {
             if (isArray) {
               data.splice(key, 1);
@@ -3206,11 +2702,11 @@
           content.appendChild(row);
         });
 
-        const addRow = document.createElement("div");
-        addRow.style.marginTop = "5px";
-        const addBtn = document.createElement("button");
-        addBtn.className = "json-add-btn";
-        addBtn.innerText = isArray ? "+ Add Item" : "+ Add Property";
+        const addRow = document.createElement('div');
+        addRow.style.marginTop = '5px';
+        const addBtn = document.createElement('button');
+        addBtn.className = 'json-add-btn';
+        addBtn.innerText = isArray ? '+ Add Item' : '+ Add Property';
         addBtn.onclick = () => {
           if (isArray) {
             data.push("");
@@ -3228,16 +2724,16 @@
 
         rootNode.appendChild(content);
 
-        const footer = document.createElement("div");
+        const footer = document.createElement('div');
         footer.innerText = closeChar;
         rootNode.appendChild(footer);
 
         container.appendChild(rootNode);
       } else {
         // Primitive
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "json-value-input";
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'json-value-input';
         input.value = JSON.stringify(data);
         input.onchange = (e) => {
           try {
@@ -3252,14 +2748,14 @@
     }
 
     function syncNestedToRaw() {
-      const rawEditor = document.getElementById("json-raw-editor");
+      const rawEditor = document.getElementById('json-raw-editor');
       if (rawEditor) {
         rawEditor.value = JSON.stringify(currentlyEditingJSON.data, null, 2);
       }
     }
 
     function syncRawToNested() {
-      const rawEditor = document.getElementById("json-raw-editor");
+      const rawEditor = document.getElementById('json-raw-editor');
       if (rawEditor) {
         try {
           currentlyEditingJSON.data = JSON.parse(rawEditor.value);
@@ -3275,26 +2771,22 @@
       currentlyEditingText = {
         recordId,
         field,
-        isNewRow,
+        isNewRow
       };
 
-      document.getElementById("text-modal-title").innerText =
-        `Edit Text: ${field}`;
-      document.getElementById("text-editor-textarea").value =
-        initialValue || "";
+      document.getElementById('text-modal-title').innerText = `Edit Text: ${field}`;
+      document.getElementById('text-editor-textarea').value = initialValue || "";
 
-      document.getElementById("text-editor-modal").style.display = "flex";
+      document.getElementById('text-editor-modal').style.display = 'flex';
     }
 
     function closeTextEditor() {
-      document.getElementById("text-editor-modal").style.display = "none";
+      document.getElementById('text-editor-modal').style.display = 'none';
     }
 
     function saveTextEditor() {
-      const textVal = document.getElementById("text-editor-textarea").value;
-      const rowId = currentlyEditingText.isNewRow
-        ? "row-new"
-        : `row-${currentlyEditingText.recordId}`;
+      const textVal = document.getElementById('text-editor-textarea').value;
+      const rowId = currentlyEditingText.isNewRow ? 'row-new' : `row-${currentlyEditingText.recordId}`;
       const row = document.getElementById(rowId);
       if (row) {
         const field = currentlyEditingText.field;
@@ -3303,9 +2795,7 @@
           if (!row.classList.contains("editing-row")) {
             // Row not in edit mode; automatically enter edit mode so changes can be saved.
             // Check the row's checkbox and toggle selection
-            const cb = row.querySelector(
-              '.select-cell input[type="checkbox"]',
-            );
+            const cb = row.querySelector('.select-cell input[type="checkbox"]');
             if (cb && !cb.checked) {
               cb.checked = true;
               toggleRowSelection(currentlyEditingText.recordId, true);
@@ -3314,18 +2804,15 @@
           }
 
           const hiddenInput = cell.querySelector('input[type="hidden"]');
-          const preview = cell.querySelector(".text-preview");
+          const preview = cell.querySelector('.text-preview');
           if (hiddenInput) {
             hiddenInput.value = textVal;
           }
           if (preview) {
-            preview.innerText =
-              textVal.length > 20
-                ? textVal.substring(0, 20) + "..."
-                : textVal;
+            preview.innerText = textVal.length > 20 ? textVal.substring(0, 20) + '...' : textVal;
           }
-          cell.setAttribute("title", textVal);
-          row.classList.add("has-edits");
+          cell.setAttribute('title', textVal);
+          row.classList.add('has-edits');
           updatebulkBar();
         }
       }
@@ -3341,9 +2828,7 @@
 
       listContainer.innerHTML = "";
 
-      const progressContainer = document.getElementById(
-        "export-progress-container",
-      );
+      const progressContainer = document.getElementById("export-progress-container");
       if (progressContainer) progressContainer.style.display = "none";
       const downloadBtn = document.getElementById("export-download-btn");
       if (downloadBtn) {
@@ -3353,25 +2838,19 @@
       const cancelBtn = document.getElementById("export-cancel-btn");
       if (cancelBtn) cancelBtn.disabled = false;
 
-      const currentType =
-        document.getElementById("data-type-selector")?.value;
+      const currentType = document.getElementById("data-type-selector")?.value;
 
       DATA_TYPES.forEach((dt) => {
         const labelEl = document.createElement("label");
-        labelEl.style.cssText =
-          "display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; padding: 6px 8px; border-radius: 4px; transition: background-color 0.15s;";
-        labelEl.onmouseover = () => {
-          labelEl.style.backgroundColor = "#f0f4f8";
-        };
-        labelEl.onmouseout = () => {
-          labelEl.style.backgroundColor = "transparent";
-        };
+        labelEl.style.cssText = "display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; padding: 6px 8px; border-radius: 4px; transition: background-color 0.15s;";
+        labelEl.onmouseover = () => { labelEl.style.backgroundColor = "#f0f4f8"; };
+        labelEl.onmouseout = () => { labelEl.style.backgroundColor = "transparent"; };
 
         const cb = document.createElement("input");
         cb.type = "checkbox";
         cb.className = "export-type-checkbox";
         cb.value = dt.value;
-        cb.checked = dt.value === currentType || DATA_TYPES.length === 1;
+        cb.checked = (dt.value === currentType) || (DATA_TYPES.length === 1);
 
         const span = document.createElement("span");
         span.textContent = dt.label;
@@ -3398,32 +2877,21 @@
     function formatCSVField(val, header, typeSlug) {
       if (val === null || val === undefined) return "";
       let str = "";
-      if (
-        typeof val === "boolean" ||
-        (isBooleanField(typeSlug, header) &&
-          (val === "true" || val === "false"))
-      ) {
-        str = val === true || val === "true" ? "yes" : "no";
+      if (typeof val === "boolean" || (isBooleanField(typeSlug, header) && (val === "true" || val === "false"))) {
+        str = (val === true || val === "true") ? "yes" : "no";
       } else if (typeof val === "object") {
         str = JSON.stringify(val);
       } else {
         str = String(val);
       }
-      if (
-        str.includes('"') ||
-        str.includes(",") ||
-        str.includes("\n") ||
-        str.includes("\r")
-      ) {
+      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
         return '"' + str.replace(/"/g, '""') + '"';
       }
       return str;
     }
 
     function downloadCSVFile(csvContent, filename) {
-      const blob = new Blob(["\uFEFF" + csvContent], {
-        type: "text/csv;charset=utf-8;",
-      });
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
@@ -3448,18 +2916,12 @@
         let fetchUrl = `${API_BASE_URL}${dataTypeValue}?cursor=${cursor}&limit=100`;
         const response = await fetch(fetchUrl, { headers: headersConfig });
         if (!response.ok) {
-          throw new Error(
-            `HTTP ${response.status} fetching records for ${dataTypeValue}`,
-          );
+          throw new Error(`HTTP ${response.status} fetching records for ${dataTypeValue}`);
         }
         const data = await response.json();
-        const results =
-          data.response && data.response.results ? data.response.results : [];
+        const results = (data.response && data.response.results) ? data.response.results : [];
         allRecords = allRecords.concat(results);
-        remaining =
-          data.response && data.response.remaining
-            ? data.response.remaining
-            : 0;
+        remaining = (data.response && data.response.remaining) ? data.response.remaining : 0;
         cursor += results.length;
         if (results.length === 0) break;
       }
@@ -3467,25 +2929,19 @@
     }
 
     async function startExportToCSV() {
-      const checkedBoxes = Array.from(
-        document.querySelectorAll(".export-type-checkbox:checked"),
-      );
+      const checkedBoxes = Array.from(document.querySelectorAll(".export-type-checkbox:checked"));
       if (checkedBoxes.length === 0) {
         alert("Please select at least one data type to export.");
         return;
       }
 
-      const selectedTypes = checkedBoxes.map((cb) => {
-        const dt = DATA_TYPES.find((d) => d.value === cb.value);
+      const selectedTypes = checkedBoxes.map(cb => {
+        const dt = DATA_TYPES.find(d => d.value === cb.value);
         return dt ? dt : { value: cb.value, label: cb.value };
       });
 
-      const progressContainer = document.getElementById(
-        "export-progress-container",
-      );
-      const progressStatus = document.getElementById(
-        "export-progress-status",
-      );
+      const progressContainer = document.getElementById("export-progress-container");
+      const progressStatus = document.getElementById("export-progress-status");
       const progressBar = document.getElementById("export-progress-bar");
       const downloadBtn = document.getElementById("export-download-btn");
       const cancelBtn = document.getElementById("export-cancel-btn");
@@ -3499,19 +2955,16 @@
           const typeObj = selectedTypes[i];
           const percent = Math.round((i / selectedTypes.length) * 100);
           if (progressBar) progressBar.style.width = `${percent}%`;
-          if (progressStatus)
-            progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Fetching records for "${typeObj.label}"...`;
+          if (progressStatus) progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Fetching records for "${typeObj.label}"...`;
 
           const records = await fetchAllRowsForDataType(typeObj.value);
-          if (progressStatus)
-            progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Generating CSV for "${typeObj.label}"...`;
+          if (progressStatus) progressStatus.textContent = `Exporting (${i + 1}/${selectedTypes.length}): Generating CSV for "${typeObj.label}"...`;
 
           const metaHeaders = cachedTypeColumns[typeObj.value] || [];
           const allKeysSet = new Set(metaHeaders);
           records.forEach((record) => {
             Object.keys(record).forEach((key) => {
-              if (key.toLowerCase() === "unique id" && allKeysSet.has("_id"))
-                return;
+              if (key.toLowerCase() === "unique id" && allKeysSet.has("_id")) return;
               allKeysSet.add(key);
             });
           });
@@ -3525,9 +2978,7 @@
               if (Array.isArray(rawMap)) {
                 activeOrderMap = rawMap;
               } else if (typeof rawMap === "string") {
-                try {
-                  activeOrderMap = JSON.parse(rawMap);
-                } catch (_) {}
+                try { activeOrderMap = JSON.parse(rawMap); } catch (_) { }
               }
             }
             if (activeOrderMap && activeOrderMap.length > 0) {
@@ -3544,17 +2995,11 @@
               });
               headers = reorderedHeaders;
             }
-          } catch (_) {}
+          } catch (_) { }
 
-          const headerRow = headers
-            .map((h) => formatCSVField(h, h, typeObj.value))
-            .join(",");
-          const csvRows = records.map((record) => {
-            return headers
-              .map((header) =>
-                formatCSVField(record[header], header, typeObj.value),
-              )
-              .join(",");
+          const headerRow = headers.map(h => formatCSVField(h, h, typeObj.value)).join(",");
+          const csvRows = records.map(record => {
+            return headers.map(header => formatCSVField(record[header], header, typeObj.value)).join(",");
           });
           const csvContent = [headerRow, ...csvRows].join("\r\n");
 
@@ -3562,20 +3007,19 @@
           downloadCSVFile(csvContent, filename);
 
           if (i < selectedTypes.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, 400));
+            await new Promise(resolve => setTimeout(resolve, 400));
           }
         }
 
         if (progressBar) progressBar.style.width = "100%";
-        if (progressStatus)
-          progressStatus.textContent = `Successfully exported ${selectedTypes.length} data type(s) to CSV!`;
+        if (progressStatus) progressStatus.textContent = `Successfully exported ${selectedTypes.length} data type(s) to CSV!`;
         setTimeout(() => {
           closeExportModal();
         }, 1500);
+
       } catch (error) {
         console.error("Error exporting to CSV:", error);
-        if (progressStatus)
-          progressStatus.textContent = `Error during export: ${error.message || error}`;
+        if (progressStatus) progressStatus.textContent = `Error during export: ${error.message || error}`;
         if (progressBar) progressBar.style.backgroundColor = "#dc3545";
         if (cancelBtn) cancelBtn.disabled = false;
       } finally {
@@ -3600,63 +3044,46 @@
 
     // --- FILE PREVIEW HELPERS ---
     function isImageFile(val) {
-      if (typeof val !== "string") return false;
+      if (typeof val !== 'string') return false;
       // Also check full URL in case extension is in query params
       const low = val.toLowerCase();
-      const hasImgExt = (s) =>
-        s.endsWith(".jpg") ||
-        s.endsWith(".jpeg") ||
-        s.endsWith(".png") ||
-        s.endsWith(".gif") ||
-        s.endsWith(".webp") ||
-        s.endsWith(".svg");
-      return (
-        hasImgExt(val.split("?")[0]) ||
-        hasImgExt(val.split("#")[0]) ||
-        low.includes(".jpg?") ||
-        low.includes(".jpeg?") ||
-        low.includes(".png?") ||
-        low.includes(".gif?") ||
-        low.includes(".webp?") ||
-        low.includes(".svg?")
-      );
+      const hasImgExt = (s) => s.endsWith('.jpg') || s.endsWith('.jpeg') || s.endsWith('.png') || s.endsWith('.gif') || s.endsWith('.webp') || s.endsWith('.svg');
+      return hasImgExt(val.split('?')[0]) || hasImgExt(val.split('#')[0]) || low.includes('.jpg?') || low.includes('.jpeg?') || low.includes('.png?') || low.includes('.gif?') || low.includes('.webp?') || low.includes('.svg?');
     }
 
     function isBubbleFile(val) {
-      if (typeof val !== "string") return false;
-      return (
-        val.startsWith("//s3.amazonaws.com/") ||
-        val.includes(".s3.amazonaws.com/") ||
-        val.includes(".cdn.bubble.io/") ||
-        isImageFile(val)
-      );
+      if (typeof val !== 'string') return false;
+      return val.startsWith('//s3.amazonaws.com/')
+        || val.includes('.s3.amazonaws.com/')
+        || val.includes('.cdn.bubble.io/')
+        || isImageFile(val);
     }
 
     function renderFilePreview(url, hideFileName = false) {
-      if (!url) return "";
-      const fullUrl = url.startsWith("//") ? "https:" + url : url;
-      const fileName = url.split("/").pop().split("?")[0];
+      if (!url) return '';
+      const fullUrl = url.startsWith('//') ? 'https:' + url : url;
+      const fileName = url.split('/').pop().split('?')[0];
       const safeUrl = escapeHTML(fullUrl);
 
       if (isImageFile(url)) {
         return `
-        <div class="file-preview-wrapper">
-          <a href="${safeUrl}" target="_blank" title="Open image in new tab">
-            <img src="${safeUrl}" class="thumbnail-preview" alt="Thumbnail">
-          </a>
-          ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
-        </div>`;
+          <div class="file-preview-wrapper">
+            <a href="${safeUrl}" target="_blank" title="Open image in new tab">
+              <img src="${safeUrl}" class="thumbnail-preview" alt="Thumbnail">
+            </a>
+            ${hideFileName ? '' : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
+          </div>`;
       } else {
         return `
-        <div class="file-preview-wrapper">
-          <a href="${safeUrl}" target="_blank" class="file-icon-link" title="Open file in new tab">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-              <polyline points="13 2 13 9 20 9"></polyline>
-            </svg>
-          </a>
-          ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
-        </div>`;
+          <div class="file-preview-wrapper">
+            <a href="${safeUrl}" target="_blank" class="file-icon-link" title="Open file in new tab">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+            </a>
+            ${hideFileName ? '' : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
+          </div>`;
       }
     }
 
@@ -3666,23 +3093,17 @@
      */
     function extractImgUrlsFromJson(val, found) {
       found = found || [];
-      if (typeof val === "string") {
-        if (
-          isImageFile(val) ||
-          val.startsWith("//s3.amazonaws.com/") ||
-          val.includes(".s3.amazonaws.com/") ||
-          val.includes(".cdn.bubble.io/")
-        ) {
+      if (typeof val === 'string') {
+        if (isImageFile(val)
+          || val.startsWith('//s3.amazonaws.com/')
+          || val.includes('.s3.amazonaws.com/')
+          || val.includes('.cdn.bubble.io/')) {
           found.push(val);
         }
       } else if (Array.isArray(val)) {
-        val.forEach(function (item) {
-          extractImgUrlsFromJson(item, found);
-        });
-      } else if (val !== null && typeof val === "object") {
-        Object.values(val).forEach(function (v) {
-          extractImgUrlsFromJson(v, found);
-        });
+        val.forEach(function (item) { extractImgUrlsFromJson(item, found); });
+      } else if (val !== null && typeof val === 'object') {
+        Object.values(val).forEach(function (v) { extractImgUrlsFromJson(v, found); });
       }
       return found;
     }
@@ -3691,11 +3112,11 @@
      * Updates a cell's innerHTML and data attributes based on its value and type.
      */
     function setCellContent(cell, value, field, recordId, currentType) {
-      cell.setAttribute("data-field", field);
+      cell.setAttribute('data-field', field);
 
       // Clean up previous attributes
-      cell.removeAttribute("data-json");
-      cell.removeAttribute("data-raw-value");
+      cell.removeAttribute('data-json');
+      cell.removeAttribute('data-raw-value');
 
       let displayValue = value;
       let isJSON = false;
@@ -3709,17 +3130,15 @@
       }
       // Convert boolean true/false to yes/no
       else if (isBooleanField(currentType, field)) {
-        const isTrue =
-          value === true ||
-          value === "true" ||
-          value === "yes" ||
-          (typeof value === "string" && value.toLowerCase() === "yes");
-        displayValue = `<span class="type-badge ${isTrue ? "badge-boolean-yes" : "badge-boolean-no"}">${isTrue ? "yes" : "no"}</span>`;
+        const isTrue = (value === true || value === "true" || value === "yes" || (typeof value === "string" && value.toLowerCase() === "yes"));
+        displayValue = `<span class="type-badge ${isTrue ? 'badge-boolean-yes' : 'badge-boolean-no'}">${isTrue ? 'yes' : 'no'}</span>`;
         isHTML = true;
-      } else if (getOptionSetForField(currentType, field)) {
+      }
+      else if (getOptionSetForField(currentType, field)) {
         displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
         isHTML = true;
-      } else if (isDateField(currentType, field)) {
+      }
+      else if (isDateField(currentType, field)) {
         displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
         isHTML = true;
       }
@@ -3733,19 +3152,14 @@
       // (e.g. multi-image list fields stored as text in the API response).
       // Must come BEFORE isBubbleFile to prevent substring matches like .cdn.bubble.io/
       // inside a JSON string from being passed to renderFilePreview.
-      else if (
-        typeof value === "string" &&
-        (value.trim().startsWith("[") || value.trim().startsWith("{"))
-      ) {
+      else if (typeof value === 'string' && (value.trim().startsWith('[') || value.trim().startsWith('{'))) {
         const trimmed = value.trim();
         try {
           JSON.parse(trimmed); // validate only — we keep the original trimmed string
           isJSON = true;
           jsonValue = trimmed;
           displayValue = trimmed;
-        } catch (_) {
-          /* not valid JSON — fall through to isBubbleFile / plain text */
-        }
+        } catch (_) { /* not valid JSON — fall through to isBubbleFile / plain text */ }
       }
       // Handle File URLs (single file/image)
       else if (isBubbleFile(value)) {
@@ -3754,71 +3168,53 @@
       }
 
       if (isJSON) {
-        cell.setAttribute("data-json", jsonValue);
+        cell.setAttribute('data-json', jsonValue);
         // Detect image URLs nested inside the JSON
         let parsedJson = null;
-        try {
-          parsedJson = JSON.parse(jsonValue);
-        } catch (_) {}
-        const imgUrls =
-          parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
+        try { parsedJson = JSON.parse(jsonValue); } catch (_) { }
+        const imgUrls = parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
         const uniqueImgUrls = [...new Set(imgUrls)];
 
         // If the JSON is a pure flat array of file/image URLs (a Bubble "list of files" field),
         // render each entry through renderFilePreview — the same proven path as single-file cells.
-        if (
-          Array.isArray(parsedJson) &&
-          parsedJson.length > 0 &&
-          parsedJson.every(function (item) {
-            return typeof item === "string" && isBubbleFile(item);
-          })
-        ) {
+        if (Array.isArray(parsedJson)
+          && parsedJson.length > 0
+          && parsedJson.every(function (item) { return typeof item === 'string' && isBubbleFile(item); })) {
           const hideFileName = parsedJson.length > 1;
-          cell.innerHTML = parsedJson
-            .slice(0, 5)
-            .map(function (url) {
-              return renderFilePreview(url, hideFileName);
-            })
-            .join("");
+          cell.innerHTML = parsedJson.slice(0, 5).map(function (url) { return renderFilePreview(url, hideFileName); }).join('');
         } else {
           // Mixed / complex JSON: show JSON badge + any detected image thumbnails alongside
-          const thumbsHtml = uniqueImgUrls
-            .slice(0, 5)
-            .map(function (url) {
-              const fullUrl = url.startsWith("//") ? "https:" + url : url;
-              const safe = escapeHTML(fullUrl);
-              return `<a href="${safe}" target="_blank" title="Open image in new tab" style="display:inline-block;vertical-align:middle;"><img src="${safe}" class="thumbnail-preview json-img-thumb" alt="JSON image"></a>`;
-            })
-            .join(" ");
+          const thumbsHtml = uniqueImgUrls.slice(0, 5).map(function (url) {
+            const fullUrl = url.startsWith('//') ? 'https:' + url : url;
+            const safe = escapeHTML(fullUrl);
+            return `<a href="${safe}" target="_blank" title="Open image in new tab" style="display:inline-block;vertical-align:middle;"><img src="${safe}" class="thumbnail-preview json-img-thumb" alt="JSON image"></a>`;
+          }).join(' ');
 
-          cell.innerHTML = "";
-          const badge = document.createElement("span");
-          badge.className = "json-badge";
-          badge.innerText = "JSON";
+          cell.innerHTML = '';
+          const badge = document.createElement('span');
+          badge.className = 'json-badge';
+          badge.innerText = 'JSON';
           badge.onclick = function () {
-            openJSONEditor(recordId, field, cell.getAttribute("data-json"));
+            openJSONEditor(recordId, field, cell.getAttribute('data-json'));
           };
           cell.appendChild(badge);
 
-          const previewNode = document.createElement("span");
-          previewNode.style.fontSize = "11px";
-          previewNode.style.color = "#666";
-          previewNode.style.fontFamily = "monospace";
+          const previewNode = document.createElement('span');
+          previewNode.style.fontSize = '11px';
+          previewNode.style.color = '#666';
+          previewNode.style.fontFamily = 'monospace';
           // innerText automatically escapes content
-          previewNode.innerText =
-            " " +
-            jsonValue.substring(0, 30) +
-            (jsonValue.length > 30 ? "..." : "");
+          previewNode.innerText = ' ' + jsonValue.substring(0, 30) + (jsonValue.length > 30 ? '...' : '');
           cell.appendChild(previewNode);
 
           if (thumbsHtml) {
-            const thumbsContainer = document.createElement("span");
-            thumbsContainer.innerHTML = " " + thumbsHtml;
+            const thumbsContainer = document.createElement('span');
+            thumbsContainer.innerHTML = ' ' + thumbsHtml;
             cell.appendChild(thumbsContainer);
           }
         }
       } else if (isFile) {
-        cell.setAttribute("data-raw-value", value);
+        cell.setAttribute('data-raw-value', value);
         cell.innerHTML = displayValue;
       } else {
         if (isHTML) {
@@ -3899,10 +3295,7 @@
       if (!headers || headers.length === 0) return;
 
       const sortedHeaders = [...headers].sort((a, b) =>
-        a
-          .replace(/_/g, " ")
-          .trim()
-          .localeCompare(b.replace(/_/g, " ").trim()),
+        a.replace(/_/g, " ").trim().localeCompare(b.replace(/_/g, " ").trim())
       );
       sortedHeaders.forEach((header) => {
         const cleanHeader = header.replace(/_/g, " ").trim();
@@ -3987,7 +3380,7 @@
       const storageKey = getSettingsStorageKey();
       const savedData = localStorage.getItem(storageKey);
       settingsRecord = {
-        [DATA_MANAGER_SETTINGS_NAME]: savedData || "{}",
+        [DATA_MANAGER_SETTINGS_NAME]: savedData || "{}"
       };
     }
 
@@ -3996,7 +3389,7 @@
       currentFilterName = null;
       // 0. Reset Column Edit Mode
       isEditingColumns = false;
-      setTableActionState("normal");
+      setTableActionState('normal');
 
       // 1. Reset Pagination & Sorting
       currentCursor = 0;
@@ -4005,8 +3398,7 @@
 
       // Update detectedHeaders immediately to the schema columns of the newly selected data type
       // before resetting constraint dropdowns, ensuring new rows reflect the active type's fields.
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       if (cachedTypeColumns && cachedTypeColumns[activeType]) {
         detectedHeaders = [...cachedTypeColumns[activeType]];
       } else {
@@ -4028,8 +3420,7 @@
       selectAllMatching = false;
       isAddingNewRow = false;
       document.getElementById("all-matching-notice").style.display = "none";
-      document.getElementById("all-matching-selected-notice").style.display =
-        "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       updatebulkBar();
 
       // Clear layout cache so it re-fetches for the new configuration
@@ -4060,21 +3451,17 @@
 
     function getResolvedConstraints(constraints) {
       if (!constraints || !Array.isArray(constraints)) return [];
-      const currentType =
-        document.getElementById("data-type-selector")?.value || "";
+      const currentType = document.getElementById("data-type-selector")?.value || "";
       const knownHeaders = cachedTypeColumns[currentType] || [];
       return constraints
-        .filter((c) => {
+        .filter(c => {
           if (!c || !c.key) return false;
-          if (c.key === "_id" || c.key.toLowerCase() === "unique id")
-            return true;
+          if (c.key === "_id" || c.key.toLowerCase() === "unique id") return true;
           if (knownHeaders.length === 0) return true; // Pass through if schema metadata is not yet loaded
           return knownHeaders.includes(c.key);
         })
-        .map((c) =>
-          c.value === "current date/time"
-            ? { ...c, value: new Date().toISOString() }
-            : c,
+        .map(c =>
+          c.value === "current date/time" ? { ...c, value: new Date().toISOString() } : c
         );
     }
 
@@ -4107,8 +3494,7 @@
 
         // Append Constraints
         if (currentConstraints.length > 0) {
-          const resolvedConstraints =
-            getResolvedConstraints(currentConstraints);
+          const resolvedConstraints = getResolvedConstraints(currentConstraints);
           const constraintsJson = JSON.stringify(resolvedConstraints);
           // encodeURIComponent ensures special characters like brackets and quotes don't break the URL
           fetchUrl += `&constraints=${encodeURIComponent(constraintsJson)}`;
@@ -4141,8 +3527,7 @@
           Object.keys(record).forEach((key) => {
             // Avoid adding duplicates that might differ only by case/canonicalization
             // or that are redundant display-name versions of system fields.
-            if (key.toLowerCase() === "unique id" && allKeysSet.has("_id"))
-              return;
+            if (key.toLowerCase() === "unique id" && allKeysSet.has("_id")) return;
             allKeysSet.add(key);
           });
         });
@@ -4161,7 +3546,7 @@
             } else if (typeof rawMap === "string") {
               try {
                 activeOrderMap = JSON.parse(rawMap);
-              } catch (e) {}
+              } catch (e) { }
             }
           }
         }
@@ -4187,12 +3572,8 @@
         }
 
         // Dynamically populate drop-down fields strictly once
-        const constraintSelects = document.querySelectorAll(
-          "#constraints-list .constraint-field",
-        );
-        constraintSelects.forEach((select) =>
-          populateConstraintFields(detectedHeaders, select, select.value),
-        );
+        const constraintSelects = document.querySelectorAll("#constraints-list .constraint-field");
+        constraintSelects.forEach(select => populateConstraintFields(detectedHeaders, select, select.value));
         populateColumnFilterGroup(detectedHeaders);
 
         // Clear the local text input when turning pages/requerying, then render
@@ -4255,22 +3636,13 @@
       } else {
         const meta = getFieldMeta(activeType, header);
         if (meta && meta.type) {
-          return meta.type.startsWith("option.")
-            ? "option set"
-            : meta.type === "boolean"
-              ? "yes/no"
-              : meta.type === "number"
-                ? "number"
-                : meta.type === "date"
-                  ? "date"
+          return meta.type.startsWith("option.") ? "option set"
+            : meta.type === "boolean" ? "yes/no"
+              : meta.type === "number" ? "number"
+                : meta.type === "date" ? "date"
                   : "text";
         } else {
-          const runtimeTypeMap = {
-            string: "text",
-            number: "number",
-            boolean: "yes/no",
-            object: "option set",
-          };
+          const runtimeTypeMap = { string: "text", number: "number", boolean: "yes/no", object: "option set" };
           return runtimeTypeMap[getExpectedType(header)] || "text";
         }
       }
@@ -4282,15 +3654,10 @@
       select.innerHTML = "";
 
       const sortedHeaders = [...headers].sort((a, b) =>
-        a
-          .replace(/_/g, " ")
-          .trim()
-          .toLowerCase()
-          .localeCompare(b.replace(/_/g, " ").trim().toLowerCase()),
+        a.replace(/_/g, " ").trim().toLowerCase().localeCompare(b.replace(/_/g, " ").trim().toLowerCase())
       );
 
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       sortedHeaders.forEach((header) => {
         const option = document.createElement("option");
         option.value = header;
@@ -4312,10 +3679,7 @@
         select.appendChild(option);
       }
 
-      if (
-        currentValue &&
-        Array.from(select.options).some((opt) => opt.value === currentValue)
-      ) {
+      if (currentValue && Array.from(select.options).some(opt => opt.value === currentValue)) {
         select.value = currentValue;
       } else if (select.options.length > 0) {
         select.value = select.options[0].value;
@@ -4332,9 +3696,9 @@
       const allChecked =
         records.length > 0 && records.every((r) => selectedRows.has(r._id));
       tableHTML += `<th class="select-cell">
-                          <input type="checkbox" title="Select all rows" ${allChecked ? "checked" : ""}
-                                 onchange="toggleSelectAll(this.checked)">
-                        </th>`;
+                            <input type="checkbox" title="Select all rows" ${allChecked ? "checked" : ""}
+                                   onchange="toggleSelectAll(this.checked)">
+                          </th>`;
 
       // Generate Data Headers (Conditionally Draggable)
       const headerToIndexMap = new Map();
@@ -4366,13 +3730,13 @@
           : `Sort by ${cleanHeader}`;
 
         tableHTML += `<th
-                              ${draggableAttr}
-                              ${dragEvents}
-                              ${clickEvent}
-                              style="${cursorStyle}"
-                              title="${titleText}">
-                              ${cleanHeader} ${sortIcon}
-                            </th>`;
+                                ${draggableAttr}
+                                ${dragEvents}
+                                ${clickEvent}
+                                style="${cursorStyle}"
+                                title="${titleText}">
+                                ${cleanHeader} ${sortIcon}
+                              </th>`;
       });
 
       tableHTML += "</tr></thead><tbody>";
@@ -4388,19 +3752,13 @@
 
         // Add Row Checkbox cell
         tableHTML += `<td class="select-cell">
-                              <input type="checkbox" ${isSelected ? "checked" : ""}
-                                     onchange="toggleRowSelection('${record._id}', this.checked)">
-                            </td>`;
+                                <input type="checkbox" ${isSelected ? "checked" : ""}
+                                       onchange="toggleRowSelection('${record._id}', this.checked)">
+                              </td>`;
 
         visibleHeaders.forEach((header) => {
-          const tempTd = document.createElement("td");
-          setCellContent(
-            tempTd,
-            record[header],
-            header,
-            record._id,
-            currentType,
-          );
+          const tempTd = document.createElement('td');
+          setCellContent(tempTd, record[header], header, record._id, currentType);
           tableHTML += tempTd.outerHTML;
         });
         tableHTML += "</tr>";
@@ -4438,8 +3796,7 @@
       if (filteredRecords.length === 0) {
         renderTable([], detectedHeaders, container);
         const msgDiv = document.createElement("div");
-        msgDiv.style.cssText =
-          "padding: 10px; text-align: center; color: #666;";
+        msgDiv.style.cssText = "padding: 10px; text-align: center; color: #666;";
         msgDiv.textContent = `No visible records match "${filterValue}" on this page.`;
         container.appendChild(msgDiv);
       } else {
@@ -4454,12 +3811,10 @@
       const datePicker = container?.querySelector(".constraint-date-picker");
       const tzHint = container?.querySelector(".constraint-date-tz-hint");
       if (datePicker) {
-        datePicker.style.display =
-          selectEl.value === "specific date" ? "block" : "none";
+        datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
       if (tzHint) {
-        tzHint.style.display =
-          selectEl.value === "specific date" ? "block" : "none";
+        tzHint.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
     }
 
@@ -4467,20 +3822,15 @@
       const container = rowEl.querySelector(".constraint-value-container");
       if (!container) return;
 
-      const currentType =
-        document.getElementById("data-type-selector")?.value || "";
+      const currentType = document.getElementById("data-type-selector")?.value || "";
       const optionValues = getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
       const isDate = isDateField(currentType, field);
-      const currentOp =
-        rowEl.querySelector(".constraint-operator")?.value || "";
+      const currentOp = rowEl.querySelector(".constraint-operator")?.value || "";
 
       // Clear current contents
       container.innerHTML = "";
-      container.style.flexDirection =
-        isDate && currentOp !== "in" && currentOp !== "not in"
-          ? "column"
-          : "row";
+      container.style.flexDirection = isDate && currentOp !== "in" && currentOp !== "not in" ? "column" : "row";
 
       if (isBool && !NO_VALUE_OPERATORS.includes(currentOp)) {
         // Render a <select> dropdown for yes/no fields
@@ -4504,12 +3854,7 @@
         select.onchange = () => markConstraintsDirty();
 
         container.appendChild(select);
-      } else if (
-        optionValues &&
-        optionValues.length > 0 &&
-        currentOp !== "in" &&
-        currentOp !== "not in"
-      ) {
+      } else if (optionValues && optionValues.length > 0 && currentOp !== "in" && currentOp !== "not in") {
         const select = document.createElement("select");
         select.className = "constraint-value";
         select.onchange = () => markConstraintsDirty();
@@ -4534,10 +3879,7 @@
         const select = document.createElement("select");
         select.className = "constraint-value constraint-date-selector";
         select.style.width = "100%";
-        select.onchange = () => {
-          toggleConstraintDateInput(select);
-          markConstraintsDirty();
-        };
+        select.onchange = () => { toggleConstraintDateInput(select); markConstraintsDirty(); };
 
         const currentOpt = document.createElement("option");
         currentOpt.value = "current date/time";
@@ -4571,40 +3913,23 @@
       } else {
         // Restore text input HTML with dynamic placeholder depending on operator
         let ph = "Enter search value...";
-        if (currentOp === "contains" || currentOp === "does not contain")
-          ph = "Enter substring or keyword...";
-        else if (
-          currentOp === "contains case sensitive" ||
-          currentOp === "does not contain case sensitive"
-        )
-          ph = "Enter exact case-sensitive substring...";
-        else if (currentOp === "in" || currentOp === "not in")
-          ph = "Enter comma-separated items (e.g. item1, item2)...";
-        else if (
-          currentOp.includes("num") ||
-          currentOp.includes("greater") ||
-          currentOp.includes("less")
-        )
-          ph = "Enter number...";
-        else if (currentOp === "equals" || currentOp === "not equals")
-          ph = "Enter exact value...";
+        if (currentOp === "contains" || currentOp === "does not contain") ph = "Enter substring or keyword...";
+        else if (currentOp === "contains case sensitive" || currentOp === "does not contain case sensitive") ph = "Enter exact case-sensitive substring...";
+        else if (currentOp === "in" || currentOp === "not in") ph = "Enter comma-separated items (e.g. item1, item2)...";
+        else if (currentOp.includes("num") || currentOp.includes("greater") || currentOp.includes("less")) ph = "Enter number...";
+        else if (currentOp === "equals" || currentOp === "not equals") ph = "Enter exact value...";
 
         container.innerHTML = `
-      <div class="input-wrapper" style="flex: 1; width: 100%;">
-        <input type="text" class="constraint-value" placeholder="${ph}"
-          oninput="toggleClearBtnElement(this); markConstraintsDirty();"
-          onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
-      </div>`;
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="text" class="constraint-value" placeholder="${ph}"
+            oninput="toggleClearBtnElement(this); markConstraintsDirty();"
+            onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
+        </div>`;
       }
     }
 
     // Operators that do not use a value input
-    const NO_VALUE_OPERATORS = [
-      "is empty or null",
-      "is not empty or null",
-      "is yes",
-      "is no",
-    ];
+    const NO_VALUE_OPERATORS = ["is empty or null", "is not empty or null", "is yes", "is no"];
 
     function createConstraintRow(constraintData = null) {
       const row = document.createElement("div");
@@ -4617,20 +3942,12 @@
       const fieldSelect = document.createElement("select");
       fieldSelect.className = "constraint-field";
       fieldSelect.style.maxWidth = "fit-content";
-      fieldSelect.onchange = () => {
-        resetFilterNameInput();
-        markConstraintsDirty();
-        updateConstraintOperators(fieldSelect.value, row);
-      };
+      fieldSelect.onchange = () => { resetFilterNameInput(); markConstraintsDirty(); updateConstraintOperators(fieldSelect.value, row); };
 
       const operatorSelect = document.createElement("select");
       operatorSelect.className = "constraint-operator";
       operatorSelect.style.maxWidth = "fit-content";
-      operatorSelect.onchange = () => {
-        resetFilterNameInput();
-        markConstraintsDirty();
-        toggleConstraintValueInput(operatorSelect.value, row);
-      };
+      operatorSelect.onchange = () => { resetFilterNameInput(); markConstraintsDirty(); toggleConstraintValueInput(operatorSelect.value, row); };
 
       const valAndBtnWrapper = document.createElement("div");
       valAndBtnWrapper.className = "constraint-val-btn-wrapper";
@@ -4655,21 +3972,10 @@
       row.appendChild(valAndBtnWrapper);
 
       // Initial population
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       const activeSchemaCols = cachedTypeColumns[activeType] || [];
-      const headersToUse =
-        detectedHeaders &&
-        detectedHeaders.length > 0 &&
-        (activeSchemaCols.length === 0 ||
-          activeSchemaCols.some((col) => detectedHeaders.includes(col)))
-          ? detectedHeaders
-          : activeSchemaCols;
-      populateConstraintFields(
-        headersToUse,
-        fieldSelect,
-        constraintData ? constraintData.key : null,
-      );
+      const headersToUse = (detectedHeaders && detectedHeaders.length > 0 && (activeSchemaCols.length === 0 || activeSchemaCols.some(col => detectedHeaders.includes(col)))) ? detectedHeaders : activeSchemaCols;
+      populateConstraintFields(headersToUse, fieldSelect, constraintData ? constraintData.key : null);
 
       if (constraintData) {
         fieldSelect.value = constraintData.key;
@@ -4679,30 +3985,17 @@
         const type = constraintData.constraint_type;
         const val = constraintData.value;
 
-        const activeType =
-          document.getElementById("data-type-selector")?.value || "";
+        const activeType = document.getElementById("data-type-selector")?.value || "";
         const isDate = isDateField(activeType, constraintData.key);
-        const isNumber =
-          getFieldMeta(activeType, constraintData.key)?.type === "number" ||
-          getExpectedType(constraintData.key) === "number";
+        const isNumber = getFieldMeta(activeType, constraintData.key)?.type === "number" || getExpectedType(constraintData.key) === "number";
 
         if (type === "text contains") operatorSelect.value = "contains";
-        else if (type === "not text contains")
-          operatorSelect.value = "does not contain";
-        else if (type === "contains")
-          operatorSelect.value = "contains case sensitive";
-        else if (type === "not contains")
-          operatorSelect.value = "does not contain case sensitive";
-        else if (type === "is_empty")
-          operatorSelect.value = "is empty or null";
-        else if (type === "is_not_empty")
-          operatorSelect.value = "is not empty or null";
-        else if (type === "not equal")
-          operatorSelect.value = isNumber
-            ? "num not equals"
-            : isDate
-              ? "not equals"
-              : "not equals";
+        else if (type === "not text contains") operatorSelect.value = "does not contain";
+        else if (type === "contains") operatorSelect.value = "contains case sensitive";
+        else if (type === "not contains") operatorSelect.value = "does not contain case sensitive";
+        else if (type === "is_empty") operatorSelect.value = "is empty or null";
+        else if (type === "is_not_empty") operatorSelect.value = "is not empty or null";
+        else if (type === "not equal") operatorSelect.value = isNumber ? "num not equals" : isDate ? "not equals" : "not equals";
         else if (type === "in") operatorSelect.value = "in";
         else if (type === "not in") operatorSelect.value = "not in";
         else if (type === "greater than") {
@@ -4712,10 +4005,7 @@
             } else {
               operatorSelect.value = "date greater than";
             }
-          } else if (
-            typeof val === "number" &&
-            String(val).includes("9999999")
-          ) {
+          } else if (typeof val === "number" && String(val).includes("9999999")) {
             operatorSelect.value = "num greater than or equal";
           } else {
             operatorSelect.value = "num greater than";
@@ -4727,10 +4017,7 @@
             } else {
               operatorSelect.value = "date less than";
             }
-          } else if (
-            typeof val === "number" &&
-            String(val).includes("0000001")
-          ) {
+          } else if (typeof val === "number" && String(val).includes("0000001")) {
             operatorSelect.value = "num less than or equal";
           } else {
             operatorSelect.value = "num less than";
@@ -4757,22 +4044,10 @@
               const tzHint = row.querySelector(".constraint-date-tz-hint");
               if (datePicker && constraintData.value) {
                 let dateVal = constraintData.value;
-                if (
-                  operatorSelect.value === "date greater than or equal" &&
-                  typeof dateVal === "string" &&
-                  dateVal.endsWith(".999Z")
-                ) {
-                  dateVal = new Date(
-                    new Date(dateVal).getTime() + 1,
-                  ).toISOString();
-                } else if (
-                  operatorSelect.value === "date less than or equal" &&
-                  typeof dateVal === "string" &&
-                  dateVal.endsWith(".001Z")
-                ) {
-                  dateVal = new Date(
-                    new Date(dateVal).getTime() - 1,
-                  ).toISOString();
+                if (operatorSelect.value === "date greater than or equal" && typeof dateVal === "string" && dateVal.endsWith(".999Z")) {
+                  dateVal = new Date(new Date(dateVal).getTime() + 1).toISOString();
+                } else if (operatorSelect.value === "date less than or equal" && typeof dateVal === "string" && dateVal.endsWith(".001Z")) {
+                  dateVal = new Date(new Date(dateVal).getTime() - 1).toISOString();
                 }
                 datePicker.value = formatToDateTimeLocal(dateVal);
                 datePicker.style.display = "block";
@@ -4781,34 +4056,17 @@
                 tzHint.style.display = "block";
               }
             }
-          } else if (
-            operatorSelect.value === "in" ||
-            operatorSelect.value === "not in"
-          ) {
+          } else if (operatorSelect.value === "in" || operatorSelect.value === "not in") {
             if (Array.isArray(constraintData.value)) {
               valueInput.value = constraintData.value.join(", ");
             } else {
-              valueInput.value =
-                constraintData.value !== null &&
-                constraintData.value !== undefined
-                  ? constraintData.value
-                  : "";
+              valueInput.value = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
             }
           } else {
-            let displayVal =
-              constraintData.value !== null &&
-              constraintData.value !== undefined
-                ? constraintData.value
-                : "";
-            if (
-              operatorSelect.value === "num greater than or equal" &&
-              typeof displayVal === "number"
-            ) {
+            let displayVal = constraintData.value !== null && constraintData.value !== undefined ? constraintData.value : "";
+            if (operatorSelect.value === "num greater than or equal" && typeof displayVal === "number") {
               displayVal = Math.round((displayVal + 0.0000001) * 1e6) / 1e6;
-            } else if (
-              operatorSelect.value === "num less than or equal" &&
-              typeof displayVal === "number"
-            ) {
+            } else if (operatorSelect.value === "num less than or equal" && typeof displayVal === "number") {
               displayVal = Math.round((displayVal - 0.0000001) * 1e6) / 1e6;
             }
             valueInput.value = displayVal;
@@ -4850,7 +4108,7 @@
       list.innerHTML = "";
 
       if (currentConstraints && currentConstraints.length > 0) {
-        currentConstraints.forEach((c) => addConstraintRow(c));
+        currentConstraints.forEach(c => addConstraintRow(c));
       } else {
         addConstraintRow();
       }
@@ -4862,8 +4120,7 @@
       if (!operatorEl) return;
 
       // Resolve type using schema metadata first (same priority as populateConstraintFields),
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       let type = "string";
       if (field) {
         if (isBooleanField(activeType, field)) {
@@ -4875,14 +4132,10 @@
         } else {
           const meta = getFieldMeta(activeType, field);
           if (meta && meta.type) {
-            type = meta.type.startsWith("option.")
-              ? "option"
-              : meta.type === "boolean"
-                ? "boolean"
-                : meta.type === "number"
-                  ? "number"
-                  : meta.type === "date"
-                    ? "date"
+            type = meta.type.startsWith("option.") ? "option"
+              : meta.type === "boolean" ? "boolean"
+                : meta.type === "number" ? "number"
+                  : meta.type === "date" ? "date"
                     : "string";
           } else {
             // No schema metadata — fall back to runtime typeof (won't detect dates,
@@ -4929,14 +4182,8 @@
         ops = [
           { value: "contains", label: "contains" },
           { value: "does not contain", label: "does not contain" },
-          {
-            value: "contains case sensitive",
-            label: "contains (case sensitive)",
-          },
-          {
-            value: "does not contain case sensitive",
-            label: "does not contain (case sensitive)",
-          },
+          { value: "contains case sensitive", label: "contains (case sensitive)" },
+          { value: "does not contain case sensitive", label: "does not contain (case sensitive)" },
           { value: "equals", label: "=" },
           { value: "not equals", label: "<>" },
           { value: "in", label: "in (comma-separated)" },
@@ -4963,18 +4210,14 @@
     function toggleConstraintValueInput(operator, rowEl) {
       const valueInput = rowEl.querySelector(".constraint-value");
       const clearBtn = rowEl.querySelector(".input-clear-btn");
-      const valueContainer = rowEl.querySelector(
-        ".constraint-value-container",
-      );
+      const valueContainer = rowEl.querySelector(".constraint-value-container");
       const isDisabled = NO_VALUE_OPERATORS.includes(operator);
 
       if (valueContainer) {
         if (isDisabled) {
           valueContainer.style.display = "none";
         } else {
-          const isDateCol =
-            valueContainer.querySelector(".constraint-date-selector") ||
-            valueContainer.querySelector(".constraint-date-picker");
+          const isDateCol = valueContainer.querySelector(".constraint-date-selector") || valueContainer.querySelector(".constraint-date-picker");
           valueContainer.style.display = isDateCol ? "flex" : "block";
         }
       }
@@ -4986,26 +4229,14 @@
         if (isDisabled) {
           valueInput.value = "";
           if (clearBtn) clearBtn.style.display = "none";
-        } else if (
-          valueInput.tagName === "INPUT" &&
-          valueInput.type === "text"
-        ) {
+        } else if (valueInput.tagName === "INPUT" && valueInput.type === "text") {
           if (operator === "contains" || operator === "does not contain") {
             valueInput.placeholder = "Enter substring or keyword...";
-          } else if (
-            operator === "contains case sensitive" ||
-            operator === "does not contain case sensitive"
-          ) {
-            valueInput.placeholder =
-              "Enter exact case-sensitive substring...";
+          } else if (operator === "contains case sensitive" || operator === "does not contain case sensitive") {
+            valueInput.placeholder = "Enter exact case-sensitive substring...";
           } else if (operator === "in" || operator === "not in") {
-            valueInput.placeholder =
-              "Enter comma-separated items (e.g. apple, banana)...";
-          } else if (
-            operator.includes("num") ||
-            operator.includes("greater") ||
-            operator.includes("less")
-          ) {
+            valueInput.placeholder = "Enter comma-separated items (e.g. apple, banana)...";
+          } else if (operator.includes("num") || operator.includes("greater") || operator.includes("less")) {
             valueInput.placeholder = "Enter number...";
           } else if (operator === "equals" || operator === "not equals") {
             valueInput.placeholder = "Enter exact value...";
@@ -5016,22 +4247,13 @@
       }
 
       const field = rowEl.querySelector(".constraint-field")?.value;
-      const activeType =
-        document.getElementById("data-type-selector")?.value || "";
+      const activeType = document.getElementById("data-type-selector")?.value || "";
       const optionValues = getOptionSetForField(activeType, field);
       if (optionValues && optionValues.length > 0 && !isDisabled) {
-        const isCurrentlySelect =
-          valueInput && valueInput.tagName === "SELECT";
-        if (
-          (operator === "in" || operator === "not in") &&
-          isCurrentlySelect
-        ) {
+        const isCurrentlySelect = valueInput && valueInput.tagName === "SELECT";
+        if ((operator === "in" || operator === "not in") && isCurrentlySelect) {
           updateConstraintInput(field, rowEl);
-        } else if (
-          operator !== "in" &&
-          operator !== "not in" &&
-          !isCurrentlySelect
-        ) {
+        } else if ((operator !== "in" && operator !== "not in") && !isCurrentlySelect) {
           updateConstraintInput(field, rowEl);
         }
       }
@@ -5064,22 +4286,17 @@
     }
 
     function applyConstraintFilter() {
-      const rows = document.querySelectorAll(
-        "#constraints-list .constraint-bar",
-      );
+      const rows = document.querySelectorAll("#constraints-list .constraint-bar");
       const newConstraints = [];
 
-      rows.forEach((row) => {
+      rows.forEach(row => {
         const field = row.querySelector(".constraint-field").value;
         const operator = row.querySelector(".constraint-operator").value;
         const valueEl = row.querySelector(".constraint-value");
         let value = valueEl ? valueEl.value : "";
 
         // Handle date specific logic for constraints
-        if (
-          valueEl &&
-          valueEl.classList.contains("constraint-date-selector")
-        ) {
+        if (valueEl && valueEl.classList.contains("constraint-date-selector")) {
           if (value === "specific date") {
             const datePicker = row.querySelector(".constraint-date-picker");
             if (datePicker && datePicker.value) {
@@ -5102,8 +4319,7 @@
 
         const key = field;
         let constraintType;
-        let constraintValue =
-          typeof value === "string" ? value.trim() : value;
+        let constraintValue = typeof value === "string" ? value.trim() : value;
         if (operator === "contains") {
           constraintType = "text contains";
         } else if (operator === "does not contain") {
@@ -5118,43 +4334,25 @@
           constraintType = "is_not_empty";
         } else if (operator === "equals") {
           constraintType = "equals";
-          if (
-            isDateField(
-              document.getElementById("data-type-selector")?.value || "",
-              field,
-            )
-          ) {
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
             try {
               constraintValue = new Date(value.trim()).toISOString();
-            } catch (e) {}
+            } catch (e) { }
           }
         } else if (operator === "not equals") {
           constraintType = "not equal";
-          if (
-            isDateField(
-              document.getElementById("data-type-selector")?.value || "",
-              field,
-            )
-          ) {
+          if (isDateField(document.getElementById("data-type-selector")?.value || "", field)) {
             try {
               constraintValue = new Date(value.trim()).toISOString();
-            } catch (e) {}
+            } catch (e) { }
           }
         } else if (operator === "in" || operator === "not in") {
           constraintType = operator === "in" ? "in" : "not in";
           if (typeof value === "string") {
-            const parts = value
-              .split(",")
-              .map((v) => v.trim())
-              .filter((v) => v !== "");
-            const activeType =
-              document.getElementById("data-type-selector")?.value || "";
-            const isNum =
-              getFieldMeta(activeType, field)?.type === "number" ||
-              getExpectedType(field) === "number";
-            constraintValue = isNum
-              ? parts.map((p) => parseFloat(p)).filter((n) => !isNaN(n))
-              : parts;
+            const parts = value.split(",").map(v => v.trim()).filter(v => v !== "");
+            const activeType = document.getElementById("data-type-selector")?.value || "";
+            const isNum = getFieldMeta(activeType, field)?.type === "number" || getExpectedType(field) === "number";
+            constraintValue = isNum ? parts.map(p => parseFloat(p)).filter(n => !isNaN(n)) : parts;
           } else if (Array.isArray(value)) {
             constraintValue = value;
           } else {
@@ -5197,9 +4395,7 @@
             constraintValue = "current date/time";
           } else {
             try {
-              constraintValue = new Date(
-                new Date(value.trim()).getTime() - 1,
-              ).toISOString();
+              constraintValue = new Date(new Date(value.trim()).getTime() - 1).toISOString();
             } catch (e) {
               constraintValue = value.trim();
             }
@@ -5217,9 +4413,7 @@
             constraintValue = "current date/time";
           } else {
             try {
-              constraintValue = new Date(
-                new Date(value.trim()).getTime() + 1,
-              ).toISOString();
+              constraintValue = new Date(new Date(value.trim()).getTime() + 1).toISOString();
             } catch (e) {
               constraintValue = value.trim();
             }
@@ -5305,7 +4499,8 @@
       const row = document.getElementById(`row-${recordId}`);
       const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
-      const currentType = document.getElementById("data-type-selector").value;
+      const currentType =
+        document.getElementById("data-type-selector").value;
 
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
@@ -5313,11 +4508,7 @@
         // Prevent editing of Bubble's protected system IDs
         if (PROTECTED_FIELDS.includes(field)) return;
 
-        const currentValue = cell.hasAttribute("data-raw-value")
-          ? cell.getAttribute("data-raw-value")
-          : cell.hasAttribute("data-json")
-            ? cell.getAttribute("data-json")
-            : cell.innerText;
+        const currentValue = cell.hasAttribute('data-raw-value') ? cell.getAttribute('data-raw-value') : (cell.hasAttribute('data-json') ? cell.getAttribute('data-json') : cell.innerText);
         cell.setAttribute("data-original", currentValue); // Store for cancellation
 
         // Check if this field uses an option set or yes/no type
@@ -5407,30 +4598,26 @@
           }
 
           cell.appendChild(select);
-        } else if (cell.hasAttribute("data-json")) {
+        } else if (cell.hasAttribute('data-json')) {
           // Render JSON edit UI
-          const jsonVal = cell.getAttribute("data-json");
-          const hiddenInput = document.createElement("input");
-          hiddenInput.type = "hidden";
+          const jsonVal = cell.getAttribute('data-json');
+          const hiddenInput = document.createElement('input');
+          hiddenInput.type = 'hidden';
           hiddenInput.value = jsonVal;
           cell.appendChild(hiddenInput);
 
-          const editBtn = document.createElement("button");
-          editBtn.className = "json-badge";
-          editBtn.innerText = "Edit JSON";
-          editBtn.onclick = () =>
-            openJSONEditor(recordId, field, hiddenInput.value);
+          const editBtn = document.createElement('button');
+          editBtn.className = 'json-badge';
+          editBtn.innerText = 'Edit JSON';
+          editBtn.onclick = () => openJSONEditor(recordId, field, hiddenInput.value);
           cell.appendChild(editBtn);
 
-          const preview = document.createElement("span");
-          preview.style.fontSize = "11px";
-          preview.style.color = "#666";
-          preview.style.marginLeft = "5px";
-          preview.style.fontFamily = "monospace";
-          preview.innerText =
-            currentValue.length > 20
-              ? currentValue.substring(0, 20) + "..."
-              : currentValue;
+          const preview = document.createElement('span');
+          preview.style.fontSize = '11px';
+          preview.style.color = '#666';
+          preview.style.marginLeft = '5px';
+          preview.style.fontFamily = 'monospace';
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + '...' : currentValue;
           cell.appendChild(preview);
         } else {
           // Default: render a text input with multi-line modal support
@@ -5442,8 +4629,7 @@
           const editBtn = document.createElement("button");
           editBtn.className = "json-badge";
           editBtn.innerText = "Text";
-          editBtn.onclick = () =>
-            openTextEditor(recordId, field, hiddenInput.value);
+          editBtn.onclick = () => openTextEditor(recordId, field, hiddenInput.value);
           cell.appendChild(editBtn);
 
           const preview = document.createElement("span");
@@ -5452,10 +4638,7 @@
           preview.style.color = "#666";
           preview.style.marginLeft = "5px";
           preview.style.fontFamily = "monospace";
-          preview.innerText =
-            currentValue.length > 20
-              ? currentValue.substring(0, 20) + "..."
-              : currentValue;
+          preview.innerText = currentValue.length > 20 ? currentValue.substring(0, 20) + "..." : currentValue;
           cell.appendChild(preview);
         }
       });
@@ -5473,9 +4656,7 @@
 
       const currentType =
         document.getElementById("data-type-selector")?.value || "";
-      const record = cachedRecords.find(
-        (r) => String(r._id) === String(recordId),
-      );
+      const record = cachedRecords.find((r) => String(r._id) === String(recordId));
 
       // Revert inputs back to original content and color coding
       cells.forEach((cell) => {
@@ -5484,13 +4665,10 @@
           let originalValue = cell.getAttribute("data-original");
           if (record && field in record) {
             originalValue = record[field];
-          } else if (
-            cell.hasAttribute("data-json") &&
-            typeof originalValue === "string"
-          ) {
+          } else if (cell.hasAttribute("data-json") && typeof originalValue === "string") {
             try {
               originalValue = JSON.parse(originalValue);
-            } catch (e) {}
+            } catch (e) { }
           }
           setCellContent(cell, originalValue, field, recordId, currentType);
           cell.removeAttribute("data-original");
@@ -5518,7 +4696,8 @@
       let payload = {};
       let hasChanges = false;
 
-      const currentType = document.getElementById("data-type-selector").value;
+      const currentType =
+        document.getElementById("data-type-selector").value;
 
       // 2. Loop through row, compare original values to input/select values, and build payload
       cells.forEach((cell) => {
@@ -5535,8 +4714,7 @@
             const isOptionSet = !!getOptionSetForField(currentType, field);
             const isBool = isBooleanField(currentType, field);
             const isDate = isDateField(currentType, field);
-            const isJSON =
-              editEl.type === "hidden" && cell.hasAttribute("data-json");
+            const isJSON = editEl.type === 'hidden' && cell.hasAttribute('data-json');
 
             let origCompared = originalValue;
             if (isBool) {
@@ -5607,7 +4785,7 @@
               const field = cell.getAttribute("data-field");
               const isBool = isBooleanField(currentType, field);
               const isDate = isDateField(currentType, field);
-              const isJSON = hiddenInput && cell.hasAttribute("data-json");
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let newValue = editEl.value;
               let displayValue = newValue;
@@ -5626,8 +4804,8 @@
                 try {
                   newValue = JSON.parse(newValue);
                   displayValue = JSON.stringify(newValue);
-                  cell.setAttribute("data-json", displayValue);
-                } catch (e) {}
+                  cell.setAttribute('data-json', displayValue);
+                } catch (e) { }
               } else if (isDate) {
                 if (newValue) {
                   newValue = new Date(newValue).toISOString();
@@ -5639,7 +4817,7 @@
               }
 
               setCellContent(cell, newValue, field, recordId, currentType);
-              cell.setAttribute("title", displayValue);
+              cell.setAttribute('title', displayValue);
               cell.removeAttribute("data-original");
 
               // Keep the local Javascript array in sync so client-side searching works
@@ -5669,15 +4847,13 @@
     // --- ROW SELECTION & DELETION ---
     function toggleRowSelection(recordId, isChecked) {
       if (isChecked) {
-        const record = cachedRecords.find((r) => r._id === recordId);
+        const record = cachedRecords.find(r => r._id === recordId);
         if (record) selectedRows.set(recordId, record);
       } else {
         selectedRows.delete(recordId);
         if (selectAllMatching) {
           selectAllMatching = false;
-          document.getElementById(
-            "all-matching-selected-notice",
-          ).style.display = "none";
+          document.getElementById("all-matching-selected-notice").style.display = "none";
         }
 
         // Auto-cancel edit mode when deselected
@@ -5703,13 +4879,13 @@
         .toLowerCase();
       const visibleRecords = filterValue
         ? cachedRecords.filter((record) =>
-            Object.values(record).some((val) => {
-              if (val === null || val === undefined) return false;
-              const s =
-                typeof val === "object" ? JSON.stringify(val) : String(val);
-              return s.toLowerCase().includes(filterValue);
-            }),
-          )
+          Object.values(record).some((val) => {
+            if (val === null || val === undefined) return false;
+            const s =
+              typeof val === "object" ? JSON.stringify(val) : String(val);
+            return s.toLowerCase().includes(filterValue);
+          }),
+        )
         : cachedRecords;
 
       visibleRecords.forEach((record) => {
@@ -5729,19 +4905,13 @@
         }
       });
 
-      const allMatchingNotice = document.getElementById(
-        "all-matching-notice",
-      );
-      const allMatchingSelectedNotice = document.getElementById(
-        "all-matching-selected-notice",
-      );
+      const allMatchingNotice = document.getElementById("all-matching-notice");
+      const allMatchingSelectedNotice = document.getElementById("all-matching-selected-notice");
 
       if (isChecked && totalMatchingCount > visibleRecords.length) {
         allMatchingNotice.style.display = "block";
-        document.getElementById("current-page-count").textContent =
-          visibleRecords.length;
-        document.getElementById("total-matching-count-notice").textContent =
-          totalMatchingCount;
+        document.getElementById("current-page-count").textContent = visibleRecords.length;
+        document.getElementById("total-matching-count-notice").textContent = totalMatchingCount;
       } else {
         allMatchingNotice.style.display = "none";
         allMatchingSelectedNotice.style.display = "none";
@@ -5754,12 +4924,9 @@
     function selectAllMatchingRecords() {
       selectAllMatching = true;
       document.getElementById("all-matching-notice").style.display = "none";
-      const selectedNotice = document.getElementById(
-        "all-matching-selected-notice",
-      );
+      const selectedNotice = document.getElementById("all-matching-selected-notice");
       selectedNotice.style.display = "block";
-      document.getElementById("total-matching-selected-count").textContent =
-        totalMatchingCount;
+      document.getElementById("total-matching-selected-count").textContent = totalMatchingCount;
       updatebulkBar();
     }
 
@@ -5777,21 +4944,14 @@
       document.getElementById("bulk-edit-actions").style.display = "flex";
 
       // Populate field selector
-      const currentType =
-        document.getElementById("data-type-selector")?.value || "";
+      const currentType = document.getElementById("data-type-selector")?.value || "";
       fieldSelect.innerHTML = "";
 
       const editableHeaders = detectedHeaders
-        .filter((h) => !PROTECTED_FIELDS.includes(h))
-        .sort((a, b) =>
-          a
-            .replace(/_/g, " ")
-            .trim()
-            .toLowerCase()
-            .localeCompare(b.replace(/_/g, " ").trim().toLowerCase()),
-        );
+        .filter(h => !PROTECTED_FIELDS.includes(h))
+        .sort((a, b) => a.replace(/_/g, " ").trim().toLowerCase().localeCompare(b.replace(/_/g, " ").trim().toLowerCase()));
 
-      editableHeaders.forEach((header) => {
+      editableHeaders.forEach(header => {
         const opt = document.createElement("option");
         opt.value = header;
         const cleanHeader = header.replace(/_/g, " ").trim();
@@ -5824,20 +4984,16 @@
       const datePicker = container?.querySelector(".bulk-edit-date-picker");
       const tzHint = container?.querySelector(".bulk-edit-date-tz-hint");
       if (datePicker) {
-        datePicker.style.display =
-          selectEl.value === "specific date" ? "block" : "none";
+        datePicker.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
       if (tzHint) {
-        tzHint.style.display =
-          selectEl.value === "specific date" ? "block" : "none";
+        tzHint.style.display = selectEl.value === "specific date" ? "block" : "none";
       }
     }
 
     function clearBulkEditValue(btn) {
       const wrapper = btn.closest(".input-wrapper");
-      const input = wrapper
-        ? wrapper.querySelector(".bulk-edit-value")
-        : null;
+      const input = wrapper ? wrapper.querySelector(".bulk-edit-value") : null;
       if (input) {
         input.value = "";
         btn.style.display = "none";
@@ -5847,14 +5003,11 @@
 
     function updateBulkEditValueInput() {
       const fieldSelect = document.getElementById("bulk-edit-field");
-      const valueContainer = document.getElementById(
-        "bulk-edit-value-container",
-      );
+      const valueContainer = document.getElementById("bulk-edit-value-container");
       if (!fieldSelect || !valueContainer) return;
 
       const field = fieldSelect.value;
-      const currentType =
-        document.getElementById("data-type-selector")?.value || "";
+      const currentType = document.getElementById("data-type-selector")?.value || "";
       const optionValues = getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
       const isDate = isDateField(currentType, field);
@@ -5940,16 +5093,16 @@
         valueContainer.appendChild(tzHint);
       } else {
         valueContainer.innerHTML = `
-      <div class="input-wrapper" style="flex: 1; width: 100%;">
-        <input type="text" class="bulk-edit-value" placeholder="Enter value to apply to all selected rows..."
-          style="width: 100%; box-sizing: border-box; padding: 8px;"
-          oninput="toggleClearBtnElement(this);"
-          onkeydown="if (event.key === 'Enter') applyBulkEdit();" />
-        <button type="button" class="input-clear-btn" onclick="clearBulkEditValue(this)"
-          title="Clear value" style="display: none">
-          ×
-        </button>
-      </div>`;
+        <div class="input-wrapper" style="flex: 1; width: 100%;">
+          <input type="text" class="bulk-edit-value" placeholder="Enter value to apply to all selected rows..."
+            style="width: 100%; box-sizing: border-box; padding: 8px;"
+            oninput="toggleClearBtnElement(this);"
+            onkeydown="if (event.key === 'Enter') applyBulkEdit();" />
+          <button type="button" class="input-clear-btn" onclick="clearBulkEditValue(this)"
+            title="Clear value" style="display: none">
+            ×
+          </button>
+        </div>`;
       }
     }
 
@@ -5982,9 +5135,7 @@
       }
 
       if (value === "") {
-        const confirmClear = confirm(
-          `Are you sure you want to clear "${field.replace(/_/g, " ")}" for ${count} selected row(s)?`,
-        );
+        const confirmClear = confirm(`Are you sure you want to clear "${field.replace(/_/g, " ")}" for ${count} selected row(s)?`);
         if (!confirmClear) return;
       } else {
         const confirmMsg = `Are you sure you want to apply "${value}" to the field "${field.replace(/_/g, " ")}" for ${count} selected row(s)?`;
@@ -6000,13 +5151,7 @@
       const isOptionSet = !!getOptionSetForField(currentType, field);
       const isBool = isBooleanField(currentType, field);
       const isDate = isDateField(currentType, field);
-      const typedValue = castPayloadValue(
-        value,
-        isBool,
-        isOptionSet,
-        field,
-        isDate,
-      );
+      const typedValue = castPayloadValue(value, isBool, isOptionSet, field, isDate);
 
       let successCount = 0;
       let failCount = 0;
@@ -6029,15 +5174,11 @@
 
           if (!response.ok) {
             const errData = await response.json();
-            throw new Error(
-              errData.body?.message || `HTTP Error: ${response.status}`,
-            );
+            throw new Error(errData.body?.message || `HTTP Error: ${response.status}`);
           }
 
           // Update local cache
-          const recordIndex = cachedRecords.findIndex(
-            (r) => r._id === recordId,
-          );
+          const recordIndex = cachedRecords.findIndex(r => r._id === recordId);
           if (recordIndex > -1) {
             cachedRecords[recordIndex][field] = typedValue;
           }
@@ -6052,9 +5193,7 @@
       applyBtn.disabled = false;
       applyBtn.textContent = originalBtnText;
 
-      alert(
-        `Bulk edit complete. ${successCount} row(s) updated successfully, ${failCount} failed.`,
-      );
+      alert(`Bulk edit complete. ${successCount} row(s) updated successfully, ${failCount} failed.`);
 
       hideBulkEdit();
       clearSelection();
@@ -6076,13 +5215,13 @@
         .toLowerCase();
       const visibleRecords = filterValue
         ? cachedRecords.filter((record) =>
-            Object.values(record).some((val) => {
-              if (val === null || val === undefined) return false;
-              const s =
-                typeof val === "object" ? JSON.stringify(val) : String(val);
-              return s.toLowerCase().includes(filterValue);
-            }),
-          )
+          Object.values(record).some((val) => {
+            if (val === null || val === undefined) return false;
+            const s =
+              typeof val === "object" ? JSON.stringify(val) : String(val);
+            return s.toLowerCase().includes(filterValue);
+          }),
+        )
         : cachedRecords;
 
       if (visibleRecords.length === 0) {
@@ -6103,13 +5242,11 @@
       const actionBtns = document.getElementById("action-buttons");
       const prevBtn = document.getElementById("prev-btn");
       const nextBtn = document.getElementById("next-btn");
-      const count = selectAllMatching
-        ? totalMatchingCount
-        : selectedRows.size;
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
 
       if (!unifiedGroup || !saveBtn || !cancelBtn) return;
 
-      if (mode === "edit_columns") {
+      if (mode === 'edit_columns') {
         unifiedGroup.style.display = "flex";
         if (newRefreshBtns) newRefreshBtns.style.display = "none";
         if (bulkBar) bulkBar.style.display = "none";
@@ -6120,13 +5257,9 @@
 
         saveBtn.textContent = options.saveText || "Save Column Order";
         saveBtn.className = "btn btn-primary";
-        saveBtn.disabled =
-          options.saveDisabled !== undefined ? options.saveDisabled : false;
-        cancelBtn.disabled =
-          options.cancelDisabled !== undefined
-            ? options.cancelDisabled
-            : false;
-      } else if (mode === "edit_rows") {
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.saveDisabled : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
+      } else if (mode === 'edit_rows') {
         unifiedGroup.style.display = "flex";
         if (newRefreshBtns) newRefreshBtns.style.display = "none";
         if (editLink) editLink.style.display = "";
@@ -6136,13 +5269,9 @@
 
         saveBtn.textContent = options.saveText || "Save Changes";
         saveBtn.className = "btn btn-success";
-        saveBtn.disabled =
-          options.saveDisabled !== undefined ? options.saveDisabled : false;
-        cancelBtn.disabled =
-          options.cancelDisabled !== undefined
-            ? options.cancelDisabled
-            : false;
-      } else if (mode === "add_row") {
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.saveDisabled : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
+      } else if (mode === 'add_row') {
         unifiedGroup.style.display = "flex";
         if (newRefreshBtns) newRefreshBtns.style.display = "none";
         if (editLink) editLink.style.display = "";
@@ -6152,12 +5281,8 @@
 
         saveBtn.textContent = options.saveText || "Save New Row";
         saveBtn.className = "btn btn-success";
-        saveBtn.disabled =
-          options.saveDisabled !== undefined ? options.prevBtn : false;
-        cancelBtn.disabled =
-          options.cancelDisabled !== undefined
-            ? options.cancelDisabled
-            : false;
+        saveBtn.disabled = options.saveDisabled !== undefined ? options.prevBtn : false;
+        cancelBtn.disabled = options.cancelDisabled !== undefined ? options.cancelDisabled : false;
       } else {
         // mode === 'normal'
         unifiedGroup.style.display = "none";
@@ -6205,22 +5330,16 @@
       const dupDelWrapper = document.getElementById("dup-del-wrapper");
       const leftActions = document.querySelector(".action-group-left");
 
-      const count = selectAllMatching
-        ? totalMatchingCount
-        : selectedRows.size;
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
       const isEditing = !!document.querySelector(".editing-row");
       const hasEdits = !!document.querySelector(".has-edits");
 
-      if (leftActions)
-        leftActions.style.display =
-          isEditing || isAddingNewRow ? "none" : "flex";
+      if (leftActions) leftActions.style.display = (isEditing || isAddingNewRow) ? "none" : "flex";
       // Disable editing both the keyword table-filter and constraint-filter-group during isEditing
       const tableFilterInput = document.getElementById("table-filter");
       const clearFilterBtn = document.getElementById("clear-filter-btn");
       const tableFilterWrapper = tableFilterInput?.closest(".input-wrapper");
-      const constraintFilterGroup = document.getElementById(
-        "constraint-filter-group",
-      );
+      const constraintFilterGroup = document.getElementById("constraint-filter-group");
       if (tableFilterInput) {
         tableFilterInput.disabled = isEditing;
       }
@@ -6239,18 +5358,10 @@
 
       // Action buttons & selection state (enabled/displayed whenever any row is selected or has edits, or adding a new row)
       if (count > 0 || hasEdits || isAddingNewRow) {
-        if (count > 0)
-          countSpan.textContent =
-            count === 1
-              ? "1 row selected"
-              : `${count} row${count !== 1 ? "s" : ""} selected`;
-        if (dupDelWrapper)
-          dupDelWrapper.style.display =
-            count > 0 || hasEdits ? "flex" : "none";
+        if (count > 0) countSpan.textContent = count === 1 ? "1 row selected" : `${count} row${count !== 1 ? "s" : ""} selected`;
+        if (dupDelWrapper) dupDelWrapper.style.display = count > 0 || hasEdits ? "flex" : "none";
         if (duplicateBtn) duplicateBtn.disabled = count === 0 && !hasEdits;
-        if (deleteBtn)
-          deleteBtn.disabled =
-            (count === 0 && !hasEdits) || selectAllMatching;
+        if (deleteBtn) deleteBtn.disabled = (count === 0 && !hasEdits) || selectAllMatching;
         if (editBtn) editBtn.disabled = count === 0 || selectAllMatching;
         if (clearBtn) clearBtn.disabled = count === 0 && !hasEdits;
       } else {
@@ -6266,11 +5377,7 @@
         bar.classList.add("active");
         if (bulkEditBtn) bulkEditBtn.disabled = false;
         if (editActionBtns) {
-          editActionBtns.style.display = !bar.classList.contains(
-            "bulk-editing",
-          )
-            ? "flex"
-            : "none";
+          editActionBtns.style.display = !bar.classList.contains("bulk-editing") ? "flex" : "none";
         }
       } else {
         bar.classList.remove("active");
@@ -6282,27 +5389,21 @@
       }
 
       if (isEditingColumns) {
-        setTableActionState("edit_columns");
+        setTableActionState('edit_columns');
       } else if (isAddingNewRow) {
-        setTableActionState("add_row");
+        setTableActionState('add_row');
       } else if (isEditing) {
-        setTableActionState("edit_rows", { saveDisabled: !hasEdits });
+        setTableActionState('edit_rows', { saveDisabled: !hasEdits });
       } else {
-        setTableActionState("normal");
+        setTableActionState('normal');
       }
     }
 
     async function saveSelectedRows() {
-      const editingIds = Array.from(selectedRows.keys()).filter(
-        (recordId) => {
-          const row = document.getElementById(`row-${recordId}`);
-          return (
-            row &&
-            row.classList.contains("editing-row") &&
-            row.classList.contains("has-edits")
-          );
-        },
-      );
+      const editingIds = Array.from(selectedRows.keys()).filter((recordId) => {
+        const row = document.getElementById(`row-${recordId}`);
+        return row && row.classList.contains("editing-row") && row.classList.contains("has-edits");
+      });
       if (editingIds.length === 0) return;
 
       const confirmed = window.confirm(
@@ -6310,16 +5411,13 @@
       );
       if (!confirmed) return;
 
-      setTableActionState("edit_rows", {
-        saveText: "Saving...",
-        saveDisabled: true,
-        cancelDisabled: true,
-      });
+      setTableActionState('edit_rows', { saveText: "Saving...", saveDisabled: true, cancelDisabled: true });
 
       let successCount = 0;
       let failCount = 0;
 
-      const currentType = document.getElementById("data-type-selector").value;
+      const currentType =
+        document.getElementById("data-type-selector").value;
 
       for (const recordId of editingIds) {
         const row = document.getElementById(`row-${recordId}`);
@@ -6343,7 +5441,7 @@
               const isOptionSet = !!getOptionSetForField(currentType, field);
               const isBool = isBooleanField(currentType, field);
               const isDate = isDateField(currentType, field);
-              const isJSON = hiddenInput && cell.hasAttribute("data-json");
+              const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
               let origCompared = originalValue;
               if (isBool) {
@@ -6362,17 +5460,8 @@
                 origCompared = formatToDateTimeLocal(originalValue);
               }
 
-              if (
-                val !== origCompared &&
-                (val !== originalValue || isBool || isDate)
-              ) {
-                val = castPayloadValue(
-                  val,
-                  isBool,
-                  isOptionSet,
-                  field,
-                  isDate,
-                );
+              if (val !== origCompared && (val !== originalValue || isBool || isDate)) {
+                val = castPayloadValue(val, isBool, isOptionSet, field, isDate);
 
                 payload[field] = val;
                 hasChanges = true;
@@ -6416,7 +5505,7 @@
                 const field = cell.getAttribute("data-field");
                 const isBool = isBooleanField(currentType, field);
                 const isDate = isDateField(currentType, field);
-                const isJSON = hiddenInput && cell.hasAttribute("data-json");
+                const isJSON = hiddenInput && cell.hasAttribute('data-json');
 
                 let newValue = editEl.value;
                 let displayValue = newValue;
@@ -6435,8 +5524,8 @@
                   try {
                     newValue = JSON.parse(newValue);
                     displayValue = JSON.stringify(newValue);
-                    cell.setAttribute("data-json", displayValue);
-                  } catch (e) {}
+                    cell.setAttribute('data-json', displayValue);
+                  } catch (e) { }
                 } else if (isDate) {
                   if (newValue) {
                     newValue = new Date(newValue).toISOString();
@@ -6448,7 +5537,7 @@
                 }
 
                 setCellContent(cell, newValue, field, recordId, currentType);
-                cell.setAttribute("title", displayValue);
+                cell.setAttribute('title', displayValue);
                 cell.removeAttribute("data-original");
 
                 const recordIndex = cachedRecords.findIndex(
@@ -6473,12 +5562,7 @@
         }
       }
 
-      if (failCount > 0)
-        setTableActionState("edit_rows", {
-          saveText: "Save Changes",
-          saveDisabled: false,
-          cancelDisabled: false,
-        });
+      if (failCount > 0) setTableActionState('edit_rows', { saveText: "Save Changes", saveDisabled: false, cancelDisabled: false });
 
       if (failCount > 0) {
         alert(
@@ -6506,8 +5590,7 @@
       selectedRows.clear();
       selectAllMatching = false;
       document.getElementById("all-matching-notice").style.display = "none";
-      document.getElementById("all-matching-selected-notice").style.display =
-        "none";
+      document.getElementById("all-matching-selected-notice").style.display = "none";
       // Uncheck all visible checkboxes and remove highlights
       document.querySelectorAll("tbody tr").forEach((row) => {
         row.classList.remove("row-selected");
@@ -6527,8 +5610,7 @@
       while (remaining > 0) {
         let fetchUrl = `${API_BASE_URL}${currentType}?cursor=${cursor}`;
         if (currentConstraints.length > 0) {
-          const resolvedConstraints =
-            getResolvedConstraints(currentConstraints);
+          const resolvedConstraints = getResolvedConstraints(currentConstraints);
           fetchUrl += `&constraints=${encodeURIComponent(JSON.stringify(resolvedConstraints))}`;
         }
         if (sortField) {
@@ -6536,11 +5618,10 @@
         }
 
         const response = await fetch(fetchUrl, {
-          headers: { Authorization: `Bearer ${API_KEY}` },
+          headers: { Authorization: `Bearer ${API_KEY}` }
         });
 
-        if (!response.ok)
-          throw new Error(`HTTP ${response.status} fetching matching rows`);
+        if (!response.ok) throw new Error(`HTTP ${response.status} fetching matching rows`);
 
         const data = await response.json();
         const results = data.response.results || [];
@@ -6553,13 +5634,11 @@
     }
 
     async function duplicateSelectedRows() {
-      const count = selectAllMatching
-        ? totalMatchingCount
-        : selectedRows.size;
+      const count = selectAllMatching ? totalMatchingCount : selectedRows.size;
       if (count === 0) return;
 
       const confirmed = window.confirm(
-        `Are you sure you want to duplicate ${count} row${count !== 1 ? "s" : ""}?`,
+        `Are you sure you want to duplicate ${count} row${count !== 1 ? "s" : ""}?`
       );
       if (!confirmed) return;
 
@@ -6590,34 +5669,26 @@
 
           const lines = batch.map((original) => {
             const payload = { ...original };
-            PROTECTED_FIELDS.forEach((f) => delete payload[f]);
+            PROTECTED_FIELDS.forEach(f => delete payload[f]);
             return JSON.stringify(payload);
           });
 
           const body = lines.join("\n");
 
           try {
-            const response = await fetch(
-              `${API_BASE_URL}${currentType}/bulk`,
-              {
-                method: "POST",
-                headers: {
-                  Authorization: `Bearer ${API_KEY}`,
-                  "Content-Type": "text/plain",
-                },
-                body: body,
+            const response = await fetch(`${API_BASE_URL}${currentType}/bulk`, {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${API_KEY}`,
+                "Content-Type": "text/plain",
               },
-            );
+              body: body,
+            });
 
             if (!response.ok) {
               const errText = await response.text();
-              console.error(
-                `Bulk duplication failed for batch starting at index ${i}:`,
-                errText,
-              );
-              throw new Error(
-                `HTTP ${response.status}: ${errText || "Bulk request failed"}`,
-              );
+              console.error(`Bulk duplication failed for batch starting at index ${i}:`, errText);
+              throw new Error(`HTTP ${response.status}: ${errText || "Bulk request failed"}`);
             }
 
             const responseText = await response.text();
@@ -6628,17 +5699,15 @@
               if (Array.isArray(jsonData)) {
                 parsedLines = jsonData;
               } else if (jsonData && typeof jsonData === "object") {
-                parsedLines = jsonData.lines ||
-                  jsonData.response?.lines ||
-                  jsonData.results || [jsonData];
+                parsedLines = jsonData.lines || jsonData.response?.lines || jsonData.results || [jsonData];
               }
             } catch (jsonErr) {
               // Bubble's /bulk endpoint returns text/plain with one JSON object per line (JSONL format)
               parsedLines = responseText
                 .split("\n")
-                .map((line) => line.trim())
-                .filter((line) => line.length > 0)
-                .map((line) => {
+                .map(line => line.trim())
+                .filter(line => line.length > 0)
+                .map(line => {
                   try {
                     return JSON.parse(line);
                   } catch (e) {
@@ -6649,13 +5718,12 @@
             }
 
             if (parsedLines.length > 0) {
-              parsedLines.forEach((item) => {
-                const isSuccess =
-                  item &&
-                  ((typeof item.status === "string" &&
-                    item.status.toLowerCase() === "success") ||
-                    item.status === true ||
-                    (!item.status && item.id));
+              parsedLines.forEach(item => {
+                const isSuccess = item && (
+                  (typeof item.status === "string" && item.status.toLowerCase() === "success") ||
+                  item.status === true ||
+                  (!item.status && item.id)
+                );
                 if (isSuccess) {
                   successCount++;
                 } else {
@@ -6667,17 +5735,12 @@
               successCount += batch.length;
             }
           } catch (err) {
-            console.error(
-              `Failed to duplicate batch ${i}-${i + batch.length}:`,
-              err,
-            );
+            console.error(`Failed to duplicate batch ${i}-${i + batch.length}:`, err);
             failCount += batch.length;
           }
         }
 
-        alert(
-          `Successfully duplicated ${successCount} row${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` Failed to duplicate ${failCount} row(s).` : ""}`,
-        );
+        alert(`Successfully duplicated ${successCount} row${successCount !== 1 ? "s" : ""}.${failCount > 0 ? ` Failed to duplicate ${failCount} row(s).` : ""}`);
         clearSelection();
         fetchAndRenderData();
       } catch (error) {
@@ -6749,13 +5812,8 @@
 
       // Update local cache outside the loop to improve performance (O(N) instead of O(N*M))
       if (successfullyDeletedIds.size > 0) {
-        cachedRecords = cachedRecords.filter(
-          (r) => !successfullyDeletedIds.has(r._id),
-        );
-        totalMatchingCount = Math.max(
-          0,
-          totalMatchingCount - successfullyDeletedIds.size,
-        );
+        cachedRecords = cachedRecords.filter((r) => !successfullyDeletedIds.has(r._id));
+        totalMatchingCount = Math.max(0, totalMatchingCount - successfullyDeletedIds.size);
       }
 
       // Update UI
@@ -6789,10 +5847,7 @@
       } else {
         const startRecord = currentCursor + 1;
         const endRecord = currentCursor + cachedRecords.length;
-        const remaining = Math.max(
-          0,
-          totalMatchingCount - currentCursor - cachedRecords.length,
-        );
+        const remaining = Math.max(0, totalMatchingCount - currentCursor - cachedRecords.length);
         pageInfo.innerText = `Showing ${startRecord} - ${endRecord} (${remaining} remaining)`;
 
         if (prevBtn) prevBtn.disabled = currentCursor === 0;
@@ -6909,21 +5964,19 @@
             td.appendChild(select);
           } else {
             // Check if this might be a JSON field by looking at cachedRecords metadata/values
-            const exampleVal =
-              cachedRecords.length > 0 ? cachedRecords[0][header] : null;
-            const isLikelyJSON = exampleVal && typeof exampleVal === "object";
+            const exampleVal = cachedRecords.length > 0 ? cachedRecords[0][header] : null;
+            const isLikelyJSON = exampleVal && typeof exampleVal === 'object';
 
             if (isLikelyJSON) {
-              const hiddenInput = document.createElement("input");
-              hiddenInput.type = "hidden";
+              const hiddenInput = document.createElement('input');
+              hiddenInput.type = 'hidden';
               hiddenInput.value = Array.isArray(exampleVal) ? "[]" : "{}";
               td.appendChild(hiddenInput);
 
-              const editBtn = document.createElement("button");
-              editBtn.className = "json-badge";
-              editBtn.innerText = "Edit JSON";
-              editBtn.onclick = () =>
-                openJSONEditor("new", header, hiddenInput.value, true);
+              const editBtn = document.createElement('button');
+              editBtn.className = 'json-badge';
+              editBtn.innerText = 'Edit JSON';
+              editBtn.onclick = () => openJSONEditor('new', header, hiddenInput.value, true);
               td.appendChild(editBtn);
             } else {
               const hiddenInput = document.createElement("input");
@@ -6934,8 +5987,7 @@
               const editBtn = document.createElement("button");
               editBtn.className = "json-badge";
               editBtn.innerText = "Text";
-              editBtn.onclick = () =>
-                openTextEditor("new", header, hiddenInput.value, true);
+              editBtn.onclick = () => openTextEditor("new", header, hiddenInput.value, true);
               td.appendChild(editBtn);
 
               const preview = document.createElement("span");
@@ -6979,7 +6031,8 @@
       const cells = newRow.querySelectorAll("td[data-field]");
       let payload = {};
 
-      const currentType = document.getElementById("data-type-selector").value;
+      const currentType =
+        document.getElementById("data-type-selector").value;
 
       cells.forEach((cell) => {
         const field = cell.getAttribute("data-field");
@@ -6993,7 +6046,7 @@
         if (!editEl) return;
 
         let val = editEl.value;
-        if (val.trim() === "" && editEl.type !== "hidden") return; // Don't send empty fields (unless it's hidden JSON)
+        if (val.trim() === "" && editEl.type !== 'hidden') return; // Don't send empty fields (unless it's hidden JSON)
 
         // Check if this is an option set or yes/no field
         const isOptionSet = !!getOptionSetForField(currentType, field);
@@ -7007,11 +6060,7 @@
 
       const fetchUrl = `${API_BASE_URL}${currentType}`;
 
-      setTableActionState("add_row", {
-        saveText: "Creating...",
-        saveDisabled: true,
-        cancelDisabled: true,
-      });
+      setTableActionState('add_row', { saveText: "Creating...", saveDisabled: true, cancelDisabled: true });
 
       try {
         const response = await fetch(fetchUrl, {
@@ -7037,11 +6086,7 @@
       } catch (error) {
         console.error("Create row error:", error);
         alert(`Failed to create row: ${error.message}`);
-        setTableActionState("add_row", {
-          saveText: "Save New Row",
-          saveDisabled: false,
-          cancelDisabled: false,
-        });
+        setTableActionState('add_row', { saveText: "Save New Row", saveDisabled: false, cancelDisabled: false });
       }
     }
 
@@ -7064,9 +6109,7 @@
     }
 
     window.addEventListener("resize", updateColumnOrderGroupPosition);
-    window
-      .matchMedia("(max-width: 800px)")
-      .addEventListener("change", updateColumnOrderGroupPosition);
+    window.matchMedia("(max-width: 800px)").addEventListener("change", updateColumnOrderGroupPosition);
     updateColumnOrderGroupPosition();
 
     // Initialize the script
@@ -7087,9 +6130,7 @@
 
       // 2. Update the visual color style of the dropdown badge
       const tableWrapper = document.querySelector(".sidebar-header");
-      const collapsedView = document.getElementById(
-        "data-types-collapsed-view",
-      );
+      const collapsedView = document.getElementById("data-types-collapsed-view");
       if (VERSION === "") {
         selector.className = "badge-live";
         if (tableWrapper) tableWrapper.style.backgroundColor = "#d0ffcf";
@@ -7128,21 +6169,17 @@
       if (isEditingColumns) {
         // Turn ON Edit Mode
         preEditHeadersBackup = [...detectedHeaders];
-        setTableActionState("edit_columns");
+        setTableActionState('edit_columns');
       } else {
         // Turn OFF Edit Mode (Save)
-        setTableActionState("edit_columns", {
-          saveText: "Saving...",
-          saveDisabled: true,
-          cancelDisabled: true,
-        });
+        setTableActionState('edit_columns', { saveText: "Saving...", saveDisabled: true, cancelDisabled: true });
 
         // Generate the new string-based orderMap
         const newMap = detectedHeaders;
 
         // Send to localStorage, then reset button/link visibility
         saveColumnOrderToLocalStorage(newMap).then(() => {
-          setTableActionState("normal");
+          setTableActionState('normal');
         });
       }
 
@@ -7156,7 +6193,7 @@
       populateColumnFilterGroup(detectedHeaders);
       const container = document.getElementById("table-container");
 
-      setTableActionState("normal");
+      setTableActionState('normal');
       renderTable(cachedRecords, detectedHeaders, container);
     }
 
@@ -7213,22 +6250,15 @@
 
       // Add or update the filter — confirm before overwriting an existing name
       if (existingFilters.hasOwnProperty(name)) {
-        const overwrite = confirm(
-          `A filter named "${name}" already exists. Overwrite it?`,
-        );
+        const overwrite = confirm(`A filter named "${name}" already exists. Overwrite it?`);
         if (!overwrite) return;
       }
 
       existingFilters[name] = filterSettings;
       allFilters[currentType] = existingFilters;
-      const updatedSettingsString = setSettingsEntry(
-        SETTINGS_KEY_FILTER_DATA,
-        allFilters,
-      );
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
-      const btn = document.querySelector(
-        "button[onclick='saveFilterView()']",
-      );
+      const btn = document.querySelector("button[onclick='saveFilterView()']");
       const originalText = btn.textContent;
       btn.textContent = "Saving...";
       btn.disabled = true;
@@ -7278,10 +6308,7 @@
       if (!rawFilters) return;
 
       try {
-        const filters =
-          typeof rawFilters === "object"
-            ? rawFilters
-            : JSON.parse(rawFilters);
+        const filters = typeof rawFilters === "object" ? rawFilters : JSON.parse(rawFilters);
         const filter = filters[filterName];
         if (filter) {
           hiddenColumns = new Set(filter.hiddenColumns || []);
@@ -7309,10 +6336,7 @@
     }
 
     async function deleteFilterView(dataTypeValue, filterName) {
-      if (
-        !confirm(`Delete saved view "${filterName}"? This cannot be undone.`)
-      )
-        return;
+      if (!confirm(`Delete saved view "${filterName}"? This cannot be undone.`)) return;
 
       const dt = DATA_TYPES.find((d) => d.value === dataTypeValue);
       if (!dt) return;
@@ -7323,10 +6347,7 @@
 
       delete existingFilters[filterName];
       allFilters[dataTypeValue] = existingFilters;
-      const updatedSettingsString = setSettingsEntry(
-        SETTINGS_KEY_FILTER_DATA,
-        allFilters,
-      );
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_FILTER_DATA, allFilters);
 
       try {
         const storageKey = getSettingsStorageKey();
@@ -7334,11 +6355,7 @@
         settingsRecord[DATA_MANAGER_SETTINGS_NAME] = updatedSettingsString;
 
         // If the deleted filter was active, clear the active filter name
-        if (
-          currentFilterName === filterName &&
-          dataTypeValue ===
-            document.getElementById("data-type-selector")?.value
-        ) {
+        if (currentFilterName === filterName && dataTypeValue === document.getElementById("data-type-selector")?.value) {
           currentFilterName = null;
         }
         renderDataTypeSidebar();
@@ -7355,17 +6372,10 @@
 
       // Load and update the column order entry in DATA_MANAGER_SETTINGS_NAME["columnOrder"]
       const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
-      const existingOrder = Array.isArray(allOrders[currentType])
-        ? allOrders[currentType]
-        : [];
-      const missingHeaders = existingOrder.filter(
-        (h) => !detectedHeaders.includes(h),
-      );
+      const existingOrder = Array.isArray(allOrders[currentType]) ? allOrders[currentType] : [];
+      const missingHeaders = existingOrder.filter((h) => !detectedHeaders.includes(h));
       allOrders[currentType] = [...newMap, ...missingHeaders];
-      const updatedSettingsString = setSettingsEntry(
-        SETTINGS_KEY_COLUMN_ORDER,
-        allOrders,
-      );
+      const updatedSettingsString = setSettingsEntry(SETTINGS_KEY_COLUMN_ORDER, allOrders);
 
       try {
         const storageKey = getSettingsStorageKey();
@@ -7380,65 +6390,59 @@
 
     // --- Image Hover Popup ---
     (function () {
-      const popup = document.getElementById("img-hover-popup");
-      const popupImg = document.getElementById("img-hover-popup-img");
+      const popup = document.getElementById('img-hover-popup');
+      const popupImg = document.getElementById('img-hover-popup-img');
       let hideTimer = null;
 
       function positionPopup(x, y) {
         // Place popup centered above the cursor
-        popup.style.left = x + "px";
-        popup.style.top = y - 10 + "px";
+        popup.style.left = x + 'px';
+        popup.style.top = (y - 10) + 'px';
       }
 
-      document
-        .getElementById("table-container")
-        .addEventListener("mouseover", function (e) {
-          const thumb = e.target.closest(".thumbnail-preview");
-          if (!thumb) return;
-          clearTimeout(hideTimer);
-          const src = thumb.src;
-          if (!src) return;
-          popupImg.src = src;
-          const rect = thumb.getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top;
-          popup.style.display = "block";
-          positionPopup(cx, cy);
-        });
+      document.getElementById('table-container').addEventListener('mouseover', function (e) {
+        const thumb = e.target.closest('.thumbnail-preview');
+        if (!thumb) return;
+        clearTimeout(hideTimer);
+        const src = thumb.src;
+        if (!src) return;
+        popupImg.src = src;
+        const rect = thumb.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top;
+        popup.style.display = 'block';
+        positionPopup(cx, cy);
+      });
 
-      document
-        .getElementById("table-container")
-        .addEventListener("mouseout", function (e) {
-          const thumb = e.target.closest(".thumbnail-preview");
-          if (!thumb) return;
-          hideTimer = setTimeout(function () {
-            popup.style.display = "none";
-            popupImg.src = "";
-          }, 80);
-        });
+      document.getElementById('table-container').addEventListener('mouseout', function (e) {
+        const thumb = e.target.closest('.thumbnail-preview');
+        if (!thumb) return;
+        hideTimer = setTimeout(function () {
+          popup.style.display = 'none';
+          popupImg.src = '';
+        }, 80);
+      });
 
-      document
-        .getElementById("table-container")
-        .addEventListener("input", function (e) {
-          if (e.target.closest(".select-cell")) return;
-          const row = e.target.closest(".editing-row");
-          if (row) {
-            row.classList.add("has-edits");
-            updatebulkBar();
-          }
-        });
+      document.getElementById('table-container').addEventListener('input', function (e) {
+        if (e.target.closest('.select-cell')) return;
+        const row = e.target.closest('.editing-row');
+        if (row) {
+          row.classList.add('has-edits');
+          updatebulkBar();
+        }
+      });
 
-      document
-        .getElementById("table-container")
-        .addEventListener("change", function (e) {
-          if (e.target.closest(".select-cell")) return;
-          const row = e.target.closest(".editing-row");
-          if (row) {
-            row.classList.add("has-edits");
-            updatebulkBar();
-          }
-        });
+      document.getElementById('table-container').addEventListener('change', function (e) {
+        if (e.target.closest('.select-cell')) return;
+        const row = e.target.closest('.editing-row');
+        if (row) {
+          row.classList.add('has-edits');
+          updatebulkBar();
+        }
+      });
     })();
+
   </script>
 </body>
+
 </html>

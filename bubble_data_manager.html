@@ -4275,7 +4275,7 @@
 
         container.innerHTML = `
         <div class="input-wrapper" style="flex: 1; width: 100%;">
-          <input type="text" class="constraint-value" placeholder="${ph}"
+          <input type="text" class="constraint-value" placeholder="${escapeHTML(ph)}"
             oninput="toggleClearBtnElement(this); markConstraintsDirty();"
             onkeydown="if (event.key === 'Enter') applyConstraintFilter();" />
         </div>`;

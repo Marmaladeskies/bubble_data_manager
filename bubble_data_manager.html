@@ -2280,25 +2280,21 @@
       if (!typeMeta || !fieldDisplayName) return null;
 
       if (!typeMeta._lowerCache) {
+        const lowerCache = {};
+        Object.values(typeMeta).forEach((f) => {
+          if (f.display) lowerCache[f.display.toLowerCase().trim()] = f;
+          if (f.id) lowerCache[f.id.toLowerCase().trim()] = f;
+        });
         Object.defineProperty(typeMeta, "_lowerCache", {
-          value: {},
+          value: lowerCache,
           enumerable: false,
         });
       }
 
       let fieldMeta = typeMeta[fieldDisplayName];
       if (fieldMeta === undefined && typeof fieldDisplayName === "string") {
-        if (typeMeta._lowerCache[fieldDisplayName] !== undefined) {
-          return typeMeta._lowerCache[fieldDisplayName];
-        }
-
         const clean = fieldDisplayName.toLowerCase().trim();
-        fieldMeta = Object.values(typeMeta).find(
-          (f) =>
-            (f.display && f.display.toLowerCase().trim() === clean) ||
-            (f.id && f.id.toLowerCase().trim() === clean),
-        );
-        typeMeta._lowerCache[fieldDisplayName] = fieldMeta || null;
+        fieldMeta = typeMeta._lowerCache[clean] || null;
       }
       return fieldMeta || null;
     }

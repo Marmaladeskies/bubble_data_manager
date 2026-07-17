@@ -4066,14 +4066,18 @@
 
       // Generate Data Rows
       records.forEach((record) => {
+        const safeIdHTML = escapeHTML(record._id);
+        const safeIdJS = escapeHTML(
+          String(record._id).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+        );
         const isSelected = selectedRows.has(record._id);
         // Attach the _id to the tr element so we can target the whole row
-        tableHTML += `<tr id="row-${record._id}" class="${isSelected ? "row-selected" : ""}">`;
+        tableHTML += `<tr id="row-${safeIdHTML}" class="${isSelected ? "row-selected" : ""}">`;
 
         // Add Row Checkbox cell
         tableHTML += `<td class="select-cell">
                                 <input type="checkbox" ${isSelected ? "checked" : ""}
-                                       onchange="toggleRowSelection('${record._id}', this.checked)">
+                                       onchange="toggleRowSelection('${safeIdJS}', this.checked)">
                               </td>`;
 
         visibleHeaders.forEach((header) => {

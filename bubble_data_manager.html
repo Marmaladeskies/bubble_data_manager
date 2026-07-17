@@ -3202,28 +3202,17 @@
             return `<a href="${safe}" target="_blank" title="Open image in new tab" style="display:inline-block;vertical-align:middle;"><img src="${safe}" class="thumbnail-preview json-img-thumb" alt="JSON image"></a>`;
           }).join(' ');
 
-          cell.innerHTML = '';
-          const badge = document.createElement('span');
-          badge.className = 'json-badge';
-          badge.innerText = 'JSON';
-          badge.onclick = function () {
-            openJSONEditor(recordId, field, cell.getAttribute('data-json'));
-          };
-          cell.appendChild(badge);
+          const safeRecordId = escapeHTML(
+            String(recordId).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+          );
+          const safeField = escapeHTML(
+            String(field).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+          );
+          const safePreview =
+            escapeHTML(jsonValue.substring(0, 30)) +
+            (jsonValue.length > 30 ? "..." : "");
 
-          const previewNode = document.createElement('span');
-          previewNode.style.fontSize = '11px';
-          previewNode.style.color = '#666';
-          previewNode.style.fontFamily = 'monospace';
-          // innerText automatically escapes content
-          previewNode.innerText = ' ' + jsonValue.substring(0, 30) + (jsonValue.length > 30 ? '...' : '');
-          cell.appendChild(previewNode);
-
-          if (thumbsHtml) {
-            const thumbsContainer = document.createElement('span');
-            thumbsContainer.innerHTML = ' ' + thumbsHtml;
-            cell.appendChild(thumbsContainer);
-          }
+          cell.innerHTML = `<span class="json-badge" onclick="openJSONEditor('${safeRecordId}', '${safeField}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
         }
       } else if (isFile) {
         cell.setAttribute('data-raw-value', value);

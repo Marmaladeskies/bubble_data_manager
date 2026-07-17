@@ -2796,6 +2796,14 @@
         return getExpectedType(fieldDisplayName) === "boolean";
       }
 
+      function isNumberField(dataTypeSlug, fieldDisplayName) {
+        const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
+        if (fieldMeta) {
+          return fieldMeta.type === "number";
+        }
+        return getExpectedType(fieldDisplayName) === "number";
+      }
+
       function isDateField(dataTypeSlug, fieldDisplayName) {
         const fieldMeta = getFieldMeta(dataTypeSlug, fieldDisplayName);
         if (fieldMeta) {
@@ -3092,7 +3100,7 @@
           const field = currentlyEditingJSON.field;
           const cell = row.querySelector(`td[data-field="${field}"]`);
           if (cell) {
-            if (!row.classList.contains("editing-row")) {
+            if (!row.classList.contains("editing-row") && !row.classList.contains("new-row-adding")) {
               // Row not in edit mode; automatically enter edit mode so changes can be saved.
               // Check the row's checkbox and toggle selection
               const cb = row.querySelector(
@@ -3300,7 +3308,7 @@
           const field = currentlyEditingText.field;
           const cell = row.querySelector(`td[data-field="${field}"]`);
           if (cell) {
-            if (!row.classList.contains("editing-row")) {
+            if (!row.classList.contains("editing-row") && !row.classList.contains("new-row-adding")) {
               // Row not in edit mode; automatically enter edit mode so changes can be saved.
               // Check the row's checkbox and toggle selection
               const cb = row.querySelector(
@@ -5288,7 +5296,9 @@
       }
 
       function editRow(recordId) {
+        if (recordId === "new" || recordId === "row-new") return;
         const row = document.getElementById(`row-${recordId}`);
+        if (!row || row.classList.contains("new-row-adding")) return;
         const cells = row.querySelectorAll("td[data-field]"); // Grab all data cells
 
         const currentType = document.getElementById("data-type-selector").value;
@@ -5299,7 +5309,10 @@
           // Prevent editing of Bubble's protected system IDs
           if (PROTECTED_FIELDS.includes(field)) return;
 
-          const currentValue = cell.hasAttribute("data-raw-value")
+          const existingInput = cell.querySelector('input[type="hidden"], input:not([type="hidden"]), select');
+          const currentValue = existingInput
+            ? existingInput.value
+            : cell.hasAttribute("data-raw-value")
             ? cell.getAttribute("data-raw-value")
             : cell.hasAttribute("data-json")
               ? cell.getAttribute("data-json")
@@ -5361,6 +5374,15 @@
             tzHint.style.lineHeight = "1.2";
             tzHint.innerText = getLocalTimeZoneLabel();
             cell.appendChild(tzHint);
+          } else if (isNumberField(currentType, field)) {
+            const input = document.createElement("input");
+            input.type = "number";
+            input.value = currentValue !== null && currentValue !== undefined ? currentValue : "";
+            input.style.width = "100%";
+            input.style.minWidth = "80px";
+            input.style.boxSizing = "border-box";
+            input.style.padding = "4px";
+            cell.appendChild(input);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
             const select = document.createElement("select");
@@ -6831,7 +6853,7 @@
         // Build a new row with empty inputs for each editable field
         const newRow = document.createElement("tr");
         newRow.id = "row-new";
-        newRow.classList.add("new-row-adding");
+        newRow.classList.add("new-row-adding", "editing-row");
 
         // Empty checkbox cell
         newRow.innerHTML = '<td class="select-cell"></td>';
@@ -6890,6 +6912,15 @@
               tzHint.style.lineHeight = "1.2";
               tzHint.innerText = getLocalTimeZoneLabel();
               td.appendChild(tzHint);
+            } else if (isNumberField(currentType, header)) {
+              const input = document.createElement("input");
+              input.type = "number";
+              input.value = "";
+              input.style.width = "100%";
+              input.style.minWidth = "80px";
+              input.style.boxSizing = "border-box";
+              input.style.padding = "4px";
+              td.appendChild(input);
             } else if (optionValues && optionValues.length > 0) {
               // Render a <select> dropdown for option set fields
               const select = document.createElement("select");
@@ -6948,7 +6979,7 @@
                 preview.style.color = "#666";
                 preview.style.marginLeft = "5px";
                 preview.style.fontFamily = "monospace";
-                preview.innerText = "...";
+                preview.innerText = "";
                 td.appendChild(preview);
               }
             }
@@ -6997,7 +7028,7 @@
           if (!editEl) return;
 
           let val = editEl.value;
-          if (val.trim() === "" && editEl.type !== "hidden") return; // Don't send empty fields (unless it's hidden JSON)
+          if (val.trim() === "" || val === "[]" || val === "{}") return; // Don't send empty fields
 
           // Check if this is an option set or yes/no field
           const isOptionSet = !!getOptionSetForField(currentType, field);

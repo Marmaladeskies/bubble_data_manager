@@ -3725,7 +3725,7 @@
           : "";
         const clickEvent = isEditingColumns
           ? ""
-          : `onclick="handleSort('${header}')"`; // Disable sorting while dragging
+          : `onclick="handleSort('${escapeHTML(String(header).replace(/\\/g, "\\\\").replace(/'/g, "\\'"))}')"`; // Disable sorting while dragging
         const titleText = isEditingColumns
           ? "Drag to reorder column"
           : `Sort by ${cleanHeader}`;

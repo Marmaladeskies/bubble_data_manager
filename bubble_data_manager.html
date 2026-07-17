@@ -2279,14 +2279,26 @@
       const typeMeta = cachedFieldMeta[dataTypeSlug];
       if (!typeMeta || !fieldDisplayName) return null;
 
+      if (!typeMeta._lowerCache) {
+        Object.defineProperty(typeMeta, "_lowerCache", {
+          value: {},
+          enumerable: false,
+        });
+      }
+
       let fieldMeta = typeMeta[fieldDisplayName];
-      if (!fieldMeta && typeof fieldDisplayName === "string") {
+      if (fieldMeta === undefined && typeof fieldDisplayName === "string") {
+        if (typeMeta._lowerCache[fieldDisplayName] !== undefined) {
+          return typeMeta._lowerCache[fieldDisplayName];
+        }
+
         const clean = fieldDisplayName.toLowerCase().trim();
         fieldMeta = Object.values(typeMeta).find(
           (f) =>
             (f.display && f.display.toLowerCase().trim() === clean) ||
             (f.id && f.id.toLowerCase().trim() === clean),
         );
+        typeMeta._lowerCache[fieldDisplayName] = fieldMeta || null;
       }
       return fieldMeta || null;
     }

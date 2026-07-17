@@ -1983,7 +1983,6 @@
       }
 
       if (window.innerWidth <= 800) {
-        console.log("Mobile view detected (" + window.innerWidth + "px), collapsing sidebar");
         const sidebar = document.getElementById("data-types-sidebar");
         const icon = document.getElementById("sidebar-toggle-icon");
         if (sidebar) sidebar.classList.add("collapsed");
@@ -2223,9 +2222,6 @@
           },
         );
       }
-      console.log(
-        `Mapped ${Object.keys(optionSlugToDisplayName).length} option slug(s) to display names.`,
-      );
 
       return Object.entries(types)
         .map(([value, info]) => ({ value, label: info.display }))

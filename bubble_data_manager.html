@@ -3704,25 +3704,16 @@
       /**
        * Updates a cell's innerHTML and data attributes based on its value and type.
        */
-      function setCellContent(cell, value, field, recordId, currentType) {
-        cell.setAttribute("data-field", field);
-
-        // Clean up previous attributes
-        cell.removeAttribute("data-json");
-        cell.removeAttribute("data-raw-value");
-
+      function getCellContentState(value, field, recordId, currentType) {
         let displayValue = value;
         let isJSON = false;
         let jsonValue = "";
         let isFile = false;
         let isHTML = false;
 
-        // Handle missing values cleanly
         if (value === null || value === undefined || value === "") {
           displayValue = "";
-        }
-        // Convert boolean true/false to yes/no
-        else if (isBooleanField(currentType, field)) {
+        } else if (isBooleanField(currentType, field)) {
           const isTrue =
             value === true ||
             value === "true" ||
@@ -3736,40 +3727,35 @@
         } else if (isDateField(currentType, field)) {
           displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
           isHTML = true;
-        }
-        // Bubble often returns linked data or geographic addresses as objects/arrays
-        else if (typeof value === "object") {
+        } else if (typeof value === "object") {
           isJSON = true;
           jsonValue = JSON.stringify(value);
           displayValue = jsonValue;
-        }
-        // Handle string values that Bubble returns as a pre-serialized JSON array/object
-        // (e.g. multi-image list fields stored as text in the API response).
-        // Must come BEFORE isBubbleFile to prevent substring matches like .cdn.bubble.io/
-        // inside a JSON string from being passed to renderFilePreview.
-        else if (
+        } else if (
           typeof value === "string" &&
           (value.trim().startsWith("[") || value.trim().startsWith("{"))
         ) {
           const trimmed = value.trim();
           try {
-            JSON.parse(trimmed); // validate only — we keep the original trimmed string
+            JSON.parse(trimmed);
             isJSON = true;
             jsonValue = trimmed;
             displayValue = trimmed;
-          } catch (_) {
-            /* not valid JSON — fall through to isBubbleFile / plain text */
-          }
-        }
-        // Handle File URLs (single file/image)
-        else if (isBubbleFile(value)) {
+          } catch (_) {}
+        } else if (isBubbleFile(value)) {
           isFile = true;
           displayValue = renderFilePreview(value);
         }
 
+        let result = {
+          content: displayValue,
+          isHTML: isHTML,
+          dataJson: null,
+          dataRawValue: null,
+        };
+
         if (isJSON) {
-          cell.setAttribute("data-json", jsonValue);
-          // Detect image URLs nested inside the JSON
+          result.dataJson = jsonValue;
           let parsedJson = null;
           try {
             parsedJson = JSON.parse(jsonValue);
@@ -3778,8 +3764,6 @@
             parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
           const uniqueImgUrls = [...new Set(imgUrls)];
 
-          // If the JSON is a pure flat array of file/image URLs (a Bubble "list of files" field),
-          // render each entry through renderFilePreview — the same proven path as single-file cells.
           if (
             Array.isArray(parsedJson) &&
             parsedJson.length > 0 &&
@@ -3788,14 +3772,14 @@
             })
           ) {
             const hideFileName = parsedJson.length > 1;
-            cell.innerHTML = parsedJson
+            result.content = parsedJson
               .slice(0, 5)
               .map(function (url) {
                 return renderFilePreview(url, hideFileName);
               })
               .join("");
+            result.isHTML = true;
           } else {
-            // Mixed / complex JSON: show JSON badge + any detected image thumbnails alongside
             const thumbsHtml = uniqueImgUrls
               .slice(0, 5)
               .map(function (url) {
@@ -3815,17 +3799,38 @@
               escapeHTML(jsonValue.substring(0, 30)) +
               (jsonValue.length > 30 ? "..." : "");
 
-            cell.innerHTML = `<span class="json-badge" onclick="openJSONEditor('${safeRecordId}', '${safeField}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
+            result.content = `<span class="json-badge" onclick="openJSONEditor('${safeRecordId}', '${safeField}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
+            result.isHTML = true;
           }
         } else if (isFile) {
-          cell.setAttribute("data-raw-value", value);
-          cell.innerHTML = displayValue;
+          result.dataRawValue = value;
+          result.isHTML = true;
+        }
+
+        return result;
+      }
+
+      /**
+       * Updates a cell's innerHTML and data attributes based on its value and type.
+       */
+      function setCellContent(cell, value, field, recordId, currentType) {
+        cell.setAttribute("data-field", field);
+        cell.removeAttribute("data-json");
+        cell.removeAttribute("data-raw-value");
+
+        const state = getCellContentState(value, field, recordId, currentType);
+
+        if (state.dataJson !== null) {
+          cell.setAttribute("data-json", state.dataJson);
+        }
+        if (state.dataRawValue !== null) {
+          cell.setAttribute("data-raw-value", state.dataRawValue);
+        }
+
+        if (state.isHTML) {
+          cell.innerHTML = state.content;
         } else {
-          if (isHTML) {
-            cell.innerHTML = displayValue;
-          } else {
-            cell.innerText = displayValue;
-          }
+          cell.innerText = state.content;
         }
       }
 
@@ -4397,15 +4402,25 @@
                               </td>`;
 
           visibleHeaders.forEach((header) => {
-            const tempTd = document.createElement("td");
-            setCellContent(
-              tempTd,
+            const state = getCellContentState(
               record[header],
               header,
               record._id,
               currentType,
             );
-            tableHTML += tempTd.outerHTML;
+
+            let attrs = `data-field="${escapeHTML(header)}"`;
+            if (state.dataJson !== null) {
+              attrs += ` data-json="${escapeHTML(state.dataJson)}"`;
+            }
+            if (state.dataRawValue !== null) {
+              attrs += ` data-raw-value="${escapeHTML(state.dataRawValue)}"`;
+            }
+
+            const content = state.isHTML
+              ? state.content
+              : escapeHTML(state.content);
+            tableHTML += `<td ${attrs}>${content}</td>`;
           });
           tableHTML += "</tr>";
         });

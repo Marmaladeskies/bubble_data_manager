@@ -4469,6 +4469,26 @@
       }
 
       // --- CLIENT SIDE INLINE TABLE FILTER ---
+
+      function getRecordSearchStrings(record) {
+        if (record._cachedSearchStrings === undefined) {
+          const searchStrings = [];
+          for (const val of Object.values(record)) {
+            if (val === null || val === undefined) continue;
+            const stringVal =
+              typeof val === "object" ? JSON.stringify(val) : String(val);
+            searchStrings.push(stringVal.toLowerCase());
+          }
+          Object.defineProperty(record, "_cachedSearchStrings", {
+            value: searchStrings,
+            enumerable: false, // Prevents inclusion in Object.values() iteration
+            writable: true,
+            configurable: true,
+          });
+        }
+        return record._cachedSearchStrings;
+      }
+
       function applyClientFilter() {
         const filterValue = document
           .getElementById("table-filter")
@@ -4483,12 +4503,9 @@
         }
 
         const filteredRecords = cachedRecords.filter((record) => {
-          return Object.values(record).some((val) => {
-            if (val === null || val === undefined) return false;
-            const stringVal =
-              typeof val === "object" ? JSON.stringify(val) : String(val);
-            return stringVal.toLowerCase().includes(filterValue);
-          });
+          return getRecordSearchStrings(record).some((str) =>
+            str.includes(filterValue),
+          );
         });
 
         if (filteredRecords.length === 0) {
@@ -5588,12 +5605,9 @@
           .toLowerCase();
         const visibleRecords = filterValue
           ? cachedRecords.filter((record) =>
-              Object.values(record).some((val) => {
-                if (val === null || val === undefined) return false;
-                const s =
-                  typeof val === "object" ? JSON.stringify(val) : String(val);
-                return s.toLowerCase().includes(filterValue);
-              }),
+              getRecordSearchStrings(record).some((str) =>
+                str.includes(filterValue),
+              ),
             )
           : cachedRecords;
 
@@ -5909,6 +5923,7 @@
               );
               if (recordIndex > -1) {
                 cachedRecords[recordIndex][field] = typedValue;
+                cachedRecords[recordIndex]._cachedSearchStrings = undefined; // Invalidate cache
               }
 
               successCount++;
@@ -5946,12 +5961,9 @@
           .toLowerCase();
         const visibleRecords = filterValue
           ? cachedRecords.filter((record) =>
-              Object.values(record).some((val) => {
-                if (val === null || val === undefined) return false;
-                const s =
-                  typeof val === "object" ? JSON.stringify(val) : String(val);
-                return s.toLowerCase().includes(filterValue);
-              }),
+              getRecordSearchStrings(record).some((str) =>
+                str.includes(filterValue),
+              ),
             )
           : cachedRecords;
 
@@ -6341,6 +6353,8 @@
                     );
                     if (recordIndex > -1) {
                       cachedRecords[recordIndex][field] = newValue;
+                      cachedRecords[recordIndex]._cachedSearchStrings =
+                        undefined; // Invalidate cache
                     }
                   }
                 }

@@ -2596,6 +2596,8 @@
       listEl.innerHTML = "";
       const currentVal = document.getElementById("data-type-selector")?.value;
 
+      const allFiltersObj = getSettingsEntry(SETTINGS_KEY_FILTER_DATA);
+
       DATA_TYPES.forEach((dt) => {
         const item = document.createElement("div");
         item.className =
@@ -2611,7 +2613,6 @@
         listEl.appendChild(item);
 
         // Render saved filters for this data type
-        const allFiltersObj = getSettingsEntry(SETTINGS_KEY_FILTER_DATA);
         if (allFiltersObj[dt.value]) {
           try {
             const filters = allFiltersObj[dt.value];

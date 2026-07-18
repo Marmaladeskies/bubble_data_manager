@@ -3602,6 +3602,43 @@
       }
 
       // --- UTILITY ---
+      function createStyledSelect(config = {}) {
+        const select = document.createElement("select");
+        if (config.className) select.className = config.className;
+        if (config.width) select.style.width = config.width;
+        if (config.minWidth) select.style.minWidth = config.minWidth;
+        if (config.maxWidth) select.style.maxWidth = config.maxWidth;
+        if (config.boxSizing) select.style.boxSizing = config.boxSizing;
+        if (config.padding) select.style.padding = config.padding;
+
+        if (config.blankOptionText !== undefined) {
+          const blankOpt = document.createElement("option");
+          blankOpt.value = "";
+          blankOpt.text = config.blankOptionText;
+          select.appendChild(blankOpt);
+        }
+
+        if (config.options && Array.isArray(config.options)) {
+          config.options.forEach((optConfig) => {
+            const opt = document.createElement("option");
+            opt.value = optConfig.value;
+            opt.text = optConfig.text;
+            if (optConfig.selected) opt.selected = true;
+            if (optConfig.style) {
+              if (optConfig.style.fontStyle)
+                opt.style.fontStyle = optConfig.style.fontStyle;
+              if (optConfig.style.textTransform)
+                opt.style.textTransform = optConfig.style.textTransform;
+            }
+            select.appendChild(opt);
+          });
+        }
+
+        if (config.onchange) select.onchange = config.onchange;
+
+        return select;
+      }
+
       function escapeHTML(str) {
         if (typeof str !== "string") return str;
         return str
@@ -4503,24 +4540,18 @@
 
         if (isBool && !NO_VALUE_OPERATORS.includes(currentOp)) {
           // Render a <select> dropdown for yes/no fields
-          const select = document.createElement("select");
-          select.className = "constraint-value";
-          select.style.width = "100%";
-          select.style.boxSizing = "border-box";
-          select.style.padding = "8px";
-
-          const blankOpt = document.createElement("option");
-          blankOpt.value = "";
-          blankOpt.text = "— select —";
-          select.appendChild(blankOpt);
-
-          ["yes", "no"].forEach((val) => {
-            const opt = document.createElement("option");
-            opt.value = val === "yes" ? "true" : "false";
-            opt.text = val;
-            select.appendChild(opt);
+          const select = createStyledSelect({
+            className: "constraint-value",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "8px",
+            blankOptionText: "— select —",
+            options: ["yes", "no"].map((val) => ({
+              value: val === "yes" ? "true" : "false",
+              text: val,
+            })),
+            onchange: () => markConstraintsDirty(),
           });
-          select.onchange = () => markConstraintsDirty();
 
           container.appendChild(select);
         } else if (
@@ -4529,44 +4560,33 @@
           currentOp !== "in" &&
           currentOp !== "not in"
         ) {
-          const select = document.createElement("select");
-          select.className = "constraint-value";
-          select.onchange = () => markConstraintsDirty();
-          select.style.width = "100%";
-          select.style.boxSizing = "border-box";
-          select.style.padding = "8px";
-
-          const blankOpt = document.createElement("option");
-          blankOpt.value = "";
-          blankOpt.text = "— select —";
-          select.appendChild(blankOpt);
-
-          optionValues.forEach((optVal) => {
-            const opt = document.createElement("option");
-            opt.value = optVal;
-            opt.text = optVal;
-            select.appendChild(opt);
+          const select = createStyledSelect({
+            className: "constraint-value",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "8px",
+            blankOptionText: "— select —",
+            options: optionValues.map((optVal) => ({
+              value: optVal,
+              text: optVal,
+            })),
+            onchange: () => markConstraintsDirty(),
           });
 
           container.appendChild(select);
         } else if (isDate && currentOp !== "in" && currentOp !== "not in") {
-          const select = document.createElement("select");
-          select.className = "constraint-value constraint-date-selector";
-          select.style.width = "100%";
-          select.onchange = () => {
-            toggleConstraintDateInput(select);
-            markConstraintsDirty();
-          };
-
-          const currentOpt = document.createElement("option");
-          currentOpt.value = "current date/time";
-          currentOpt.text = "Current Date/Time";
-          select.appendChild(currentOpt);
-
-          const specificOpt = document.createElement("option");
-          specificOpt.value = "specific date";
-          specificOpt.text = "Specific Date...";
-          select.appendChild(specificOpt);
+          const select = createStyledSelect({
+            className: "constraint-value constraint-date-selector",
+            width: "100%",
+            options: [
+              { value: "current date/time", text: "Current Date/Time" },
+              { value: "specific date", text: "Specific Date..." },
+            ],
+            onchange: (e) => {
+              toggleConstraintDateInput(e.target);
+              markConstraintsDirty();
+            },
+          });
 
           container.appendChild(select);
 
@@ -4633,23 +4653,25 @@
         row.style.alignItems = "center";
         row.style.flexWrap = "wrap";
 
-        const fieldSelect = document.createElement("select");
-        fieldSelect.className = "constraint-field";
-        fieldSelect.style.maxWidth = "fit-content";
-        fieldSelect.onchange = () => {
-          resetFilterNameInput();
-          markConstraintsDirty();
-          updateConstraintOperators(fieldSelect.value, row);
-        };
+        const fieldSelect = createStyledSelect({
+          className: "constraint-field",
+          maxWidth: "fit-content",
+          onchange: (e) => {
+            resetFilterNameInput();
+            markConstraintsDirty();
+            updateConstraintOperators(e.target.value, row);
+          },
+        });
 
-        const operatorSelect = document.createElement("select");
-        operatorSelect.className = "constraint-operator";
-        operatorSelect.style.maxWidth = "fit-content";
-        operatorSelect.onchange = () => {
-          resetFilterNameInput();
-          markConstraintsDirty();
-          toggleConstraintValueInput(operatorSelect.value, row);
-        };
+        const operatorSelect = createStyledSelect({
+          className: "constraint-operator",
+          maxWidth: "fit-content",
+          onchange: (e) => {
+            resetFilterNameInput();
+            markConstraintsDirty();
+            toggleConstraintValueInput(e.target.value, row);
+          },
+        });
 
         const valAndBtnWrapper = document.createElement("div");
         valAndBtnWrapper.className = "constraint-val-btn-wrapper";
@@ -5355,29 +5377,20 @@
 
           if (isBool) {
             // Render a <select> dropdown for yes/no fields
-            const select = document.createElement("select");
-            select.style.width = "100%";
-            select.style.minWidth = "100px";
-            select.style.boxSizing = "border-box";
-            select.style.padding = "4px";
-
-            const blankOpt = document.createElement("option");
-            blankOpt.value = "";
-            blankOpt.text = "— none —";
-            select.appendChild(blankOpt);
-
-            ["yes", "no"].forEach((val) => {
-              const opt = document.createElement("option");
-              opt.value = val === "yes" ? "true" : "false";
-              opt.text = val;
-              if (
-                currentValue.toLowerCase() === val ||
-                (currentValue === "true" && val === "yes") ||
-                (currentValue === "false" && val === "no")
-              ) {
-                opt.selected = true;
-              }
-              select.appendChild(opt);
+            const select = createStyledSelect({
+              width: "100%",
+              minWidth: "100px",
+              boxSizing: "border-box",
+              padding: "4px",
+              blankOptionText: "— none —",
+              options: ["yes", "no"].map((val) => ({
+                value: val === "yes" ? "true" : "false",
+                text: val,
+                selected:
+                  currentValue.toLowerCase() === val ||
+                  (currentValue === "true" && val === "yes") ||
+                  (currentValue === "false" && val === "no"),
+              })),
             });
 
             cell.appendChild(select);
@@ -5415,34 +5428,29 @@
             cell.appendChild(input);
           } else if (optionValues && optionValues.length > 0) {
             // Render a <select> dropdown for option set fields
-            const select = document.createElement("select");
-            select.style.width = "100%";
-            select.style.minWidth = "100px";
-            select.style.boxSizing = "border-box";
-            select.style.padding = "4px";
-
-            // Add a blank option to allow clearing the value
-            const blankOpt = document.createElement("option");
-            blankOpt.value = "";
-            blankOpt.text = "— none —";
-            select.appendChild(blankOpt);
-
-            optionValues.forEach((optVal) => {
-              const opt = document.createElement("option");
-              opt.value = optVal;
-              opt.text = optVal;
-              if (optVal === currentValue) opt.selected = true;
-              select.appendChild(opt);
-            });
+            const selectOptions = optionValues.map((optVal) => ({
+              value: optVal,
+              text: optVal,
+              selected: optVal === currentValue,
+            }));
 
             // If current value wasn't found in options, add it as a custom entry
             if (currentValue && !optionValues.includes(currentValue)) {
-              const customOpt = document.createElement("option");
-              customOpt.value = currentValue;
-              customOpt.text = `${currentValue} (custom)`;
-              customOpt.selected = true;
-              select.appendChild(customOpt);
+              selectOptions.push({
+                value: currentValue,
+                text: `${currentValue} (custom)`,
+                selected: true,
+              });
             }
+
+            const select = createStyledSelect({
+              width: "100%",
+              minWidth: "100px",
+              boxSizing: "border-box",
+              padding: "4px",
+              blankOptionText: "— none —",
+              options: selectOptions,
+            });
 
             cell.appendChild(select);
           } else if (cell.hasAttribute("data-json")) {
@@ -5740,60 +5748,43 @@
         valueContainer.style.flexDirection = isDate ? "column" : "row";
 
         if (isBool) {
-          const select = document.createElement("select");
-          select.className = "bulk-edit-value";
-          select.style.width = "100%";
-          select.style.boxSizing = "border-box";
-          select.style.padding = "8px";
-
-          const blankOpt = document.createElement("option");
-          blankOpt.value = "";
-          blankOpt.text = "— select —";
-          select.appendChild(blankOpt);
-
-          ["yes", "no"].forEach((val) => {
-            const opt = document.createElement("option");
-            opt.value = val === "yes" ? "true" : "false";
-            opt.text = val;
-            select.appendChild(opt);
+          const select = createStyledSelect({
+            className: "bulk-edit-value",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "8px",
+            blankOptionText: "— select —",
+            options: ["yes", "no"].map((val) => ({
+              value: val === "yes" ? "true" : "false",
+              text: val,
+            })),
           });
           valueContainer.appendChild(select);
         } else if (optionValues && optionValues.length > 0) {
-          const select = document.createElement("select");
-          select.className = "bulk-edit-value";
-          select.style.width = "100%";
-          select.style.boxSizing = "border-box";
-          select.style.padding = "8px";
-
-          const blankOpt = document.createElement("option");
-          blankOpt.value = "";
-          blankOpt.text = "— select —";
-          select.appendChild(blankOpt);
-
-          optionValues.forEach((optVal) => {
-            const opt = document.createElement("option");
-            opt.value = optVal;
-            opt.text = optVal;
-            select.appendChild(opt);
+          const select = createStyledSelect({
+            className: "bulk-edit-value",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "8px",
+            blankOptionText: "— select —",
+            options: optionValues.map((optVal) => ({
+              value: optVal,
+              text: optVal,
+            })),
           });
           valueContainer.appendChild(select);
         } else if (isDate) {
-          const select = document.createElement("select");
-          select.className = "bulk-edit-value bulk-edit-date-selector";
-          select.style.width = "100%";
-          select.style.boxSizing = "border-box";
-          select.style.padding = "8px";
-          select.onchange = () => toggleBulkEditDateInput(select);
-
-          const currentOpt = document.createElement("option");
-          currentOpt.value = "current date/time";
-          currentOpt.text = "Current Date/Time";
-          select.appendChild(currentOpt);
-
-          const specificOpt = document.createElement("option");
-          specificOpt.value = "specific date";
-          specificOpt.text = "Specific Date...";
-          select.appendChild(specificOpt);
+          const select = createStyledSelect({
+            className: "bulk-edit-value bulk-edit-date-selector",
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "8px",
+            options: [
+              { value: "current date/time", text: "Current Date/Time" },
+              { value: "specific date", text: "Specific Date..." },
+            ],
+            onchange: (e) => toggleBulkEditDateInput(e.target),
+          });
 
           valueContainer.appendChild(select);
 
@@ -6743,22 +6734,16 @@
             const isBool = isBooleanField(currentType, header);
 
             if (isBool) {
-              const select = document.createElement("select");
-              select.style.width = "100%";
-              select.style.minWidth = "100px";
-              select.style.boxSizing = "border-box";
-              select.style.padding = "4px";
-
-              const blankOpt = document.createElement("option");
-              blankOpt.value = "";
-              blankOpt.text = "— select —";
-              select.appendChild(blankOpt);
-
-              ["yes", "no"].forEach((val) => {
-                const opt = document.createElement("option");
-                opt.value = val === "yes" ? "true" : "false";
-                opt.text = val;
-                select.appendChild(opt);
+              const select = createStyledSelect({
+                width: "100%",
+                minWidth: "100px",
+                boxSizing: "border-box",
+                padding: "4px",
+                blankOptionText: "— select —",
+                options: ["yes", "no"].map((val) => ({
+                  value: val === "yes" ? "true" : "false",
+                  text: val,
+                })),
               });
 
               td.appendChild(select);
@@ -6792,22 +6777,16 @@
               td.appendChild(input);
             } else if (optionValues && optionValues.length > 0) {
               // Render a <select> dropdown for option set fields
-              const select = document.createElement("select");
-              select.style.width = "100%";
-              select.style.minWidth = "100px";
-              select.style.boxSizing = "border-box";
-              select.style.padding = "4px";
-
-              const blankOpt = document.createElement("option");
-              blankOpt.value = "";
-              blankOpt.text = "— select —";
-              select.appendChild(blankOpt);
-
-              optionValues.forEach((optVal) => {
-                const opt = document.createElement("option");
-                opt.value = optVal;
-                opt.text = optVal;
-                select.appendChild(opt);
+              const select = createStyledSelect({
+                width: "100%",
+                minWidth: "100px",
+                boxSizing: "border-box",
+                padding: "4px",
+                blankOptionText: "— select —",
+                options: optionValues.map((optVal) => ({
+                  value: optVal,
+                  text: optVal,
+                })),
               });
 
               td.appendChild(select);

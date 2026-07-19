@@ -38,3 +38,5 @@ __pycache*
 # Explictly include (must come after exclusions):
 !directory/file_name.ext
 node_modules/
+playwright-report/
+test-results/

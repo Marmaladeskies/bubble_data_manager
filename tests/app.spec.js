@@ -90,6 +90,29 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(allApps[0]).toEqual({ index: 1, domain: 'https://example-bubble-app.com', apiKey: 'fake-api-key' });
     expect(allApps[1]).toEqual({ index: 2, domain: 'https://another-app.com', apiKey: 'another-key' });
   });
+
+  test('Javascript function: isBubbleFile', async ({ page }) => {
+    // Test valid Bubble S3 URLs
+    expect(await page.evaluate(() => isBubbleFile('//s3.amazonaws.com/app/file.txt'))).toBe(true);
+    expect(await page.evaluate(() => isBubbleFile('https://example.s3.amazonaws.com/file.pdf'))).toBe(true);
+
+    // Test valid Bubble CDN URLs
+    expect(await page.evaluate(() => isBubbleFile('https://d1muf25xaso8hp.cdn.bubble.io/f12345/image.png'))).toBe(true);
+
+    // Test valid image files (which pass because of isImageFile)
+    expect(await page.evaluate(() => isBubbleFile('https://example.com/image.jpg'))).toBe(true);
+    expect(await page.evaluate(() => isBubbleFile('https://example.com/photo.png?size=large'))).toBe(true);
+
+    // Test invalid URLs
+    expect(await page.evaluate(() => isBubbleFile('https://example.com/document.pdf'))).toBe(false);
+    expect(await page.evaluate(() => isBubbleFile('https://example.com/'))).toBe(false);
+    expect(await page.evaluate(() => isBubbleFile('just a regular string'))).toBe(false);
+
+    // Test non-string inputs
+    expect(await page.evaluate(() => isBubbleFile(null))).toBe(false);
+    expect(await page.evaluate(() => isBubbleFile(undefined))).toBe(false);
+    expect(await page.evaluate(() => isBubbleFile(123))).toBe(false);
+    expect(await page.evaluate(() => isBubbleFile({}))).toBe(false);
   test('Javascript function: formatToDateTimeLocal', async ({ page }) => {
     // 1. Empty/null inputs
     let res = await page.evaluate(() => formatToDateTimeLocal(''));

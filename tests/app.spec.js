@@ -90,6 +90,36 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(allApps[0]).toEqual({ index: 1, domain: 'https://example-bubble-app.com', apiKey: 'fake-api-key' });
     expect(allApps[1]).toEqual({ index: 2, domain: 'https://another-app.com', apiKey: 'another-key' });
   });
+  test('Javascript function: formatToDateTimeLocal', async ({ page }) => {
+    // 1. Empty/null inputs
+    let res = await page.evaluate(() => formatToDateTimeLocal(''));
+    expect(res).toBe('');
+
+    res = await page.evaluate(() => formatToDateTimeLocal(null));
+    expect(res).toBe('');
+
+    res = await page.evaluate(() => formatToDateTimeLocal(undefined));
+    expect(res).toBe('');
+
+    // 2. Invalid date strings
+    res = await page.evaluate(() => formatToDateTimeLocal('invalid-date'));
+    expect(res).toBe('');
+
+    // 3. Valid date string requiring padding (using a local time string to avoid CI timezone differences)
+    // Note: JS Date parsing of "2024-05-05T08:05:00" without Z is treated as local time.
+    res = await page.evaluate(() => formatToDateTimeLocal('2024-05-05T08:05:00'));
+    expect(res).toBe('2024-05-05T08:05');
+
+    // 4. Valid date string not requiring padding
+    res = await page.evaluate(() => formatToDateTimeLocal('2024-11-20T14:30:00'));
+    expect(res).toBe('2024-11-20T14:30');
+
+    // 5. Check edge cases like boundary values, if needed.
+    // E.g., year with 4 digits.
+    res = await page.evaluate(() => formatToDateTimeLocal('1999-01-01T00:00:00'));
+    expect(res).toBe('1999-01-01T00:00');
+  });
+
 
   test('Javascript function: parseAllSettings', async ({ page }) => {
     // Test scenario 1: settingsRecord is null/undefined

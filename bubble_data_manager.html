@@ -4427,8 +4427,8 @@
                                 ${dragEvents}
                                 ${clickEvent}
                                 style="${cursorStyle}"
-                                title="${titleText}">
-                                ${cleanHeader} ${sortIcon}
+                                title="${escapeHTML(titleText)}">
+                                ${escapeHTML(cleanHeader)} ${sortIcon}
                               </th>`;
         });
 

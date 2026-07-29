@@ -3764,6 +3764,7 @@
         let displayValue = value;
         let isJSON = false;
         let jsonValue = "";
+        let parsedObj = null;
         let isFile = false;
         let isHTML = false;
 
@@ -3785,6 +3786,7 @@
           isHTML = true;
         } else if (typeof value === "object") {
           isJSON = true;
+          parsedObj = value;
           jsonValue = JSON.stringify(value);
           displayValue = jsonValue;
         } else if (
@@ -3793,7 +3795,7 @@
         ) {
           const trimmed = value.trim();
           try {
-            JSON.parse(trimmed);
+            parsedObj = JSON.parse(trimmed);
             isJSON = true;
             jsonValue = trimmed;
             displayValue = trimmed;
@@ -3812,10 +3814,7 @@
 
         if (isJSON) {
           result.dataJson = jsonValue;
-          let parsedJson = null;
-          try {
-            parsedJson = JSON.parse(jsonValue);
-          } catch (_) {}
+          let parsedJson = parsedObj;
           const imgUrls =
             parsedJson !== null ? extractImgUrlsFromJson(parsedJson) : [];
           const uniqueImgUrls = [...new Set(imgUrls)];

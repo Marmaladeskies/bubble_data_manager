@@ -1,5 +1,8 @@
 # Exclude directories
 directory/*
+node_modules/
+playwright-report/
+test-results/
 
 # Exclude files
 .devcontainer
@@ -37,4 +40,3 @@ __pycache*
 
 # Explictly include (must come after exclusions):
 !directory/file_name.ext
-node_modules/

@@ -3540,6 +3540,8 @@
         if (cancelBtn) cancelBtn.disabled = true;
 
         try {
+          const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
+
           for (let i = 0; i < selectedTypes.length; i++) {
             const typeObj = selectedTypes[i];
             const percent = Math.round((i / selectedTypes.length) * 100);
@@ -3563,7 +3565,6 @@
             let headers = Array.from(allKeysSet);
 
             try {
-              const allOrders = getSettingsEntry(SETTINGS_KEY_COLUMN_ORDER);
               const rawMap = allOrders[typeObj.value];
               let activeOrderMap = null;
               if (rawMap) {

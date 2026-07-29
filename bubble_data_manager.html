@@ -2310,6 +2310,39 @@
         }
       }
 
+      async function validateAppCredentials(domain, apiKey) {
+        const testUrl = `https://${domain}/api/1.1/obj/auth_validation_dummy?limit=1`;
+        try {
+          const response = await fetch(testUrl, {
+            method: "GET",
+            headers: { Authorization: `Bearer ${apiKey}` },
+          });
+
+          if (response.status === 401) {
+            return {
+              isValid: false,
+              message: `The API key entered is not valid for ${domain}`,
+            };
+          } else if (
+            response.ok ||
+            response.status === 404 ||
+            response.status === 400
+          ) {
+            return { isValid: true };
+          } else {
+            return {
+              isValid: false,
+              message: `Received an unexpected response from ${domain}. Are you sure this is a Bubble app?`,
+            };
+          }
+        } catch (error) {
+          return {
+            isValid: false,
+            message: `Could not connect to ${domain}. The URL may be misspelled, offline, or not a Bubble application.`,
+          };
+        }
+      }
+
       async function connectNewApp() {
         const apps = getAllApps();
         const nextIndex = apps.length + 1;
@@ -2347,38 +2380,17 @@
           }
 
           // Validate
-          const testUrl = `https://${domain}/api/1.1/obj/auth_validation_dummy?limit=1`;
-          try {
-            const response = await fetch(testUrl, {
-              method: "GET",
-              headers: { Authorization: `Bearer ${apiKey}` },
-            });
-
-            if (response.status === 401) {
-              alert(`The API key entered is not valid for ${domain}`);
-              continue;
-            } else if (
-              response.ok ||
-              response.status === 404 ||
-              response.status === 400
-            ) {
-              localStorage.setItem(keys.domain, domain);
-              localStorage.setItem(keys.apiKey, apiKey);
-              localStorage.setItem("current_app_index", nextIndex);
-              location.reload();
-              return;
-            } else {
-              alert(
-                `Received an unexpected response from ${domain}. Are you sure this is a Bubble app?`,
-              );
-              continue;
-            }
-          } catch (error) {
-            alert(
-              `Could not connect to ${domain}. The URL may be misspelled, offline, or not a Bubble application.`,
-            );
+          const validationResult = await validateAppCredentials(domain, apiKey);
+          if (!validationResult.isValid) {
+            alert(validationResult.message);
             continue;
           }
+
+          localStorage.setItem(keys.domain, domain);
+          localStorage.setItem(keys.apiKey, apiKey);
+          localStorage.setItem("current_app_index", nextIndex);
+          location.reload();
+          return;
         }
       }
 

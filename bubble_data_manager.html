@@ -3896,13 +3896,11 @@
       function getExpectedType(field) {
         if (columnTypeCache[field]) return columnTypeCache[field];
 
-        let expectedType = "unknown";
-        for (let record of cachedRecords) {
-          if (record[field] !== null && record[field] !== undefined) {
-            expectedType = typeof record[field];
-            break;
-          }
-        }
+        const record = cachedRecords.find(
+          (r) => r[field] !== null && r[field] !== undefined
+        );
+        const expectedType = record ? typeof record[field] : "unknown";
+
         columnTypeCache[field] = expectedType;
         return expectedType;
       }

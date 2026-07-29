@@ -113,6 +113,8 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(await page.evaluate(() => isBubbleFile(undefined))).toBe(false);
     expect(await page.evaluate(() => isBubbleFile(123))).toBe(false);
     expect(await page.evaluate(() => isBubbleFile({}))).toBe(false);
+  });
+
   test('Javascript function: formatToDateTimeLocal', async ({ page }) => {
     // 1. Empty/null inputs
     let res = await page.evaluate(() => formatToDateTimeLocal(''));
@@ -185,6 +187,8 @@ test.describe('Bubble Data Manager Testing', () => {
       return parseAllSettings();
     });
     expect(result5).toEqual({ filterData: "some-data" });
+  });
+
   test('Javascript function: escapeHTML', async ({ page }) => {
     // Happy path: strings with special HTML characters
     const testStrings = [
@@ -214,6 +218,181 @@ test.describe('Bubble Data Manager Testing', () => {
       const result = await page.evaluate((v) => escapeHTML(v), val);
       expect(result).toEqual(val);
     }
+  });
+
+  test('Javascript function: getSettingsStorageKey', async ({ page }) => {
+    const result = await page.evaluate(() => {
+      // Mock global variables used by getSettingsStorageKey
+      // Note: DATA_MANAGER_SETTINGS_NAME is a const in the real app, but its value is "bubble_data_manager_settings"
+      // DOMAIN is set to home which is mocked in beforeEach as 'https://example-bubble-app.com'
+      return getSettingsStorageKey();
+    });
+    expect(result).toBe('bubble_data_manager_settings_https://example-bubble-app.com');
+  });
+
+  test('Javascript function: getSettingsEntry', async ({ page }) => {
+    // 1. settingsRecord is empty/null
+    let res = await page.evaluate(() => {
+      settingsRecord = null;
+      return getSettingsEntry('testKey');
+    });
+    expect(res).toEqual({});
+
+    // 2. Setting exists
+    res = await page.evaluate(() => {
+      settingsRecord = {
+        bubble_data_manager_settings: JSON.stringify({ testKey: { a: 1, b: 2 } })
+      };
+      return getSettingsEntry('testKey');
+    });
+    expect(res).toEqual({ a: 1, b: 2 });
+
+    // 3. Setting doesn't exist in parsed object
+    res = await page.evaluate(() => {
+      settingsRecord = {
+        bubble_data_manager_settings: JSON.stringify({ otherKey: 123 })
+      };
+      return getSettingsEntry('testKey');
+    });
+    expect(res).toEqual({});
+  });
+
+  test('Javascript function: isBooleanField', async ({ page }) => {
+    // 1. Type from field meta
+    let res = await page.evaluate(() => {
+      // Mock getFieldMeta behavior
+      cachedFieldMeta = {
+        'mock-slug': {
+          '1': { display: 'Is Active', type: 'boolean' }
+        }
+      };
+      return isBooleanField('mock-slug', 'Is Active');
+    });
+    expect(res).toBe(true);
+
+    // 2. Type from field meta, but not boolean
+    res = await page.evaluate(() => {
+      cachedFieldMeta = {
+        'mock-slug': {
+          '1': { display: 'Count', type: 'number' }
+        }
+      };
+      return isBooleanField('mock-slug', 'Count');
+    });
+    expect(res).toBe(false);
+
+    // 3. Type missing in field meta, use cachedRecords fallback
+    res = await page.evaluate(() => {
+      cachedFieldMeta = {};
+      cachedRecords = [{ 'Is Active': true }];
+      // Clear the type cache just in case
+      columnTypeCache = {};
+      return isBooleanField('mock-slug', 'Is Active');
+    });
+    expect(res).toBe(true);
+
+    // 4. Fallback is not boolean
+    res = await page.evaluate(() => {
+      cachedFieldMeta = {};
+      cachedRecords = [{ 'Is Active': 'yes' }];
+      columnTypeCache = {};
+      return isBooleanField('mock-slug', 'Is Active');
+    });
+    expect(res).toBe(false);
+  });
+
+  test('Javascript function: isNumberField', async ({ page }) => {
+    let res = await page.evaluate(() => {
+      cachedFieldMeta = {
+        'mock-slug': {
+          '1': { display: 'Count', type: 'number' }
+        }
+      };
+      return isNumberField('mock-slug', 'Count');
+    });
+    expect(res).toBe(true);
+
+    res = await page.evaluate(() => {
+      cachedFieldMeta = {};
+      cachedRecords = [{ 'Count': 42 }];
+      columnTypeCache = {};
+      return isNumberField('mock-slug', 'Count');
+    });
+    expect(res).toBe(true);
+  });
+
+  test('Javascript function: isDateField', async ({ page }) => {
+    let res = await page.evaluate(() => {
+      cachedFieldMeta = {
+        'mock-slug': {
+          '1': { display: 'Created', type: 'date' }
+        }
+      };
+      return isDateField('mock-slug', 'Created');
+    });
+    expect(res).toBe(true);
+
+    // Using ISO format date string for fallback detection
+    res = await page.evaluate(() => {
+      cachedFieldMeta = {};
+      cachedRecords = [{ 'Created': '2024-05-05T08:05:00.000Z' }];
+      return isDateField('mock-slug', 'Created');
+    });
+    expect(res).toBe(true);
+  });
+
+  test('Javascript function: extractImgUrlsFromJson', async ({ page }) => {
+    // 1. Empty/null cases
+    expect(await page.evaluate(() => extractImgUrlsFromJson(null))).toEqual([]);
+    expect(await page.evaluate(() => extractImgUrlsFromJson({}))).toEqual([]);
+
+    // 2. Simple string match
+    expect(await page.evaluate(() => extractImgUrlsFromJson('https://example.com/image.jpg'))).toEqual(['https://example.com/image.jpg']);
+
+    // 3. Simple string no match
+    expect(await page.evaluate(() => extractImgUrlsFromJson('just a regular string'))).toEqual([]);
+
+    // 4. Nested object match
+    const nestedObjectResult = await page.evaluate(() => {
+      const data = {
+        name: 'test',
+        profile: {
+          avatar: 'https://example.com/avatar.png',
+          details: {
+            banner: '//s3.amazonaws.com/bucket/banner.jpg'
+          }
+        },
+        document: 'https://example.com/doc.pdf'
+      };
+      return extractImgUrlsFromJson(data);
+    });
+    expect(nestedObjectResult).toEqual(['https://example.com/avatar.png', '//s3.amazonaws.com/bucket/banner.jpg']);
+
+    // 5. Array match
+    const arrayResult = await page.evaluate(() => {
+      const data = [
+        'https://example.com/image1.jpg',
+        'https://d1muf25xaso8hp.cdn.bubble.io/img.webp',
+        'not a image'
+      ];
+      return extractImgUrlsFromJson(data);
+    });
+    expect(arrayResult).toEqual(['https://example.com/image1.jpg', 'https://d1muf25xaso8hp.cdn.bubble.io/img.webp']);
+
+    // 6. Complex nested structure
+    const complexResult = await page.evaluate(() => {
+      const data = {
+        items: [
+          { img: 'https://example.com/a.jpg' },
+          { data: { url: 'https://example.s3.amazonaws.com/b.png' } }
+        ],
+        extra: 'https://test.com/c.gif'
+      };
+      return extractImgUrlsFromJson(data);
+    });
+    expect(complexResult.sort()).toEqual(['https://example.com/a.jpg', 'https://example.s3.amazonaws.com/b.png', 'https://test.com/c.gif'].sort());
+  });
+
   test('Javascript function: isImageFile', async ({ page }) => {
     // Valid standard paths
     expect(await page.evaluate(() => isImageFile('image.jpg'))).toBe(true);

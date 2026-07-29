@@ -3772,7 +3772,13 @@
       /**
        * Updates a cell's innerHTML and data attributes based on its value and type.
        */
-      function getCellContentState(value, field, recordId, currentType) {
+      function getCellContentState(
+        value,
+        field,
+        recordId,
+        currentType,
+        precalcType = null,
+      ) {
         let displayValue = value;
         let isJSON = false;
         let jsonValue = "";
@@ -3780,9 +3786,19 @@
         let isFile = false;
         let isHTML = false;
 
+        const isBool = precalcType
+          ? precalcType.isBool
+          : isBooleanField(currentType, field);
+        const isOptSet = precalcType
+          ? precalcType.isOptionSet
+          : !!getOptionSetForField(currentType, field);
+        const isDate = precalcType
+          ? precalcType.isDate
+          : isDateField(currentType, field);
+
         if (value === null || value === undefined || value === "") {
           displayValue = "";
-        } else if (isBooleanField(currentType, field)) {
+        } else if (isBool) {
           const isTrue =
             value === true ||
             value === "true" ||
@@ -3790,10 +3806,10 @@
             (typeof value === "string" && value.toLowerCase() === "yes");
           displayValue = `<span class="type-badge ${isTrue ? "badge-boolean-yes" : "badge-boolean-no"}">${isTrue ? "yes" : "no"}</span>`;
           isHTML = true;
-        } else if (getOptionSetForField(currentType, field)) {
+        } else if (isOptSet) {
           displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
           isHTML = true;
-        } else if (isDateField(currentType, field)) {
+        } else if (isDate) {
           displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
           isHTML = true;
         } else if (typeof value === "object") {
@@ -3880,12 +3896,25 @@
       /**
        * Updates a cell's innerHTML and data attributes based on its value and type.
        */
-      function setCellContent(cell, value, field, recordId, currentType) {
+      function setCellContent(
+        cell,
+        value,
+        field,
+        recordId,
+        currentType,
+        precalcType = null,
+      ) {
         cell.setAttribute("data-field", field);
         cell.removeAttribute("data-json");
         cell.removeAttribute("data-raw-value");
 
-        const state = getCellContentState(value, field, recordId, currentType);
+        const state = getCellContentState(
+          value,
+          field,
+          recordId,
+          currentType,
+          precalcType,
+        );
 
         if (state.dataJson !== null) {
           cell.setAttribute("data-json", state.dataJson);
@@ -4461,6 +4490,16 @@
         const currentType =
           document.getElementById("data-type-selector")?.value || "";
 
+        // Precalculate types for visible columns
+        const precalculatedTypes = {};
+        visibleHeaders.forEach((header) => {
+          precalculatedTypes[header] = {
+            isBool: isBooleanField(currentType, header),
+            isOptionSet: !!getOptionSetForField(currentType, header),
+            isDate: isDateField(currentType, header),
+          };
+        });
+
         // Generate Data Rows
         records.forEach((record) => {
           const safeIdHTML = escapeHTML(record._id);
@@ -4483,6 +4522,7 @@
               header,
               record._id,
               currentType,
+              precalculatedTypes[header],
             );
 
             let attrs = `data-field="${escapeHTML(header)}"`;

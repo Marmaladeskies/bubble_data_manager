@@ -3958,14 +3958,15 @@
         listContainer.innerHTML = "";
         if (!headers || headers.length === 0) return;
 
-        const sortedHeaders = [...headers].sort((a, b) =>
-          a
-            .replace(/_/g, " ")
-            .trim()
-            .localeCompare(b.replace(/_/g, " ").trim()),
+        const processedHeaders = headers.map((header) => ({
+          header,
+          cleanHeader: header.replace(/_/g, " ").trim(),
+        }));
+        processedHeaders.sort((a, b) =>
+          a.cleanHeader.localeCompare(b.cleanHeader),
         );
-        sortedHeaders.forEach((header) => {
-          const cleanHeader = header.replace(/_/g, " ").trim();
+
+        processedHeaders.forEach(({ header, cleanHeader }) => {
           const isHidden = hiddenColumns.has(header);
 
           const label = document.createElement("label");

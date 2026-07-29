@@ -3899,7 +3899,7 @@
         if (columnTypeCache[field]) return columnTypeCache[field];
 
         const record = cachedRecords.find(
-          (r) => r[field] !== null && r[field] !== undefined
+          (r) => r[field] !== null && r[field] !== undefined,
         );
         const expectedType = record ? typeof record[field] : "unknown";
 
@@ -6286,6 +6286,12 @@
                 );
               }
 
+              const recordIndex = cachedRecords.findIndex(
+                (r) => r._id === recordId,
+              );
+              const recordToUpdate =
+                recordIndex > -1 ? cachedRecords[recordIndex] : null;
+
               cells.forEach((cell) => {
                 if (cell.hasAttribute("data-original")) {
                   const input = cell.querySelector(
@@ -6342,13 +6348,9 @@
                     cell.setAttribute("title", displayValue);
                     cell.removeAttribute("data-original");
 
-                    const recordIndex = cachedRecords.findIndex(
-                      (r) => r._id === recordId,
-                    );
-                    if (recordIndex > -1) {
-                      cachedRecords[recordIndex][field] = newValue;
-                      cachedRecords[recordIndex]._cachedSearchStrings =
-                        undefined; // Invalidate cache
+                    if (recordToUpdate) {
+                      recordToUpdate[field] = newValue;
+                      recordToUpdate._cachedSearchStrings = undefined; // Invalidate cache
                     }
                   }
                 }

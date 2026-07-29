@@ -3436,6 +3436,12 @@
         } else {
           str = String(val);
         }
+
+        // Prevent CSV Injection by escaping formulas
+        if (/^[=+\-@\t\r]/.test(str)) {
+          str = "'" + str;
+        }
+
         if (
           str.includes('"') ||
           str.includes(",") ||

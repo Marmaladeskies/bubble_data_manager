@@ -120,4 +120,109 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(res).toBe('1999-01-01T00:00');
   });
 
+
+  test('Javascript function: parseAllSettings', async ({ page }) => {
+    // Test scenario 1: settingsRecord is null/undefined
+    const result1 = await page.evaluate(() => {
+      settingsRecord = null;
+      return parseAllSettings();
+    });
+    expect(result1).toEqual({});
+
+    // Test scenario 2: settingsRecord[DATA_MANAGER_SETTINGS_NAME] is missing/undefined
+    const result2 = await page.evaluate(() => {
+      settingsRecord = {};
+      return parseAllSettings();
+    });
+    expect(result2).toEqual({});
+
+    // Test scenario 3: valid JSON string
+    const result3 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: '{"columnOrder":["_id","Name"]}'
+      };
+      return parseAllSettings();
+    });
+    expect(result3).toEqual({ columnOrder: ["_id", "Name"] });
+
+    // Test scenario 4: invalid JSON string (should be caught by catch block)
+    const result4 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: '{"columnOrder":["_id","Name"' // missing closing brackets
+      };
+      return parseAllSettings();
+    });
+    expect(result4).toEqual({});
+
+    // Test scenario 5: value is already an object
+    const result5 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: { filterData: "some-data" }
+      };
+      return parseAllSettings();
+    });
+    expect(result5).toEqual({ filterData: "some-data" });
+  test('Javascript function: escapeHTML', async ({ page }) => {
+    // Happy path: strings with special HTML characters
+    const testStrings = [
+      { input: 'Tom & Jerry', expected: 'Tom &amp; Jerry' },
+      { input: '<script>alert(1)</script>', expected: '&lt;script&gt;alert(1)&lt;/script&gt;' },
+      { input: 'He said "Hello"', expected: 'He said &quot;Hello&quot;' },
+      { input: "It's a beautiful day", expected: 'It&#039;s a beautiful day' },
+      { input: '<>&"\'', expected: '&lt;&gt;&amp;&quot;&#039;' } // All together
+    ];
+
+    for (const { input, expected } of testStrings) {
+      const result = await page.evaluate((val) => escapeHTML(val), input);
+      expect(result).toBe(expected);
+    }
+
+    // Edge cases: non-string inputs
+    const edgeCases = [
+      null,
+      undefined,
+      123,
+      true,
+      { key: 'value' },
+      ['array']
+    ];
+
+    for (const val of edgeCases) {
+      const result = await page.evaluate((v) => escapeHTML(v), val);
+      expect(result).toEqual(val);
+    }
+  test('Javascript function: isImageFile', async ({ page }) => {
+    // Valid standard paths
+    expect(await page.evaluate(() => isImageFile('image.jpg'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('path/to/image.png'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.webp'))).toBe(true);
+
+    // Case insensitivity
+    expect(await page.evaluate(() => isImageFile('IMAGE.JPG'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('image.PNG'))).toBe(true);
+
+    // Query parameters
+    expect(await page.evaluate(() => isImageFile('image.gif?v=123'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.svg?size=large'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('IMAGE.JPG?v=1'))).toBe(true);
+
+    // Hash fragments
+    expect(await page.evaluate(() => isImageFile('image.jpg#top'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.png#section'))).toBe(true);
+
+    // Invalid files
+    expect(await page.evaluate(() => isImageFile('document.pdf'))).toBe(false);
+    expect(await page.evaluate(() => isImageFile('archive.zip'))).toBe(false);
+    expect(await page.evaluate(() => isImageFile('https://example.com/page.html'))).toBe(false);
+
+    // Extension in query param
+    expect(await page.evaluate(() => isImageFile('https://example.com/download?file=image.jpg'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/api?path=image.png'))).toBe(true);
+
+    // Invalid types
+    expect(await page.evaluate(() => isImageFile(null))).toBe(false);
+    expect(await page.evaluate(() => isImageFile(undefined))).toBe(false);
+    expect(await page.evaluate(() => isImageFile(123))).toBe(false);
+    expect(await page.evaluate(() => isImageFile({}))).toBe(false);
+  });
 });

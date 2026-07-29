@@ -3684,24 +3684,7 @@
       function isImageFile(val) {
         if (typeof val !== "string") return false;
         // Also check full URL in case extension is in query params
-        const low = val.toLowerCase();
-        const hasImgExt = (s) =>
-          s.endsWith(".jpg") ||
-          s.endsWith(".jpeg") ||
-          s.endsWith(".png") ||
-          s.endsWith(".gif") ||
-          s.endsWith(".webp") ||
-          s.endsWith(".svg");
-        return (
-          hasImgExt(val.split("?")[0]) ||
-          hasImgExt(val.split("#")[0]) ||
-          low.includes(".jpg?") ||
-          low.includes(".jpeg?") ||
-          low.includes(".png?") ||
-          low.includes(".gif?") ||
-          low.includes(".webp?") ||
-          low.includes(".svg?")
-        );
+        return /\.(jpg|jpeg|png|gif|webp|svg)([\?#]|$)/i.test(val) || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(val.split('#')[0]);
       }
 
       function isBubbleFile(val) {

@@ -226,3 +226,68 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(await page.evaluate(() => isImageFile({}))).toBe(false);
   });
 });
+
+test.describe('Timezone utility function tests', () => {
+  // Helper to load the page in a specific timezone context and extract the label
+  async function getLabelInTimezone(browser, timezoneId) {
+    const context = await browser.newContext({ timezoneId });
+    const tzPage = await context.newPage();
+
+    // We only need the JS function to be available, so we just load the HTML.
+    // Setting up the mocks isn't strictly necessary since we aren't initializing
+    // the whole app, but for consistency we'll load the file.
+    await tzPage.goto('http://localhost:3000/bubble_data_manager.html');
+
+    const label = await tzPage.evaluate(() => getLocalTimeZoneLabel());
+    await context.close();
+    return label;
+  }
+
+  test('UTC timezone', async ({ browser }) => {
+    const label = await getLabelInTimezone(browser, 'UTC');
+    expect(label).toBe('Local Time: UTC (UTC+00:00)');
+  });
+
+  test('Positive offset timezone (Asia/Tokyo)', async ({ browser }) => {
+    const label = await getLabelInTimezone(browser, 'Asia/Tokyo');
+    expect(label).toBe('Local Time: Asia/Tokyo (UTC+09:00)');
+  });
+
+  test('Negative offset timezone (Pacific/Honolulu)', async ({ browser }) => {
+    const label = await getLabelInTimezone(browser, 'Pacific/Honolulu');
+    expect(label).toBe('Local Time: Pacific/Honolulu (UTC-10:00)');
+  });
+
+  test('Fractional offset timezone (Asia/Kolkata)', async ({ browser }) => {
+    const label = await getLabelInTimezone(browser, 'Asia/Kolkata');
+    // Note: Some Chromium versions map 'Asia/Kolkata' to 'Asia/Calcutta' internally.
+    expect(label).toMatch(/Local Time: Asia\/(Kolkata|Calcutta) \(UTC\+05:30\)/);
+  });
+
+  test('Fallback behavior when Intl is unavailable', async ({ browser }) => {
+    const context = await browser.newContext();
+    const tzPage = await context.newPage();
+
+    await tzPage.goto('http://localhost:3000/bubble_data_manager.html');
+
+    const label = await tzPage.evaluate(() => {
+      // Mock Intl to throw an error
+      const originalIntl = window.Intl;
+      window.Intl = {
+        DateTimeFormat: () => {
+          throw new Error('Intl not supported');
+        }
+      };
+
+      const result = getLocalTimeZoneLabel();
+
+      // Restore Intl
+      window.Intl = originalIntl;
+      return result;
+    });
+
+    await context.close();
+
+    expect(label).toBe('Local Browser Timezone');
+  });
+});

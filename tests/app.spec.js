@@ -90,4 +90,47 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(allApps[0]).toEqual({ index: 1, domain: 'https://example-bubble-app.com', apiKey: 'fake-api-key' });
     expect(allApps[1]).toEqual({ index: 2, domain: 'https://another-app.com', apiKey: 'another-key' });
   });
+
+  test('Javascript function: parseAllSettings', async ({ page }) => {
+    // Test scenario 1: settingsRecord is null/undefined
+    const result1 = await page.evaluate(() => {
+      settingsRecord = null;
+      return parseAllSettings();
+    });
+    expect(result1).toEqual({});
+
+    // Test scenario 2: settingsRecord[DATA_MANAGER_SETTINGS_NAME] is missing/undefined
+    const result2 = await page.evaluate(() => {
+      settingsRecord = {};
+      return parseAllSettings();
+    });
+    expect(result2).toEqual({});
+
+    // Test scenario 3: valid JSON string
+    const result3 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: '{"columnOrder":["_id","Name"]}'
+      };
+      return parseAllSettings();
+    });
+    expect(result3).toEqual({ columnOrder: ["_id", "Name"] });
+
+    // Test scenario 4: invalid JSON string (should be caught by catch block)
+    const result4 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: '{"columnOrder":["_id","Name"' // missing closing brackets
+      };
+      return parseAllSettings();
+    });
+    expect(result4).toEqual({});
+
+    // Test scenario 5: value is already an object
+    const result5 = await page.evaluate(() => {
+      settingsRecord = {
+        [DATA_MANAGER_SETTINGS_NAME]: { filterData: "some-data" }
+      };
+      return parseAllSettings();
+    });
+    expect(result5).toEqual({ filterData: "some-data" });
+  });
 });

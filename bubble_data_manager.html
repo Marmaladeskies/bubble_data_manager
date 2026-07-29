@@ -3257,7 +3257,7 @@
 
           Object.keys(data).forEach((key) => {
             content.appendChild(
-              createJSONPropertyRow(key, data[key], data, isArray, container)
+              createJSONPropertyRow(key, data[key], data, isArray, container),
             );
           });
 
@@ -3889,6 +3889,7 @@
       let currentConstraints = [];
       let constraintFieldsPopulated = false;
       let cachedRecords = []; // Holds raw server results for local filtering
+      let currentVisibleRecords = []; // Holds locally filtered records
       let columnTypeCache = {}; // Caches expected data types for each field based on currently fetched records
       let detectedHeaders = []; // Holds absolute unique columns
       let settingsRecord = null; // Holds your centralized backend database constants layout settings
@@ -4183,6 +4184,7 @@
 
           const data = await response.json();
           cachedRecords = data.response.results || [];
+          currentVisibleRecords = cachedRecords; // Reset visible records to match newly fetched records
           columnTypeCache = {}; // Reset cache when new records are fetched
           const remaining = data.response.remaining;
           const count = data.response.count;
@@ -4510,17 +4512,18 @@
 
         if (!filterValue) {
           // If text input is blank, return to unfiltered cached server rows
-          renderTable(cachedRecords, detectedHeaders, container);
+          currentVisibleRecords = cachedRecords;
+          renderTable(currentVisibleRecords, detectedHeaders, container);
           return;
         }
 
-        const filteredRecords = cachedRecords.filter((record) => {
+        currentVisibleRecords = cachedRecords.filter((record) => {
           return getRecordSearchStrings(record).some((str) =>
             str.includes(filterValue),
           );
         });
 
-        if (filteredRecords.length === 0) {
+        if (currentVisibleRecords.length === 0) {
           renderTable([], detectedHeaders, container);
           const msgDiv = document.createElement("div");
           msgDiv.style.cssText =
@@ -4528,7 +4531,7 @@
           msgDiv.textContent = `No visible records match "${filterValue}" on this page.`;
           container.appendChild(msgDiv);
         } else {
-          renderTable(filteredRecords, detectedHeaders, container);
+          renderTable(currentVisibleRecords, detectedHeaders, container);
         }
       }
 
@@ -5611,17 +5614,7 @@
 
       function toggleSelectAll(isChecked) {
         // Operate on currently visible (possibly filtered) records
-        const filterValue = document
-          .getElementById("table-filter")
-          .value.trim()
-          .toLowerCase();
-        const visibleRecords = filterValue
-          ? cachedRecords.filter((record) =>
-              getRecordSearchStrings(record).some((str) =>
-                str.includes(filterValue),
-              ),
-            )
-          : cachedRecords;
+        const visibleRecords = currentVisibleRecords;
 
         visibleRecords.forEach((record) => {
           const row = document.getElementById(`row-${record._id}`);
@@ -5967,17 +5960,7 @@
         );
         if (!selectAllCb) return;
 
-        const filterValue = document
-          .getElementById("table-filter")
-          .value.trim()
-          .toLowerCase();
-        const visibleRecords = filterValue
-          ? cachedRecords.filter((record) =>
-              getRecordSearchStrings(record).some((str) =>
-                str.includes(filterValue),
-              ),
-            )
-          : cachedRecords;
+        const visibleRecords = currentVisibleRecords;
 
         if (visibleRecords.length === 0) {
           selectAllCb.checked = false;
@@ -6662,6 +6645,9 @@
         // Update local cache outside the loop to improve performance (O(N) instead of O(N*M))
         if (successfullyDeletedIds.size > 0) {
           cachedRecords = cachedRecords.filter(
+            (r) => !successfullyDeletedIds.has(r._id),
+          );
+          currentVisibleRecords = currentVisibleRecords.filter(
             (r) => !successfullyDeletedIds.has(r._id),
           );
           totalMatchingCount = Math.max(

@@ -2237,6 +2237,7 @@
       const DOMAIN_NAME = "yourdomain.com";
       const API_TOKEN = "Your API Key";
       const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
+      const BATCH_SIZE = 500; // number of rows to duplicate in a single batch
       // ---------------------
       const DATA_MANAGER_SETTINGS_NAME = "bubble_data_manager_settings"; // name of the settings object key in local storage
       const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
@@ -3257,7 +3258,7 @@
 
           Object.keys(data).forEach((key) => {
             content.appendChild(
-              createJSONPropertyRow(key, data[key], data, isArray, container)
+              createJSONPropertyRow(key, data[key], data, isArray, container),
             );
           });
 
@@ -6494,7 +6495,6 @@
 
           let successCount = 0;
           let failCount = 0;
-          const BATCH_SIZE = 500;
 
           for (let i = 0; i < rowsToDuplicate.length; i += BATCH_SIZE) {
             const batch = rowsToDuplicate.slice(i, i + BATCH_SIZE);

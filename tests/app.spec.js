@@ -91,6 +91,35 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(allApps[1]).toEqual({ index: 2, domain: 'https://another-app.com', apiKey: 'another-key' });
   });
 
+  test('Javascript function: escapeHTML', async ({ page }) => {
+    // Happy path: strings with special HTML characters
+    const testStrings = [
+      { input: 'Tom & Jerry', expected: 'Tom &amp; Jerry' },
+      { input: '<script>alert(1)</script>', expected: '&lt;script&gt;alert(1)&lt;/script&gt;' },
+      { input: 'He said "Hello"', expected: 'He said &quot;Hello&quot;' },
+      { input: "It's a beautiful day", expected: 'It&#039;s a beautiful day' },
+      { input: '<>&"\'', expected: '&lt;&gt;&amp;&quot;&#039;' } // All together
+    ];
+
+    for (const { input, expected } of testStrings) {
+      const result = await page.evaluate((val) => escapeHTML(val), input);
+      expect(result).toBe(expected);
+    }
+
+    // Edge cases: non-string inputs
+    const edgeCases = [
+      null,
+      undefined,
+      123,
+      true,
+      { key: 'value' },
+      ['array']
+    ];
+
+    for (const val of edgeCases) {
+      const result = await page.evaluate((v) => escapeHTML(v), val);
+      expect(result).toEqual(val);
+    }
   test('Javascript function: isImageFile', async ({ page }) => {
     // Valid standard paths
     expect(await page.evaluate(() => isImageFile('image.jpg'))).toBe(true);

@@ -90,4 +90,39 @@ test.describe('Bubble Data Manager Testing', () => {
     expect(allApps[0]).toEqual({ index: 1, domain: 'https://example-bubble-app.com', apiKey: 'fake-api-key' });
     expect(allApps[1]).toEqual({ index: 2, domain: 'https://another-app.com', apiKey: 'another-key' });
   });
+
+  test('Javascript function: isImageFile', async ({ page }) => {
+    // Valid standard paths
+    expect(await page.evaluate(() => isImageFile('image.jpg'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('path/to/image.png'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.webp'))).toBe(true);
+
+    // Case insensitivity
+    expect(await page.evaluate(() => isImageFile('IMAGE.JPG'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('image.PNG'))).toBe(true);
+
+    // Query parameters
+    expect(await page.evaluate(() => isImageFile('image.gif?v=123'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.svg?size=large'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('IMAGE.JPG?v=1'))).toBe(true);
+
+    // Hash fragments
+    expect(await page.evaluate(() => isImageFile('image.jpg#top'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/img.png#section'))).toBe(true);
+
+    // Invalid files
+    expect(await page.evaluate(() => isImageFile('document.pdf'))).toBe(false);
+    expect(await page.evaluate(() => isImageFile('archive.zip'))).toBe(false);
+    expect(await page.evaluate(() => isImageFile('https://example.com/page.html'))).toBe(false);
+
+    // Extension in query param
+    expect(await page.evaluate(() => isImageFile('https://example.com/download?file=image.jpg'))).toBe(true);
+    expect(await page.evaluate(() => isImageFile('https://example.com/api?path=image.png'))).toBe(true);
+
+    // Invalid types
+    expect(await page.evaluate(() => isImageFile(null))).toBe(false);
+    expect(await page.evaluate(() => isImageFile(undefined))).toBe(false);
+    expect(await page.evaluate(() => isImageFile(123))).toBe(false);
+    expect(await page.evaluate(() => isImageFile({}))).toBe(false);
+  });
 });

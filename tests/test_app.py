@@ -7,11 +7,23 @@ from playwright.sync_api import Page, expect, Browser
 
 @pytest.fixture(scope="session", autouse=True)
 def http_server():
+    import os
+    import urllib.request
+    import urllib.error
     # Start the HTTP server from the parent directory
-    process = subprocess.Popen(["python3", "-m", "http.server", "3000"], cwd="..")
-    time.sleep(1) # wait for server to spin up
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    process = subprocess.Popen(["python3", "-m", "http.server", "3000"], cwd=root_dir)
+
+    for _ in range(50):
+        try:
+            urllib.request.urlopen("http://localhost:3000/bubble_data_manager.html")
+            break
+        except Exception:
+            time.sleep(0.1)
+
     yield
     process.terminate()
+    process.wait()
 
 @pytest.fixture(autouse=True)
 def setup_page(page: Page):
@@ -253,46 +265,35 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(undefined)") is False
 
 
-def get_label_in_timezone(browser: Browser, timezone_id: str):
-    context = browser.new_context(timezone_id=timezone_id)
-    tz_page = context.new_page()
-    tz_page.goto('http://localhost:3000/bubble_data_manager.html')
-    label = tz_page.evaluate("getLocalTimeZoneLabel()")
-    context.close()
-    return label
-
 class TestTimezoneUtilityFunctions:
 
-    # We do not need the autouse fixture mock for this test block since it just tests the JS function execution.
-
-    def test_utc_timezone(self, browser: Browser):
-        label = get_label_in_timezone(browser, 'UTC')
+    @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "UTC"}])
+    def test_utc_timezone(self, page: Page):
+        label = page.evaluate("getLocalTimeZoneLabel()")
         assert label == 'Local Time: UTC (UTC+00:00)'
 
-    def test_positive_offset_timezone(self, browser: Browser):
-        label = get_label_in_timezone(browser, 'Asia/Tokyo')
+    @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "Asia/Tokyo"}])
+    def test_positive_offset_timezone(self, page: Page):
+        label = page.evaluate("getLocalTimeZoneLabel()")
         assert label == 'Local Time: Asia/Tokyo (UTC+09:00)'
 
-    def test_negative_offset_timezone(self, browser: Browser):
-        label = get_label_in_timezone(browser, 'Pacific/Honolulu')
+    @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "Pacific/Honolulu"}])
+    def test_negative_offset_timezone(self, page: Page):
+        label = page.evaluate("getLocalTimeZoneLabel()")
         assert label == 'Local Time: Pacific/Honolulu (UTC-10:00)'
 
-    def test_fractional_offset_timezone(self, browser: Browser):
-        label = get_label_in_timezone(browser, 'Asia/Kolkata')
+    @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "Asia/Kolkata"}])
+    def test_fractional_offset_timezone(self, page: Page):
+        label = page.evaluate("getLocalTimeZoneLabel()")
         assert bool(re.search(r"Local Time: Asia/(Kolkata|Calcutta) \(UTC\+05:30\)", label)) is True
 
-    def test_fallback_behavior_when_intl_unavailable(self, browser: Browser):
-        context = browser.new_context()
-        tz_page = context.new_page()
-        tz_page.goto('http://localhost:3000/bubble_data_manager.html')
-
-        label = tz_page.evaluate("""(() => {
+    def test_fallback_behavior_when_intl_unavailable(self, page: Page):
+        label = page.evaluate("""(() => {
             const originalIntl = window.Intl;
             window.Intl = { DateTimeFormat: () => { throw new Error('Intl not supported'); } };
             const result = getLocalTimeZoneLabel();
             window.Intl = originalIntl;
             return result;
         })()""")
-        context.close()
 
         assert label == 'Local Browser Timezone'

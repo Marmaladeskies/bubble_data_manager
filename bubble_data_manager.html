@@ -3491,7 +3491,16 @@
 
         while (remaining > 0) {
           let fetchUrl = `${API_BASE_URL}${dataTypeValue}?cursor=${cursor}&limit=100`;
-          const response = await fetch(fetchUrl, { headers: headersConfig });
+          let response;
+          try {
+            response = await fetch(fetchUrl, { headers: headersConfig });
+          } catch (fetchErr) {
+            if (fetchErr instanceof TypeError) {
+              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
+              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+            }
+            throw fetchErr;
+          }
           if (!response.ok) {
             throw new Error(
               `HTTP ${response.status} fetching records for ${dataTypeValue}`,
@@ -4204,9 +4213,60 @@
             fetchUrl += `&sort_field=${encodeURIComponent(sortField)}&descending=${sortDescending}`;
           }
 
-          const response = await fetch(fetchUrl, { headers: headersConfig });
+          let response;
+          try {
+            response = await fetch(fetchUrl, { headers: headersConfig });
+          } catch (fetchErr) {
+            if (fetchErr instanceof TypeError) {
+              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
+            }
+            throw fetchErr;
+          }
 
           if (!response.ok) {
+            if (response.status === 400 || response.status === 404) {
+              try {
+                const newTypes = await fetchDataTypesFromBubble();
+                const typeStillExists = newTypes.some(t => t.value === currentType);
+
+                if (!typeStillExists) {
+                   rebuildDataTypes(newTypes);
+                   handleDataTypeChange();
+                   return;
+                } else if (response.status === 400) {
+                    // Type exists, but a 400 occurred (likely a deleted column used in sort/filter)
+                    const validCols = cachedTypeColumns[currentType] || [];
+                    let constraintsChanged = false;
+
+                    // Sanitize Constraints
+                    const newConstraints = currentConstraints.filter(c => {
+                       if (c.key === "_id" || c.key.toLowerCase() === "unique id") return true;
+                       if (validCols.length > 0 && !validCols.includes(c.key)) {
+                          constraintsChanged = true;
+                          return false;
+                       }
+                       return true;
+                    });
+
+                    let sortChanged = false;
+                    // Sanitize Sort
+                    if (sortField && sortField !== "_id" && sortField !== "Modified Date" && sortField !== "Created Date" && validCols.length > 0 && !validCols.includes(sortField)) {
+                       sortField = "Modified Date";
+                       sortChanged = true;
+                    }
+
+                    if (constraintsChanged || sortChanged) {
+                        currentConstraints = newConstraints;
+                        syncConstraintsUI();
+                        // Re-trigger fetch with sanitized parameters
+                        fetchAndRenderData();
+                        return;
+                    }
+                }
+              } catch (metaErr) {
+                console.warn("Could not recover from 400/404 error using schema metadata:", metaErr);
+              }
+            }
             throw new Error(
               `HTTP Error: ${response.status} ${response.statusText}`,
             );
@@ -6495,9 +6555,18 @@
             fetchUrl += `&sort_field=${encodeURIComponent(sortField)}&descending=${sortDescending}`;
           }
 
-          const response = await fetch(fetchUrl, {
-            headers: { Authorization: `Bearer ${API_KEY}` },
-          });
+          let response;
+          try {
+            response = await fetch(fetchUrl, {
+              headers: { Authorization: `Bearer ${API_KEY}` },
+            });
+          } catch (fetchErr) {
+            if (fetchErr instanceof TypeError) {
+              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
+              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+            }
+            throw fetchErr;
+          }
 
           if (!response.ok)
             throw new Error(`HTTP ${response.status} fetching matching rows`);

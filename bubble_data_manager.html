@@ -2858,6 +2858,30 @@
       }
 
       /**
+       * Formats an ISO 8601 date string into a human-readable local date/time.
+       * E.g.: "Aug 17, 2026, 8:39:35 PM"
+       * Falls back to the raw value if parsing fails.
+       */
+      function formatDateForDisplay(isoString) {
+        if (!isoString) return "";
+        try {
+          const d = new Date(isoString);
+          if (isNaN(d.getTime())) return String(isoString);
+          return d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          });
+        } catch (_) {
+          return String(isoString);
+        }
+      }
+
+      /**
        * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
        */
       function formatToDateTimeLocal(dateStr) {
@@ -3803,7 +3827,8 @@
           displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
           isHTML = true;
         } else if (isDate) {
-          displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
+          const formattedDate = formatDateForDisplay(value);
+          displayValue = `<span class="type-badge badge-date" title="${escapeHTML(String(value))}">${escapeHTML(formattedDate)}</span>`;
           isHTML = true;
         } else if (typeof value === "object") {
           isJSON = true;

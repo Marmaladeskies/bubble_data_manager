@@ -13,7 +13,7 @@ _This improved database manager is a single .html file that can be opened in any
 - Uses at least 10x-20x less RAM than a bubble editor window in your browser and has more features
 - Drag and drop column reordering and column positions can be saved permanently
 - Use 'today's date' to create dynamic constraint views of your database that can be saved to always use the current date/time
-- Inline row editing with a JSON editor popup that avoids sytnax errors and calendar picker for date typed fields
+- Inline row editing with a JSON editor popup that avoids sytnax errors and calendar picker for date typed fields (all dates are displayed in your browser's timezone)
 - Bulk editing a column for multiple rows
 - Easily delete or duplicate multiple rows (or every row of a constraint view)
 - Export any or ALL data types (in your custom column order) to CSV files at once
@@ -91,4 +91,19 @@ You can also edit [bubble_data_manager.html](bubble_data_manager.html) to change
 localStorage.getItem('bubble_data_manager_settings_<yourdomain.com>');
 // Import that json data output again:
 localStorage.setItem('bubble_data_manager_settings_<your_url.com/test-version>', JSON.stringify({your_json_content}));
+~~~
+
+## Improving This Script
+
+- You can easily modify this script to customize it for your app.
+- Unit testing is also included in this repo to help if you want to setup a python environment and make major changes or add features and automatically test your changes for any obvious conflicts or bugs.
+
+To run the unit tests navigate to the /tests directory and run:
+~~~bash
+# Install the required Python dependencies (pytest and playwright):
+pip install -r requirements.txt
+# Run the test suite:
+pytest test_app.py
+#For more detailed output add verbose flag:
+pytest -v test_app.py
 ~~~

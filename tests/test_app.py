@@ -220,6 +220,45 @@ class TestBubbleDataManager:
             return isDateField('mock-slug', 'Created');
         })()""") is True
 
+    def test_format_csv_field(self, page: Page):
+        # Null and undefined
+        assert page.evaluate("formatCSVField(null, 'header', 'type')") == ""
+        assert page.evaluate("formatCSVField(undefined, 'header', 'type')") == ""
+
+        # Basic types
+        assert page.evaluate("formatCSVField(123, 'header', 'type')") == "123"
+        assert page.evaluate("formatCSVField('hello', 'header', 'type')") == "hello"
+
+        # Boolean formatting
+        assert page.evaluate("formatCSVField(true, 'header', 'type')") == "yes"
+        assert page.evaluate("formatCSVField(false, 'header', 'type')") == "no"
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-slug': { '1': { display: 'Is Active', type: 'boolean' } } };
+            return formatCSVField('true', 'Is Active', 'mock-slug');
+        })()""") == "yes"
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-slug': { '1': { display: 'Is Active', type: 'boolean' } } };
+            return formatCSVField('false', 'Is Active', 'mock-slug');
+        })()""") == "no"
+
+        # Objects
+        assert page.evaluate("formatCSVField({a: 1}, 'header', 'type')") == '"{""a"":1}"'
+        assert page.evaluate("formatCSVField([1, 2], 'header', 'type')") == '"[1,2]"'
+
+        # CSV Injection prevention (escaping formulas)
+        assert page.evaluate("formatCSVField('=1+1', 'header', 'type')") == "'=1+1"
+        assert page.evaluate("formatCSVField('+1+1', 'header', 'type')") == "'+1+1"
+        assert page.evaluate("formatCSVField('-1+1', 'header', 'type')") == "'-1+1"
+        assert page.evaluate("formatCSVField('@1+1', 'header', 'type')") == "'@1+1"
+        assert page.evaluate("formatCSVField('\\t1+1', 'header', 'type')") == "'\t1+1"
+        assert page.evaluate("formatCSVField('\\r1+1', 'header', 'type')") == "\"'\r1+1\""
+
+        # Escaping quotes, commas, newlines
+        assert page.evaluate("formatCSVField('hello, world', 'header', 'type')") == '"hello, world"'
+        assert page.evaluate("formatCSVField('hello\\nworld', 'header', 'type')") == '"hello\nworld"'
+        assert page.evaluate("formatCSVField('hello\\rworld', 'header', 'type')") == '"hello\rworld"'
+        assert page.evaluate("formatCSVField('hello \"world\"', 'header', 'type')") == '"hello ""world"""'
+
     def test_extract_img_urls_from_json(self, page: Page):
         assert page.evaluate("extractImgUrlsFromJson(null)") == []
         assert page.evaluate("extractImgUrlsFromJson({})") == []

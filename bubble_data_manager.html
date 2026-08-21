@@ -2243,6 +2243,7 @@
       const DATA_MANAGER_SETTINGS_NAME = "bubble_data_manager_settings"; // name of the settings object key in local storage
       const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
       const SETTINGS_KEY_FILTER_DATA = "filterData";
+      const ERR_MSG_OFFLINE = "You appear to be offline or experiencing a connection issue. Please check your network connection.";
 
       function getAppStorageKeys(index) {
         if (index === 1) {
@@ -3521,8 +3522,8 @@
             response = await fetch(fetchUrl, { headers: headersConfig });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
-              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+              alert(ERR_MSG_OFFLINE);
+              throw new Error(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }
@@ -4244,7 +4245,7 @@
             response = await fetch(fetchUrl, { headers: headersConfig });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
+              alert(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }
@@ -6588,8 +6589,8 @@
             });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
-              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+              alert(ERR_MSG_OFFLINE);
+              throw new Error(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }

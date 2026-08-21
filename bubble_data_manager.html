@@ -2238,6 +2238,7 @@
       const API_TOKEN = "Your API Key";
       const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
       const BATCH_SIZE = 500; // number of rows to duplicate in a single batch
+      const DELETE_BATCH_SIZE = 50; // number of rows to delete concurrently in a single batch
       // ---------------------
       const DATA_MANAGER_SETTINGS_NAME = "bubble_data_manager_settings"; // name of the settings object key in local storage
       const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
@@ -6760,43 +6761,47 @@
         let successCount = 0;
         let failCount = 0;
 
-        countSpan.textContent = `Deleting ${count} row${count !== 1 ? "s" : ""}...`;
-
-        const deletePromises = idsToDelete.map(async (id) => {
-          try {
-            const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
-            const response = await fetch(fetchUrl, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${API_KEY}` },
-            });
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-
-            return { id, success: true };
-          } catch (error) {
-            console.error(`Failed to delete ${id}:`, error);
-            return { id, success: false };
-          }
-        });
-
-        const results = await Promise.all(deletePromises);
-
         const successfullyDeletedIds = new Set();
-        for (const { id, success } of results) {
-          if (success) {
-            successCount++;
-            successfullyDeletedIds.add(id);
 
-            // Remove from local selection
-            selectedRows.delete(id);
+        for (let i = 0; i < idsToDelete.length; i += DELETE_BATCH_SIZE) {
+          const batchIds = idsToDelete.slice(i, i + DELETE_BATCH_SIZE);
+          countSpan.textContent = `Deleting rows ${i + 1}-${Math.min(i + DELETE_BATCH_SIZE, idsToDelete.length)} of ${idsToDelete.length}...`;
 
-            // Remove the row from the DOM immediately
-            const row = document.getElementById(`row-${id}`);
-            if (row) row.remove();
-          } else {
-            failCount++;
+          const deletePromises = batchIds.map(async (id) => {
+            try {
+              const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
+              const response = await fetch(fetchUrl, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${API_KEY}` },
+              });
+
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+
+              return { id, success: true };
+            } catch (error) {
+              console.error(`Failed to delete ${id}:`, error);
+              return { id, success: false };
+            }
+          });
+
+          const results = await Promise.all(deletePromises);
+
+          for (const { id, success } of results) {
+            if (success) {
+              successCount++;
+              successfullyDeletedIds.add(id);
+
+              // Remove from local selection
+              selectedRows.delete(id);
+
+              // Remove the row from the DOM immediately
+              const row = document.getElementById(`row-${id}`);
+              if (row) row.remove();
+            } else {
+              failCount++;
+            }
           }
         }
 

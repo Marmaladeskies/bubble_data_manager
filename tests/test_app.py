@@ -251,6 +251,55 @@ class TestBubbleDataManager:
         })()""")
         assert sorted(complex_res) == sorted(['https://example.com/a.jpg', 'https://example.s3.amazonaws.com/b.png', 'https://test.com/c.gif'])
 
+
+    def test_get_expected_type(self, page: Page):
+        # 1. Returns cached type if present
+        assert page.evaluate("""(() => {
+            columnTypeCache = { 'Field1': 'boolean' };
+            return getExpectedType('Field1');
+        })()""") == "boolean"
+
+        # 2. Returns 'unknown' if cachedRecords is empty and no cache
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [];
+            return getExpectedType('Field2');
+        })()""") == "unknown"
+
+        # 3. Returns 'unknown' if all records are null/undefined for the field
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field3': null }, { 'Field3': undefined }];
+            return getExpectedType('Field3');
+        })()""") == "unknown"
+
+        # 4. Returns correct type based on first valid record
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field4': null }, { 'Field4': 123 }, { 'Field4': 'string' }];
+            return getExpectedType('Field4');
+        })()""") == "number"
+
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field5': 'hello' }];
+            return getExpectedType('Field5');
+        })()""") == "string"
+
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field6': true }];
+            return getExpectedType('Field6');
+        })()""") == "boolean"
+
+        # 5. Verifies caching occurs
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field7': { a: 1 } }];
+            const expectedType = getExpectedType('Field7');
+            return expectedType === 'object' && columnTypeCache['Field7'] === 'object';
+        })()""") is True
+
     def test_is_image_file(self, page: Page):
         assert page.evaluate("isImageFile('image.jpg')") is True
         assert page.evaluate("isImageFile('path/to/image.png')") is True

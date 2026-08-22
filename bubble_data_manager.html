@@ -2238,10 +2238,12 @@
       const API_TOKEN = "Your API Key";
       const EXCLUDED_TYPES = []; // list any data types you want this script to always ignore entirely
       const BATCH_SIZE = 500; // number of rows to duplicate in a single batch
+      const DELETE_BATCH_SIZE = 50; // number of rows to delete concurrently in a single batch
       // ---------------------
       const DATA_MANAGER_SETTINGS_NAME = "bubble_data_manager_settings"; // name of the settings object key in local storage
       const SETTINGS_KEY_COLUMN_ORDER = "columnOrder";
       const SETTINGS_KEY_FILTER_DATA = "filterData";
+      const ERR_MSG_OFFLINE = "You appear to be offline or experiencing a connection issue. Please check your network connection.";
 
       function getAppStorageKeys(index) {
         if (index === 1) {
@@ -2858,6 +2860,30 @@
       }
 
       /**
+       * Formats an ISO 8601 date string into a human-readable local date/time.
+       * E.g.: "Aug 17, 2026, 8:39:35 PM"
+       * Falls back to the raw value if parsing fails.
+       */
+      function formatDateForDisplay(isoString) {
+        if (!isoString) return "";
+        try {
+          const d = new Date(isoString);
+          if (isNaN(d.getTime())) return String(isoString);
+          return d.toLocaleString(undefined, {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          });
+        } catch (_) {
+          return String(isoString);
+        }
+      }
+
+      /**
        * Converts an ISO date string to YYYY-MM-DDTHH:mm for datetime-local input.
        */
       function formatToDateTimeLocal(dateStr) {
@@ -2877,6 +2903,7 @@
       }
 
       function optionSlugMatchesDisplayName(slug, displayName) {
+        if (typeof slug !== "string" || typeof displayName !== "string") return false;
         if (optionSlugToDisplayName[slug] === displayName) return true;
         if (slug.toLowerCase() === displayName.toLowerCase()) return true;
         if (slug.replace(/_/g, " ").toLowerCase() === displayName.toLowerCase())
@@ -3496,8 +3523,8 @@
             response = await fetch(fetchUrl, { headers: headersConfig });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
-              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+              alert(ERR_MSG_OFFLINE);
+              throw new Error(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }
@@ -3819,7 +3846,8 @@
           displayValue = `<span class="type-badge badge-option">${escapeHTML(value)}</span>`;
           isHTML = true;
         } else if (isDate) {
-          displayValue = `<span class="type-badge badge-date">${escapeHTML(value)}</span>`;
+          const formattedDate = formatDateForDisplay(value);
+          displayValue = `<span class="type-badge badge-date" title="${escapeHTML(String(value))}">${escapeHTML(formattedDate)}</span>`;
           isHTML = true;
         } else if (typeof value === "object") {
           isJSON = true;
@@ -3881,17 +3909,13 @@
               })
               .join(" ");
 
-            const safeRecordId = escapeHTML(
-              String(recordId).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
-            );
-            const safeField = escapeHTML(
-              String(field).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
-            );
+            const safeRecordId = escapeHTML(String(recordId));
+            const safeField = escapeHTML(String(field));
             const safePreview =
               escapeHTML(jsonValue.substring(0, 30)) +
               (jsonValue.length > 30 ? "..." : "");
 
-            result.content = `<span class="json-badge" onclick="openJSONEditor('${safeRecordId}', '${safeField}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
+            result.content = `<span class="json-badge" data-record-id="${safeRecordId}" data-field="${safeField}" onclick="openJSONEditor(this.getAttribute('data-record-id'), this.getAttribute('data-field'), this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
             result.isHTML = true;
           }
         } else if (isFile) {
@@ -4234,7 +4258,7 @@
             response = await fetch(fetchUrl, { headers: headersConfig });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
+              alert(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }
@@ -4451,13 +4475,13 @@
         const currentValue = selectedKey || select.value;
         select.innerHTML = "";
 
-        const sortedHeaders = [...headers].sort((a, b) =>
-          a
-            .replace(/_/g, " ")
-            .trim()
-            .toLowerCase()
-            .localeCompare(b.replace(/_/g, " ").trim().toLowerCase()),
-        );
+        const sortedHeaders = [...headers]
+          .map((header) => ({
+            original: header,
+            normalized: header.replace(/_/g, " ").trim().toLowerCase(),
+          }))
+          .sort((a, b) => a.normalized.localeCompare(b.normalized))
+          .map((item) => item.original);
 
         const activeType =
           document.getElementById("data-type-selector")?.value || "";
@@ -6038,45 +6062,50 @@
         let failCount = 0;
 
         const idsToUpdate = Array.from(selectedRows.keys());
+        const CONCURRENT_LIMIT = 5;
 
-        await Promise.all(
-          idsToUpdate.map(async (recordId) => {
-            const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
-            const payload = { [field]: typedValue };
+        for (let i = 0; i < idsToUpdate.length; i += CONCURRENT_LIMIT) {
+          const chunk = idsToUpdate.slice(i, i + CONCURRENT_LIMIT);
 
-            try {
-              const response = await fetch(fetchUrl, {
-                method: "PATCH",
-                headers: {
-                  Authorization: `Bearer ${API_KEY}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-              });
+          await Promise.all(
+            chunk.map(async (recordId) => {
+              const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
+              const payload = { [field]: typedValue };
 
-              if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(
-                  errData.body?.message || `HTTP Error: ${response.status}`,
+              try {
+                const response = await fetch(fetchUrl, {
+                  method: "PATCH",
+                  headers: {
+                    Authorization: `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                  const errData = await response.json();
+                  throw new Error(
+                    errData.body?.message || `HTTP Error: ${response.status}`,
+                  );
+                }
+
+                // Update local cache
+                const recordIndex = cachedRecords.findIndex(
+                  (r) => r._id === recordId,
                 );
-              }
+                if (recordIndex > -1) {
+                  cachedRecords[recordIndex][field] = typedValue;
+                  cachedRecords[recordIndex]._cachedSearchStrings = undefined; // Invalidate cache
+                }
 
-              // Update local cache
-              const recordIndex = cachedRecords.findIndex(
-                (r) => r._id === recordId,
-              );
-              if (recordIndex > -1) {
-                cachedRecords[recordIndex][field] = typedValue;
-                cachedRecords[recordIndex]._cachedSearchStrings = undefined; // Invalidate cache
+                successCount++;
+              } catch (error) {
+                console.error(`Bulk edit error for row ${recordId}:`, error);
+                failCount++;
               }
-
-              successCount++;
-            } catch (error) {
-              console.error(`Bulk edit error for row ${recordId}:`, error);
-              failCount++;
-            }
-          }),
-        );
+            }),
+          );
+        }
 
         applyBtn.disabled = false;
         applyBtn.textContent = originalBtnText;
@@ -6578,8 +6607,8 @@
             });
           } catch (fetchErr) {
             if (fetchErr instanceof TypeError) {
-              alert("You appear to be offline or experiencing a connection issue. Please check your network connection.");
-              throw new Error("Network error: You appear to be offline or experiencing a connection issue.");
+              alert(ERR_MSG_OFFLINE);
+              throw new Error(ERR_MSG_OFFLINE);
             }
             throw fetchErr;
           }
@@ -6751,43 +6780,47 @@
         let successCount = 0;
         let failCount = 0;
 
-        countSpan.textContent = `Deleting ${count} row${count !== 1 ? "s" : ""}...`;
-
-        const deletePromises = idsToDelete.map(async (id) => {
-          try {
-            const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
-            const response = await fetch(fetchUrl, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${API_KEY}` },
-            });
-
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}`);
-            }
-
-            return { id, success: true };
-          } catch (error) {
-            console.error(`Failed to delete ${id}:`, error);
-            return { id, success: false };
-          }
-        });
-
-        const results = await Promise.all(deletePromises);
-
         const successfullyDeletedIds = new Set();
-        for (const { id, success } of results) {
-          if (success) {
-            successCount++;
-            successfullyDeletedIds.add(id);
 
-            // Remove from local selection
-            selectedRows.delete(id);
+        for (let i = 0; i < idsToDelete.length; i += DELETE_BATCH_SIZE) {
+          const batchIds = idsToDelete.slice(i, i + DELETE_BATCH_SIZE);
+          countSpan.textContent = `Deleting rows ${i + 1}-${Math.min(i + DELETE_BATCH_SIZE, idsToDelete.length)} of ${idsToDelete.length}...`;
 
-            // Remove the row from the DOM immediately
-            const row = document.getElementById(`row-${id}`);
-            if (row) row.remove();
-          } else {
-            failCount++;
+          const deletePromises = batchIds.map(async (id) => {
+            try {
+              const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
+              const response = await fetch(fetchUrl, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${API_KEY}` },
+              });
+
+              if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+              }
+
+              return { id, success: true };
+            } catch (error) {
+              console.error(`Failed to delete ${id}:`, error);
+              return { id, success: false };
+            }
+          });
+
+          const results = await Promise.all(deletePromises);
+
+          for (const { id, success } of results) {
+            if (success) {
+              successCount++;
+              successfullyDeletedIds.add(id);
+
+              // Remove from local selection
+              selectedRows.delete(id);
+
+              // Remove the row from the DOM immediately
+              const row = document.getElementById(`row-${id}`);
+              if (row) row.remove();
+            } else {
+              failCount++;
+            }
           }
         }
 

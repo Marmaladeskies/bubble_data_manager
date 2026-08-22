@@ -3461,12 +3461,15 @@
         });
       }
 
-      function formatCSVField(val, header, typeSlug) {
+      function formatCSVField(val, header, typeSlug, isBool = null) {
         if (val === null || val === undefined) return "";
         let str = "";
+
+        const isBooleanFieldFlag = isBool !== null ? isBool : isBooleanField(typeSlug, header);
+
         if (
           typeof val === "boolean" ||
-          (isBooleanField(typeSlug, header) &&
+          (isBooleanFieldFlag &&
             (val === "true" || val === "false"))
         ) {
           str = val === true || val === "true" ? "yes" : "no";
@@ -3628,13 +3631,18 @@
               }
             } catch (_) {}
 
+            const booleanFieldsMap = {};
+            headers.forEach(h => {
+              booleanFieldsMap[h] = isBooleanField(typeObj.value, h);
+            });
+
             const headerRow = headers
-              .map((h) => formatCSVField(h, h, typeObj.value))
+              .map((h) => formatCSVField(h, h, typeObj.value, booleanFieldsMap[h]))
               .join(",");
             const csvRows = records.map((record) => {
               return headers
                 .map((header) =>
-                  formatCSVField(record[header], header, typeObj.value),
+                  formatCSVField(record[header], header, typeObj.value, booleanFieldsMap[header]),
                 )
                 .join(",");
             });

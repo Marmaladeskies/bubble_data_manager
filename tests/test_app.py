@@ -592,6 +592,32 @@ class TestBubbleDataManager:
         assert page.evaluate("getResolvedConstraints('not an array')") == []
         assert page.evaluate("getResolvedConstraints([null, {key: null}])") == []
 
+
+    def test_validate_app_credentials(self, page: Page):
+        # 1. Happy path (e.g. 200 OK)
+        page.route("**/api/1.1/obj/auth_validation_dummy*", lambda route: route.fulfill(status=200))
+        res_200 = page.evaluate("validateAppCredentials('test.com', 'key')")
+        assert res_200 == {"isValid": True}
+        page.unroute("**/api/1.1/obj/auth_validation_dummy*")
+
+        # 2. 401 Unauthorized
+        page.route("**/api/1.1/obj/auth_validation_dummy*", lambda route: route.fulfill(status=401))
+        res_401 = page.evaluate("validateAppCredentials('test.com', 'key')")
+        assert res_401 == {"isValid": False, "message": "The API key entered is not valid for test.com"}
+        page.unroute("**/api/1.1/obj/auth_validation_dummy*")
+
+        # 3. Unexpected response (e.g. 500)
+        page.route("**/api/1.1/obj/auth_validation_dummy*", lambda route: route.fulfill(status=500))
+        res_500 = page.evaluate("validateAppCredentials('test.com', 'key')")
+        assert res_500 == {"isValid": False, "message": "Received an unexpected response from test.com. Are you sure this is a Bubble app?"}
+        page.unroute("**/api/1.1/obj/auth_validation_dummy*")
+
+        # 4. Network error (catch block)
+        page.route("**/api/1.1/obj/auth_validation_dummy*", lambda route: route.abort())
+        res_error = page.evaluate("validateAppCredentials('test.com', 'key')")
+        assert res_error == {"isValid": False, "message": "Could not connect to test.com. The URL may be misspelled, offline, or not a Bubble application."}
+        page.unroute("**/api/1.1/obj/auth_validation_dummy*")
+
 class TestTimezoneUtilityFunctions:
 
     @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "UTC"}])

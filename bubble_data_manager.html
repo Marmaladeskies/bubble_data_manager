@@ -2877,6 +2877,7 @@
       }
 
       function optionSlugMatchesDisplayName(slug, displayName) {
+        if (typeof slug !== "string" || typeof displayName !== "string") return false;
         if (optionSlugToDisplayName[slug] === displayName) return true;
         if (slug.toLowerCase() === displayName.toLowerCase()) return true;
         if (slug.replace(/_/g, " ").toLowerCase() === displayName.toLowerCase())

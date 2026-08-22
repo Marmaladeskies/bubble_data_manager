@@ -4504,15 +4504,16 @@
         // Filter out hidden columns
         const visibleHeaders = headers.filter((h) => !hiddenColumns.has(h));
         // Extract column headers dynamically from the first record's keys
-        let tableHTML = "<table><thead><tr>";
+        const htmlParts = [];
+        htmlParts.push("<table><thead><tr>");
 
         // Add Select-All Checkbox Header
         const allChecked =
           records.length > 0 && records.every((r) => selectedRows.has(r._id));
-        tableHTML += `<th class="select-cell">
+        htmlParts.push(`<th class="select-cell">
                             <input type="checkbox" title="Select all rows" ${allChecked ? "checked" : ""}
                                    onchange="toggleSelectAll(this.checked)">
-                          </th>`;
+                          </th>`);
 
         // Generate Data Headers (Conditionally Draggable)
         const headerToIndexMap = new Map();
@@ -4543,17 +4544,17 @@
             ? "Drag to reorder column"
             : `Sort by ${cleanHeader}`;
 
-          tableHTML += `<th
+          htmlParts.push(`<th
                                 ${draggableAttr}
                                 ${dragEvents}
                                 ${clickEvent}
                                 style="${cursorStyle}"
                                 title="${escapeHTML(titleText)}">
                                 ${escapeHTML(cleanHeader)} ${sortIcon}
-                              </th>`;
+                              </th>`);
         });
 
-        tableHTML += "</tr></thead><tbody>";
+        htmlParts.push("</tr></thead><tbody>");
 
         const currentType =
           document.getElementById("data-type-selector")?.value || "";
@@ -4576,13 +4577,13 @@
           );
           const isSelected = selectedRows.has(record._id);
           // Attach the _id to the tr element so we can target the whole row
-          tableHTML += `<tr id="row-${safeIdHTML}" class="${isSelected ? "row-selected" : ""}">`;
+          htmlParts.push(`<tr id="row-${safeIdHTML}" class="${isSelected ? "row-selected" : ""}">`);
 
           // Add Row Checkbox cell
-          tableHTML += `<td class="select-cell">
+          htmlParts.push(`<td class="select-cell">
                                 <input type="checkbox" ${isSelected ? "checked" : ""}
                                        onchange="toggleRowSelection('${safeIdJS}', this.checked)">
-                              </td>`;
+                              </td>`);
 
           visibleHeaders.forEach((header) => {
             const state = getCellContentState(
@@ -4604,15 +4605,15 @@
             const content = state.isHTML
               ? state.content
               : escapeHTML(state.content);
-            tableHTML += `<td ${attrs}>${content}</td>`;
+            htmlParts.push(`<td ${attrs}>${content}</td>`);
           });
-          tableHTML += "</tr>";
+          htmlParts.push("</tr>");
         });
 
-        tableHTML += "</tbody></table>";
+        htmlParts.push("</tbody></table>");
 
         // Inject the completed table into the DOM
-        container.innerHTML = tableHTML;
+        container.innerHTML = htmlParts.join("");
       }
 
       // --- CLIENT SIDE INLINE TABLE FILTER ---

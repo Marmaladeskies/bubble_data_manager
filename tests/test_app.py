@@ -264,6 +264,25 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(null)") is False
         assert page.evaluate("isImageFile(undefined)") is False
 
+    def test_render_file_preview_xss_protection(self, page: Page):
+        # Image URL with dangerous protocol
+        image_xss = page.evaluate("renderFilePreview('javascript:alert(1)?a.jpg')")
+        assert 'href="#"' in image_xss
+        assert 'javascript:' not in image_xss
+
+        # Non-image URL with dangerous protocol
+        file_xss = page.evaluate("renderFilePreview('javascript:alert(1)')")
+        assert 'href="#"' in file_xss
+        assert 'javascript:' not in file_xss
+
+        # Valid http URL (image)
+        valid_img = page.evaluate("renderFilePreview('https://example.com/a.jpg')")
+        assert 'href="https://example.com/a.jpg"' in valid_img
+
+        # Valid http URL (non-image)
+        valid_file = page.evaluate("renderFilePreview('http://example.com/file.pdf')")
+        assert 'href="http://example.com/file.pdf"' in valid_file
+
 
 class TestTimezoneUtilityFunctions:
 

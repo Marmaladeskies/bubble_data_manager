@@ -182,6 +182,28 @@ class TestBubbleDataManager:
             return getSettingsEntry('testKey');
         })()""") == {}
 
+    def test_set_settings_entry(self, page: Page):
+        # 1. Update an existing setting
+        result = page.evaluate("""(() => {
+            settingsRecord = { bubble_data_manager_settings: JSON.stringify({ existingKey: 'oldValue' }) };
+            return JSON.parse(setSettingsEntry('testKey', { a: 1 }));
+        })()""")
+        assert result == {"existingKey": "oldValue", "testKey": {"a": 1}}
+
+        # 2. Add a new setting when settingsRecord is null
+        result2 = page.evaluate("""(() => {
+            settingsRecord = null;
+            return JSON.parse(setSettingsEntry('newKey', 'newValue'));
+        })()""")
+        assert result2 == {"newKey": "newValue"}
+
+        # 3. Overwrite an existing key
+        result3 = page.evaluate("""(() => {
+            settingsRecord = { bubble_data_manager_settings: JSON.stringify({ testKey: 'oldValue' }) };
+            return JSON.parse(setSettingsEntry('testKey', 'newValue'));
+        })()""")
+        assert result3 == {"testKey": "newValue"}
+
     def test_is_boolean_field(self, page: Page):
         assert page.evaluate("""(() => {
             cachedFieldMeta = { 'mock-slug': { '1': { display: 'Is Active', type: 'boolean' } } };

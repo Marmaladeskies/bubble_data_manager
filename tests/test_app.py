@@ -934,3 +934,68 @@ class TestTimezoneUtilityFunctions:
         })()""")
 
         assert label == 'Local Browser Timezone'
+
+class TestGetExpectedType:
+    def test_get_expected_type_uses_cache(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = { "test_field": "string" };
+            cachedRecords = [];
+            return getExpectedType("test_field");
+        })()""")
+        assert result == "string"
+
+    def test_get_expected_type_infers_string(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [
+                { "other_field": 123 },
+                { "test_field": "hello" }
+            ];
+            return { type: getExpectedType("test_field"), cache: columnTypeCache["test_field"] };
+        })()""")
+        assert result["type"] == "string"
+        assert result["cache"] == "string"
+
+    def test_get_expected_type_infers_number(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [
+                { "test_field": 42 }
+            ];
+            return getExpectedType("test_field");
+        })()""")
+        assert result == "number"
+
+    def test_get_expected_type_infers_boolean(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [
+                { "test_field": true }
+            ];
+            return getExpectedType("test_field");
+        })()""")
+        assert result == "boolean"
+
+    def test_get_expected_type_skips_null_and_undefined(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [
+                { "test_field": null },
+                { "test_field": undefined },
+                { "test_field": "found it" }
+            ];
+            return getExpectedType("test_field");
+        })()""")
+        assert result == "string"
+
+    def test_get_expected_type_returns_unknown_if_not_found(self, page: Page):
+        result = page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [
+                { "other_field": "value" },
+                { "test_field": null }
+            ];
+            return { type: getExpectedType("test_field"), cache: columnTypeCache["test_field"] };
+        })()""")
+        assert result["type"] == "unknown"
+        assert result["cache"] == "unknown"

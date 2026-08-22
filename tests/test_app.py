@@ -393,7 +393,111 @@ class TestBubbleDataManager:
         })()""")
         assert sorted(complex_res) == sorted(['https://example.com/a.jpg', 'https://example.s3.amazonaws.com/b.png', 'https://test.com/c.gif'])
 
+    def test_cast_payload_value(self, page: Page):
+        # 1. Test isBool = True
+        assert page.evaluate("castPayloadValue('true', true, false, 'field', false)") is True
+        assert page.evaluate("castPayloadValue('yes', true, false, 'field', false)") is True
+        assert page.evaluate("castPayloadValue('false', true, false, 'field', false)") is False
+        assert page.evaluate("castPayloadValue('no', true, false, 'field', false)") is False
+        assert page.evaluate("castPayloadValue('', true, false, 'field', false)") is None
+        assert page.evaluate("castPayloadValue('other', true, false, 'field', false)") == 'other'
 
+        # Document current error behavior: passing a non-string boolean flag that uses toLowerCase
+        with pytest.raises(Exception, match="val.toLowerCase is not a function"):
+            page.evaluate("castPayloadValue(true, true, false, 'field', false)")
+        with pytest.raises(Exception, match="Cannot read properties of null"):
+            page.evaluate("castPayloadValue(null, true, false, 'field', false)")
+
+        # 2. Test isDate = True
+        assert page.evaluate("castPayloadValue('', false, false, 'field', true)") is None
+        assert page.evaluate("castPayloadValue('2024-05-05T08:05:00Z', false, false, 'field', true)") == '2024-05-05T08:05:00.000Z'
+
+        # Document current error behavior: invalid date string generates 'Invalid Date' object instead of a valid ISO string
+        # (new Date('invalid').toISOString() throws RangeError)
+        with pytest.raises(Exception, match="Invalid time value"):
+            page.evaluate("castPayloadValue('invalid', false, false, 'field', true)")
+
+        # 3. Test isOptionSet = True
+        assert page.evaluate("castPayloadValue('', false, true, 'field', false)") is None
+        assert page.evaluate("castPayloadValue('Option A', false, true, 'field', false)") == 'Option A'
+
+        # 4. Test expected type inference (isBool = False, isDate = False, isOptionSet = False)
+        # Mocking getExpectedType logic via page.evaluate
+        setup_mock = "(() => { window.columnTypeCache = {}; window.cachedRecords = []; })()"
+        page.evaluate(setup_mock)
+
+        # Expected type: number
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue('42', false, false, 'num_field', false);
+        })()""") == 42
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue(' 42 ', false, false, 'num_field', false);
+        })()""") == 42
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue('42.5', false, false, 'num_field', false);
+        })()""") == 42.5
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue('', false, false, 'num_field', false);
+        })()""") is None
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue('  ', false, false, 'num_field', false);
+        })()""") is None
+        assert page.evaluate("""(() => {
+            columnTypeCache['num_field'] = 'number';
+            return castPayloadValue('notanumber', false, false, 'num_field', false);
+        })()""") == 'notanumber'
+
+        # Expected type: boolean
+        assert page.evaluate("""(() => {
+            columnTypeCache['bool_field'] = 'boolean';
+            return castPayloadValue('true', false, false, 'bool_field', false);
+        })()""") is True
+        assert page.evaluate("""(() => {
+            columnTypeCache['bool_field'] = 'boolean';
+            return castPayloadValue('false', false, false, 'bool_field', false);
+        })()""") is False
+        assert page.evaluate("""(() => {
+            columnTypeCache['bool_field'] = 'boolean';
+            return castPayloadValue('other', false, false, 'bool_field', false);
+        })()""") == 'other'
+
+        # Expected type: string
+        assert page.evaluate("""(() => {
+            columnTypeCache['str_field'] = 'string';
+            return castPayloadValue('42', false, false, 'str_field', false);
+        })()""") == '42'
+        assert page.evaluate("""(() => {
+            columnTypeCache['str_field'] = 'string';
+            return castPayloadValue('true', false, false, 'str_field', false);
+        })()""") == 'true'
+
+        # Expected type: unknown / fallback
+        assert page.evaluate("""(() => {
+            columnTypeCache['unk_field'] = 'unknown';
+            return castPayloadValue('42', false, false, 'unk_field', false);
+        })()""") == 42
+        assert page.evaluate("""(() => {
+            columnTypeCache['unk_field'] = 'unknown';
+            return castPayloadValue('true', false, false, 'unk_field', false);
+        })()""") is True
+        assert page.evaluate("""(() => {
+            columnTypeCache['unk_field'] = 'unknown';
+            return castPayloadValue('false', false, false, 'unk_field', false);
+        })()""") is False
+        assert page.evaluate("""(() => {
+            columnTypeCache['unk_field'] = 'unknown';
+            return castPayloadValue('random', false, false, 'unk_field', false);
+        })()""") == 'random'
+
+        # Testing error behavior with null values on types expecting strings
+        with pytest.raises(Exception, match="Cannot read properties of null"):
+             page.evaluate("castPayloadValue(null, false, false, 'num_field', false)")
+            
     def test_get_expected_type(self, page: Page):
         # 1. Returns cached type if present
         assert page.evaluate("""(() => {

@@ -4462,13 +4462,13 @@
         const currentValue = selectedKey || select.value;
         select.innerHTML = "";
 
-        const sortedHeaders = [...headers].sort((a, b) =>
-          a
-            .replace(/_/g, " ")
-            .trim()
-            .toLowerCase()
-            .localeCompare(b.replace(/_/g, " ").trim().toLowerCase()),
-        );
+        const sortedHeaders = [...headers]
+          .map((header) => ({
+            original: header,
+            normalized: header.replace(/_/g, " ").trim().toLowerCase(),
+          }))
+          .sort((a, b) => a.normalized.localeCompare(b.normalized))
+          .map((item) => item.original);
 
         const activeType =
           document.getElementById("data-type-selector")?.value || "";

@@ -597,6 +597,80 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(null)") is False
         assert page.evaluate("isImageFile(undefined)") is False
 
+    def test_getOptionSetForField(self, page: Page):
+        # We run the tests in a single evaluate block because block-scoped variables (let/const)
+        # in the global scope of the page might not persist between `page.evaluate` calls depending on the environment.
+        results = page.evaluate("""(() => {
+            const out = {};
+
+            // Setup mock state
+            const oldCachedFieldMeta = cachedFieldMeta;
+            const oldCachedOptionSets = cachedOptionSets;
+            const oldCachedOptionSetsBySlug = cachedOptionSetsBySlug;
+            const oldOptionSlugToDisplayName = optionSlugToDisplayName;
+
+            try {
+                cachedFieldMeta = {
+                    'DataType1': {
+                        '1': { display: 'Status', id: '1', type: 'option.status_options' },
+                        '2': { display: 'Priority', id: '2', type: 'option.priority_options' },
+                        '3': { display: 'Name', id: '3', type: 'text' },
+                        '4': { display: 'Missing Option', id: '4', type: 'option.missing_options' }
+                    }
+                };
+
+                cachedOptionSets = {
+                    'Status Options': ['Active', 'Inactive', 'Pending'],
+                    'Priority Options': ['High', 'Medium', 'Low']
+                };
+                cachedOptionSetsBySlug = {};
+                optionSlugToDisplayName = {};
+
+                // Happy Path: Correct option set returned
+                out.res1 = getOptionSetForField('DataType1', 'Status');
+
+                // Verify it was cached by slug
+                out.cached_status = cachedOptionSetsBySlug['status_options'];
+
+                // Cache Hit: Ensure it returns from cache if present, without looping
+                cachedOptionSetsBySlug['priority_options'] = ['Urgent', 'Normal'];
+                out.res2 = getOptionSetForField('DataType1', 'Priority');
+
+                // No Field Meta: Field does not exist
+                out.res3 = getOptionSetForField('DataType1', 'NonExistentField');
+
+                // No Field Meta: Data type does not exist
+                out.res4 = getOptionSetForField('InvalidDataType', 'Status');
+
+                // Not an Option Field (e.g., text)
+                out.res5 = getOptionSetForField('DataType1', 'Name');
+
+                // Option Set Not Found
+                out.res6 = getOptionSetForField('DataType1', 'Missing Option');
+
+                // Verify negative result is cached as null
+                out.cached_missing = cachedOptionSetsBySlug['missing_options'];
+
+            } finally {
+                // Restore original state
+                cachedFieldMeta = oldCachedFieldMeta;
+                cachedOptionSets = oldCachedOptionSets;
+                cachedOptionSetsBySlug = oldCachedOptionSetsBySlug;
+                optionSlugToDisplayName = oldOptionSlugToDisplayName;
+            }
+
+            return out;
+        })()""")
+
+        assert results['res1'] == ['Active', 'Inactive', 'Pending']
+        assert results['cached_status'] == ['Active', 'Inactive', 'Pending']
+        assert results['res2'] == ['Urgent', 'Normal']
+        assert results['res3'] is None
+        assert results['res4'] is None
+        assert results['res5'] is None
+        assert results['res6'] is None
+        assert results['cached_missing'] is None
+
     def test_get_record_search_strings(self, page: Page):
         result = page.evaluate("""(() => {
             const record = {

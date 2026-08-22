@@ -6045,45 +6045,50 @@
         let failCount = 0;
 
         const idsToUpdate = Array.from(selectedRows.keys());
+        const CONCURRENT_LIMIT = 5;
 
-        await Promise.all(
-          idsToUpdate.map(async (recordId) => {
-            const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
-            const payload = { [field]: typedValue };
+        for (let i = 0; i < idsToUpdate.length; i += CONCURRENT_LIMIT) {
+          const chunk = idsToUpdate.slice(i, i + CONCURRENT_LIMIT);
 
-            try {
-              const response = await fetch(fetchUrl, {
-                method: "PATCH",
-                headers: {
-                  Authorization: `Bearer ${API_KEY}`,
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify(payload),
-              });
+          await Promise.all(
+            chunk.map(async (recordId) => {
+              const fetchUrl = `${API_BASE_URL}${currentType}/${recordId}`;
+              const payload = { [field]: typedValue };
 
-              if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(
-                  errData.body?.message || `HTTP Error: ${response.status}`,
+              try {
+                const response = await fetch(fetchUrl, {
+                  method: "PATCH",
+                  headers: {
+                    Authorization: `Bearer ${API_KEY}`,
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                  const errData = await response.json();
+                  throw new Error(
+                    errData.body?.message || `HTTP Error: ${response.status}`,
+                  );
+                }
+
+                // Update local cache
+                const recordIndex = cachedRecords.findIndex(
+                  (r) => r._id === recordId,
                 );
-              }
+                if (recordIndex > -1) {
+                  cachedRecords[recordIndex][field] = typedValue;
+                  cachedRecords[recordIndex]._cachedSearchStrings = undefined; // Invalidate cache
+                }
 
-              // Update local cache
-              const recordIndex = cachedRecords.findIndex(
-                (r) => r._id === recordId,
-              );
-              if (recordIndex > -1) {
-                cachedRecords[recordIndex][field] = typedValue;
-                cachedRecords[recordIndex]._cachedSearchStrings = undefined; // Invalidate cache
+                successCount++;
+              } catch (error) {
+                console.error(`Bulk edit error for row ${recordId}:`, error);
+                failCount++;
               }
-
-              successCount++;
-            } catch (error) {
-              console.error(`Bulk edit error for row ${recordId}:`, error);
-              failCount++;
-            }
-          }),
-        );
+            }),
+          );
+        }
 
         applyBtn.disabled = false;
         applyBtn.textContent = originalBtnText;

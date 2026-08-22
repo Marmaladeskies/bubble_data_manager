@@ -5851,13 +5851,12 @@
 
         const editableHeaders = detectedHeaders
           .filter((h) => !PROTECTED_FIELDS.includes(h))
-          .sort((a, b) =>
-            a
-              .replace(/_/g, " ")
-              .trim()
-              .toLowerCase()
-              .localeCompare(b.replace(/_/g, " ").trim().toLowerCase()),
-          );
+          .map((h) => ({
+            original: h,
+            sortKey: h.replace(/_/g, " ").trim().toLowerCase(),
+          }))
+          .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+          .map((item) => item.original);
 
         editableHeaders.forEach((header) => {
           const opt = document.createElement("option");

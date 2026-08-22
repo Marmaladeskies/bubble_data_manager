@@ -301,6 +301,44 @@ class TestBubbleDataManager:
         })()""")
         assert cache_check['hasProperty'] is True
         assert cache_check['isEnumerable'] is False
+    def test_format_csv_field(self, page: Page):
+        # Null and undefined
+        assert page.evaluate("formatCSVField(null, 'header', 'type')") == ""
+        assert page.evaluate("formatCSVField(undefined, 'header', 'type')") == ""
+
+        # Basic types
+        assert page.evaluate("formatCSVField(123, 'header', 'type')") == "123"
+        assert page.evaluate("formatCSVField('hello', 'header', 'type')") == "hello"
+
+        # Boolean formatting
+        assert page.evaluate("formatCSVField(true, 'header', 'type')") == "yes"
+        assert page.evaluate("formatCSVField(false, 'header', 'type')") == "no"
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-slug': { '1': { display: 'Is Active', type: 'boolean' } } };
+            return formatCSVField('true', 'Is Active', 'mock-slug');
+        })()""") == "yes"
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-slug': { '1': { display: 'Is Active', type: 'boolean' } } };
+            return formatCSVField('false', 'Is Active', 'mock-slug');
+        })()""") == "no"
+
+        # Objects
+        assert page.evaluate("formatCSVField({a: 1}, 'header', 'type')") == '"{""a"":1}"'
+        assert page.evaluate("formatCSVField([1, 2], 'header', 'type')") == '"[1,2]"'
+
+        # CSV Injection prevention (escaping formulas)
+        assert page.evaluate("formatCSVField('=1+1', 'header', 'type')") == "'=1+1"
+        assert page.evaluate("formatCSVField('+1+1', 'header', 'type')") == "'+1+1"
+        assert page.evaluate("formatCSVField('-1+1', 'header', 'type')") == "'-1+1"
+        assert page.evaluate("formatCSVField('@1+1', 'header', 'type')") == "'@1+1"
+        assert page.evaluate("formatCSVField('\\t1+1', 'header', 'type')") == "'\t1+1"
+        assert page.evaluate("formatCSVField('\\r1+1', 'header', 'type')") == "\"'\r1+1\""
+
+        # Escaping quotes, commas, newlines
+        assert page.evaluate("formatCSVField('hello, world', 'header', 'type')") == '"hello, world"'
+        assert page.evaluate("formatCSVField('hello\\nworld', 'header', 'type')") == '"hello\nworld"'
+        assert page.evaluate("formatCSVField('hello\\rworld', 'header', 'type')") == '"hello\rworld"'
+        assert page.evaluate("formatCSVField('hello \"world\"', 'header', 'type')") == '"hello ""world"""'
 
     def test_extract_img_urls_from_json(self, page: Page):
         assert page.evaluate("extractImgUrlsFromJson(null)") == []
@@ -333,6 +371,55 @@ class TestBubbleDataManager:
         })()""")
         assert sorted(complex_res) == sorted(['https://example.com/a.jpg', 'https://example.s3.amazonaws.com/b.png', 'https://test.com/c.gif'])
 
+
+    def test_get_expected_type(self, page: Page):
+        # 1. Returns cached type if present
+        assert page.evaluate("""(() => {
+            columnTypeCache = { 'Field1': 'boolean' };
+            return getExpectedType('Field1');
+        })()""") == "boolean"
+
+        # 2. Returns 'unknown' if cachedRecords is empty and no cache
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [];
+            return getExpectedType('Field2');
+        })()""") == "unknown"
+
+        # 3. Returns 'unknown' if all records are null/undefined for the field
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field3': null }, { 'Field3': undefined }];
+            return getExpectedType('Field3');
+        })()""") == "unknown"
+
+        # 4. Returns correct type based on first valid record
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field4': null }, { 'Field4': 123 }, { 'Field4': 'string' }];
+            return getExpectedType('Field4');
+        })()""") == "number"
+
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field5': 'hello' }];
+            return getExpectedType('Field5');
+        })()""") == "string"
+
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field6': true }];
+            return getExpectedType('Field6');
+        })()""") == "boolean"
+
+        # 5. Verifies caching occurs
+        assert page.evaluate("""(() => {
+            columnTypeCache = {};
+            cachedRecords = [{ 'Field7': { a: 1 } }];
+            const expectedType = getExpectedType('Field7');
+            return expectedType === 'object' && columnTypeCache['Field7'] === 'object';
+        })()""") is True
+
     def test_is_image_file(self, page: Page):
         assert page.evaluate("isImageFile('image.jpg')") is True
         assert page.evaluate("isImageFile('path/to/image.png')") is True
@@ -346,6 +433,121 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(null)") is False
         assert page.evaluate("isImageFile(undefined)") is False
 
+    def test_option_slug_matches_display_name(self, page: Page):
+        # Setup test map using an IIFE closure in evaluate
+        assert page.evaluate("""(() => {
+            optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+            return optionSlugMatchesDisplayName('mapped_slug', 'Custom Display Name');
+        })()""") is True
+
+        assert page.evaluate("""(() => {
+            optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+            return optionSlugMatchesDisplayName('mapped_slug', 'Other Name');
+        })()""") is False
+
+        # Test exact/case-insensitive matching
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'test')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('TEST', 'test')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'TEST')") is True
+
+        # Test underscore replacement
+        assert page.evaluate("optionSlugMatchesDisplayName('test_slug', 'test slug')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('TEST_SLUG', 'test slug')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('test_multiple_underscores', 'test multiple underscores')") is True
+
+        # Test non-matching
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'other')") is False
+        assert page.evaluate("optionSlugMatchesDisplayName('test_slug', 'test_other')") is False
+
+        # Test edge cases that throw errors due to missing methods on null/undefined
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName(null, 'test')")
+
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName('test', null)")
+
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName(undefined, 'test')")
+
+        # Quirk: if slug is not in the map, optionSlugToDisplayName[slug] is undefined.
+        # If displayName is also undefined, it returns true on the first line!
+        assert page.evaluate("optionSlugMatchesDisplayName('test', undefined)") is True
+
+        # If slug IS in the map, it doesn't match undefined, and throws on toLowerCase
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("""(() => {
+                optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+                return optionSlugMatchesDisplayName('mapped_slug', undefined);
+            })()""")
+
+
+
+    def test_get_resolved_constraints(self, page: Page):
+        res = page.evaluate("""(() => {
+            cachedTypeColumns = { 'User': ['Name', 'Email'] };
+            // Mock document.getElementById for data-type-selector
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                if (id === 'data-type-selector') {
+                    return { value: 'User' };
+                }
+                return originalGetElementById.call(document, id);
+            };
+
+            const result = getResolvedConstraints([
+                {key: 'Name', constraint_type: 'equals', value: 'John'},
+                {key: 'Unknown', constraint_type: 'equals', value: 'Doe'},
+                {key: '_id', constraint_type: 'equals', value: '123'},
+                {key: 'Unique ID', constraint_type: 'equals', value: '456'},
+                {key: 'Email', constraint_type: 'equals', value: 'current date/time'}
+            ]);
+
+            // Restore document.getElementById
+            document.getElementById = originalGetElementById;
+            return result;
+        })()""")
+
+        # Test basic filtering and keeping special keys
+        assert len(res) == 4
+        keys = [c['key'] for c in res]
+        assert 'Name' in keys
+        assert 'Unknown' not in keys
+        assert '_id' in keys
+        assert 'Unique ID' in keys
+        assert 'Email' in keys
+
+        # Test "current date/time" resolution
+        email_val = next(c['value'] for c in res if c['key'] == 'Email')
+        assert email_val != 'current date/time'
+        # Basic validation that it looks like an ISO 8601 date string
+        assert 'T' in email_val and 'Z' in email_val
+
+        # Test fallback behavior when schema is empty/missing
+        res_fallback = page.evaluate("""(() => {
+            cachedTypeColumns = {};
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                if (id === 'data-type-selector') {
+                    return { value: 'UnknownType' };
+                }
+                return originalGetElementById.call(document, id);
+            };
+
+            const result = getResolvedConstraints([
+                {key: 'SomeField', constraint_type: 'equals', value: 'Value'}
+            ]);
+
+            document.getElementById = originalGetElementById;
+            return result;
+        })()""")
+        assert len(res_fallback) == 1
+        assert res_fallback[0]['key'] == 'SomeField'
+
+        # Test invalid inputs
+        assert page.evaluate("getResolvedConstraints(null)") == []
+        assert page.evaluate("getResolvedConstraints(undefined)") == []
+        assert page.evaluate("getResolvedConstraints('not an array')") == []
+        assert page.evaluate("getResolvedConstraints([null, {key: null}])") == []
 
 class TestTimezoneUtilityFunctions:
 

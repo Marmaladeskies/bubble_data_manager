@@ -6350,11 +6350,14 @@
 
         const currentType = document.getElementById("data-type-selector").value;
 
-        await Promise.all(
-          editingIds.map(async (recordId) => {
-            const row = document.getElementById(`row-${recordId}`);
-            if (!row) return;
-            const cells = row.querySelectorAll("td[data-field]");
+        const CONCURRENT_LIMIT = 5;
+        for (let i = 0; i < editingIds.length; i += CONCURRENT_LIMIT) {
+          const chunk = editingIds.slice(i, i + CONCURRENT_LIMIT);
+          await Promise.all(
+            chunk.map(async (recordId) => {
+              const row = document.getElementById(`row-${recordId}`);
+              if (!row) return;
+              const cells = row.querySelectorAll("td[data-field]");
 
             let payload = {};
             let hasChanges = false;
@@ -6521,6 +6524,7 @@
             }
           }),
         );
+        }
 
         if (failCount > 0)
           setTableActionState("edit_rows", {

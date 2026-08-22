@@ -433,6 +433,49 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(null)") is False
         assert page.evaluate("isImageFile(undefined)") is False
 
+    def test_get_record_search_strings(self, page: Page):
+        result = page.evaluate("""(() => {
+            const record = {
+                name: "John Doe",
+                age: 30,
+                isActive: true,
+                profile: { role: "admin" },
+                missing: null,
+                undef: undefined
+            };
+
+            // First call should calculate and cache
+            const firstCall = getRecordSearchStrings(record);
+
+            // Check if it's cached and non-enumerable
+            const isCached = record._cachedSearchStrings !== undefined;
+            const keys = Object.keys(record);
+            const isEnumerable = keys.includes("_cachedSearchStrings");
+
+            // Second call should return the same reference
+            const secondCall = getRecordSearchStrings(record);
+            const isSameReference = firstCall === secondCall;
+
+            return {
+                strings: firstCall,
+                isCached: isCached,
+                isEnumerable: isEnumerable,
+                isSameReference: isSameReference
+            };
+        })()""")
+
+        # Verify the strings are correctly extracted, converted to string, lowercased, and null/undefined ignored
+        # string "John Doe" -> "john doe"
+        # number 30 -> "30"
+        # boolean true -> "true"
+        # object { role: "admin" } -> '{"role":"admin"}'
+        assert result['strings'] == ["john doe", "30", "true", '{"role":"admin"}']
+
+        # Verify caching mechanics
+        assert result['isCached'] is True
+        assert result['isEnumerable'] is False
+        assert result['isSameReference'] is True
+
     def test_option_slug_matches_display_name(self, page: Page):
         # Setup test map using an IIFE closure in evaluate
         assert page.evaluate("""(() => {

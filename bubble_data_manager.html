@@ -3890,17 +3890,13 @@
               })
               .join(" ");
 
-            const safeRecordId = escapeHTML(
-              String(recordId).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
-            );
-            const safeField = escapeHTML(
-              String(field).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
-            );
+            const safeRecordId = escapeHTML(String(recordId));
+            const safeField = escapeHTML(String(field));
             const safePreview =
               escapeHTML(jsonValue.substring(0, 30)) +
               (jsonValue.length > 30 ? "..." : "");
 
-            result.content = `<span class="json-badge" onclick="openJSONEditor('${safeRecordId}', '${safeField}', this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
+            result.content = `<span class="json-badge" data-record-id="${safeRecordId}" data-field="${safeField}" onclick="openJSONEditor(this.getAttribute('data-record-id'), this.getAttribute('data-field'), this.closest('td').getAttribute('data-json'))">JSON</span> <span style="font-size: 11px; color: #666; font-family: monospace;"> ${safePreview}</span>${thumbsHtml ? " " + thumbsHtml : ""}`;
             result.isHTML = true;
           }
         } else if (isFile) {

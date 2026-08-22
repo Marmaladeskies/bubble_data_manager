@@ -546,6 +546,44 @@ class TestBubbleDataManager:
             return expectedType === 'object' && columnTypeCache['Field7'] === 'object';
         })()""") is True
 
+    def test_format_csv_field(self, page: Page):
+        # Null / Undefined
+        assert page.evaluate("formatCSVField(null, 'Header', 'slug')") == ""
+        assert page.evaluate("formatCSVField(undefined, 'Header', 'slug')") == ""
+
+        # Boolean handling
+        assert page.evaluate("formatCSVField(true, 'Active', 'slug')") == "yes"
+        assert page.evaluate("formatCSVField(false, 'Active', 'slug')") == "no"
+
+        assert page.evaluate("(() => { cachedFieldMeta = { 'slug': { '1': { display: 'Active', type: 'boolean' } } }; return formatCSVField('true', 'Active', 'slug'); })()") == "yes"
+        assert page.evaluate("(() => { cachedFieldMeta = { 'slug': { '1': { display: 'Active', type: 'boolean' } } }; return formatCSVField('false', 'Active', 'slug'); })()") == "no"
+
+        # Object handling
+        assert page.evaluate("formatCSVField({a: 1}, 'Header', 'slug')") == '"{""a"":1}"'
+        assert page.evaluate("formatCSVField([1, 2, 3], 'Header', 'slug')") == '"[1,2,3]"'
+
+        # Regular strings
+        assert page.evaluate("formatCSVField('hello', 'Header', 'slug')") == "hello"
+        assert page.evaluate("formatCSVField('123', 'Header', 'slug')") == "123"
+
+        # CSV Injection protection
+        assert page.evaluate("formatCSVField('=SUM(A1:A2)', 'Header', 'slug')") == "'=SUM(A1:A2)"
+        assert page.evaluate("formatCSVField('+1+2', 'Header', 'slug')") == "'+1+2"
+        assert page.evaluate("formatCSVField('-1-2', 'Header', 'slug')") == "'-1-2"
+        assert page.evaluate("formatCSVField('@SUM', 'Header', 'slug')") == "'@SUM"
+
+        # Tab and carriage return prefixes
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", chr(9) + "hello") == "'" + chr(9) + "hello"
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", chr(13) + "hello") == '"\'' + chr(13) + 'hello"'
+
+        # Proper CSV string escaping (quotes, commas, newlines)
+        assert page.evaluate("formatCSVField('hello,world', 'Header', 'slug')") == '"hello,world"'
+
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", "hello" + chr(10) + "world") == '"hello' + chr(10) + 'world"'
+
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", 'hello"world') == '"hello""world"'
+        assert page.evaluate("formatCSVField('=', 'Header', 'slug')") == "'="
+        
     def test_is_image_file(self, page: Page):
         assert page.evaluate("isImageFile('image.jpg')") is True
         assert page.evaluate("isImageFile('path/to/image.png')") is True

@@ -400,6 +400,74 @@ class TestBubbleDataManager:
             })()""")
 
 
+
+    def test_get_resolved_constraints(self, page: Page):
+        res = page.evaluate("""(() => {
+            cachedTypeColumns = { 'User': ['Name', 'Email'] };
+            // Mock document.getElementById for data-type-selector
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                if (id === 'data-type-selector') {
+                    return { value: 'User' };
+                }
+                return originalGetElementById.call(document, id);
+            };
+
+            const result = getResolvedConstraints([
+                {key: 'Name', constraint_type: 'equals', value: 'John'},
+                {key: 'Unknown', constraint_type: 'equals', value: 'Doe'},
+                {key: '_id', constraint_type: 'equals', value: '123'},
+                {key: 'Unique ID', constraint_type: 'equals', value: '456'},
+                {key: 'Email', constraint_type: 'equals', value: 'current date/time'}
+            ]);
+
+            // Restore document.getElementById
+            document.getElementById = originalGetElementById;
+            return result;
+        })()""")
+
+        # Test basic filtering and keeping special keys
+        assert len(res) == 4
+        keys = [c['key'] for c in res]
+        assert 'Name' in keys
+        assert 'Unknown' not in keys
+        assert '_id' in keys
+        assert 'Unique ID' in keys
+        assert 'Email' in keys
+
+        # Test "current date/time" resolution
+        email_val = next(c['value'] for c in res if c['key'] == 'Email')
+        assert email_val != 'current date/time'
+        # Basic validation that it looks like an ISO 8601 date string
+        assert 'T' in email_val and 'Z' in email_val
+
+        # Test fallback behavior when schema is empty/missing
+        res_fallback = page.evaluate("""(() => {
+            cachedTypeColumns = {};
+            const originalGetElementById = document.getElementById;
+            document.getElementById = function(id) {
+                if (id === 'data-type-selector') {
+                    return { value: 'UnknownType' };
+                }
+                return originalGetElementById.call(document, id);
+            };
+
+            const result = getResolvedConstraints([
+                {key: 'SomeField', constraint_type: 'equals', value: 'Value'}
+            ]);
+
+            document.getElementById = originalGetElementById;
+            return result;
+        })()""")
+        assert len(res_fallback) == 1
+        assert res_fallback[0]['key'] == 'SomeField'
+
+        # Test invalid inputs
+        assert page.evaluate("getResolvedConstraints(null)") == []
+        assert page.evaluate("getResolvedConstraints(undefined)") == []
+        assert page.evaluate("getResolvedConstraints('not an array')") == []
+        assert page.evaluate("getResolvedConstraints([null, {key: null}])") == []
+
 class TestTimezoneUtilityFunctions:
 
     @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "UTC"}])

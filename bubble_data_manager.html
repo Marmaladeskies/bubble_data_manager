@@ -3738,26 +3738,42 @@
         if (!url) return "";
         const fullUrl = url.startsWith("//") ? "https:" + url : url;
         const fileName = url.split("/").pop().split("?")[0];
+
+        // Protocol validation to prevent XSS (e.g. javascript:)
+        let isValidProtocol = false;
+        try {
+          const parsedUrl = new URL(fullUrl, window.location.origin);
+          isValidProtocol = ['http:', 'https:'].includes(parsedUrl.protocol);
+        } catch (e) {
+          // If URL parsing fails, consider it invalid for the href
+        }
+
         const safeUrl = escapeHTML(fullUrl);
+        const safeHref = isValidProtocol ? safeUrl : '#';
+        const safeSrc = isValidProtocol ? safeUrl : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgZmlsbD0iI2RkZCI+PHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIi8+PC9zdmc+'; // Transparent/grey block fallback for invalid image src
+
+        // Ensure that text displaying the URL falls back if invalid protocol
+        const displayUrl = isValidProtocol ? url : 'Invalid URL';
+        const displayFileName = isValidProtocol ? (fileName || url) : 'Invalid URL';
 
         if (isImageFile(url)) {
           return `
           <div class="file-preview-wrapper">
-            <a href="${safeUrl}" target="_blank" title="Open image in new tab">
-              <img src="${safeUrl}" class="thumbnail-preview" alt="Thumbnail">
+            <a href="${safeHref}" target="_blank" title="Open image in new tab">
+              <img src="${safeSrc}" class="thumbnail-preview" alt="Thumbnail">
             </a>
-            ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
+            ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(displayUrl)}">${escapeHTML(displayFileName)}</span>`}
           </div>`;
         } else {
           return `
           <div class="file-preview-wrapper">
-            <a href="${safeUrl}" target="_blank" class="file-icon-link" title="Open file in new tab">
+            <a href="${safeHref}" target="_blank" class="file-icon-link" title="Open file in new tab">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
                 <polyline points="13 2 13 9 20 9"></polyline>
               </svg>
             </a>
-            ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(url)}">${escapeHTML(fileName || url)}</span>`}
+            ${hideFileName ? "" : `<span class="file-url-text" title="${escapeHTML(displayUrl)}">${escapeHTML(displayFileName)}</span>`}
           </div>`;
         }
       }

@@ -352,6 +352,53 @@ class TestBubbleDataManager:
         assert page.evaluate("isImageFile(null)") is False
         assert page.evaluate("isImageFile(undefined)") is False
 
+    def test_option_slug_matches_display_name(self, page: Page):
+        # Setup test map using an IIFE closure in evaluate
+        assert page.evaluate("""(() => {
+            optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+            return optionSlugMatchesDisplayName('mapped_slug', 'Custom Display Name');
+        })()""") is True
+
+        assert page.evaluate("""(() => {
+            optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+            return optionSlugMatchesDisplayName('mapped_slug', 'Other Name');
+        })()""") is False
+
+        # Test exact/case-insensitive matching
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'test')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('TEST', 'test')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'TEST')") is True
+
+        # Test underscore replacement
+        assert page.evaluate("optionSlugMatchesDisplayName('test_slug', 'test slug')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('TEST_SLUG', 'test slug')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('test_multiple_underscores', 'test multiple underscores')") is True
+
+        # Test non-matching
+        assert page.evaluate("optionSlugMatchesDisplayName('test', 'other')") is False
+        assert page.evaluate("optionSlugMatchesDisplayName('test_slug', 'test_other')") is False
+
+        # Test edge cases that throw errors due to missing methods on null/undefined
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName(null, 'test')")
+
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName('test', null)")
+
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("optionSlugMatchesDisplayName(undefined, 'test')")
+
+        # Quirk: if slug is not in the map, optionSlugToDisplayName[slug] is undefined.
+        # If displayName is also undefined, it returns true on the first line!
+        assert page.evaluate("optionSlugMatchesDisplayName('test', undefined)") is True
+
+        # If slug IS in the map, it doesn't match undefined, and throws on toLowerCase
+        with pytest.raises(Exception, match="TypeError"):
+            page.evaluate("""(() => {
+                optionSlugToDisplayName = { 'mapped_slug': 'Custom Display Name' };
+                return optionSlugMatchesDisplayName('mapped_slug', undefined);
+            })()""")
+
 
 class TestTimezoneUtilityFunctions:
 

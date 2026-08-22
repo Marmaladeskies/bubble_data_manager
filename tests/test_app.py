@@ -856,7 +856,34 @@ class TestBubbleDataManager:
         assert res_error == {"isValid": False, "message": "Could not connect to test.com. The URL may be misspelled, offline, or not a Bubble application."}
         page.unroute("**/api/1.1/obj/auth_validation_dummy*")
 
+    def test_option_slug_matches_display_name(self, page: Page):
+        # 1. Exact dictionary match
+        assert page.evaluate("(() => { optionSlugToDisplayName = { 'custom_slug_1': 'Custom Display Name' }; return optionSlugMatchesDisplayName('custom_slug_1', 'Custom Display Name'); })()") is True
+        assert page.evaluate("(() => { optionSlugToDisplayName = { 'another_slug': 'Another Name' }; return optionSlugMatchesDisplayName('another_slug', 'Another Name'); })()") is True
+
+        # 2. Case-insensitive exact match
+        assert page.evaluate("(() => { optionSlugToDisplayName = {}; return optionSlugMatchesDisplayName('ACTIVE', 'active'); })()") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('pending', 'Pending')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('CamelCase', 'camelcase')") is True
+
+        # 3. Underscore replacement match
+        assert page.evaluate("optionSlugMatchesDisplayName('in_progress', 'In Progress')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('REQUIRES_ACTION', 'requires action')") is True
+        assert page.evaluate("optionSlugMatchesDisplayName('multiple_words_here', 'Multiple Words Here')") is True
+
+        # 4. Failure cases
+        assert page.evaluate("optionSlugMatchesDisplayName('custom_slug_1', 'Wrong Name')") is False
+        assert page.evaluate("optionSlugMatchesDisplayName('active', 'inactive')") is False
+        assert page.evaluate("optionSlugMatchesDisplayName('in_progress', 'in-progress')") is False
+
+        # 5. Edge cases (null / undefined inputs)
+        assert page.evaluate("optionSlugMatchesDisplayName(null, 'active')") is False
+        assert page.evaluate("optionSlugMatchesDisplayName('active', null)") is False
+        assert page.evaluate("optionSlugMatchesDisplayName(undefined, undefined)") is False
+        assert page.evaluate("optionSlugMatchesDisplayName(123, 123)") is False
+
 class TestTimezoneUtilityFunctions:
+
 
     @pytest.mark.parametrize("browser_context_args", [{"timezone_id": "UTC"}])
     def test_utc_timezone(self, page: Page):

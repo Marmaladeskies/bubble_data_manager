@@ -220,6 +220,87 @@ class TestBubbleDataManager:
             return isDateField('mock-slug', 'Created');
         })()""") is True
 
+    def test_get_field_meta(self, page: Page):
+        # Setup mock state for cachedFieldMeta directly inside evaluate where it is executed
+        # 1. Happy path: exact display match
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = {
+                'mock-type': {
+                    'f1': { id: 'f1', display: 'First Name', type: 'text' },
+                    'f2': { id: 'f2', display: 'Last Name ', type: 'text' },
+                    'custom_id': { id: 'custom_id', display: 'Age', type: 'number' }
+                }
+            };
+            return getFieldMeta('mock-type', 'First Name').id;
+        })()""") == 'f1'
+
+        # 2. Case-insensitive match on display
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = {
+                'mock-type': {
+                    'f1': { id: 'f1', display: 'First Name', type: 'text' },
+                    'f2': { id: 'f2', display: 'Last Name ', type: 'text' },
+                    'custom_id': { id: 'custom_id', display: 'Age', type: 'number' }
+                }
+            };
+            return getFieldMeta('mock-type', '  first NAME  ').id;
+        })()""") == 'f1'
+
+        # 3. Match on ID (fallback)
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = {
+                'mock-type': {
+                    'f1': { id: 'f1', display: 'First Name', type: 'text' },
+                    'f2': { id: 'f2', display: 'Last Name ', type: 'text' },
+                    'custom_id': { id: 'custom_id', display: 'Age', type: 'number' }
+                }
+            };
+            return getFieldMeta('mock-type', 'custom_id').display;
+        })()""") == 'Age'
+
+        # 4. Error/Edge cases: missing or invalid dataTypeSlug
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-type': {} };
+            return getFieldMeta(null, 'First Name');
+        })()""") is None
+
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-type': {} };
+            return getFieldMeta('non-existent-type', 'First Name');
+        })()""") is None
+
+        # 5. Error/Edge cases: missing or invalid fieldDisplayName
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-type': {} };
+            return getFieldMeta('mock-type', null);
+        })()""") is None
+
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-type': {} };
+            return getFieldMeta('mock-type', undefined);
+        })()""") is None
+
+        # 6. Error/Edge case: valid dataTypeSlug but nonexistent field
+        assert page.evaluate("""(() => {
+            cachedFieldMeta = { 'mock-type': { 'f1': { id: 'f1', display: 'First Name', type: 'text' } } };
+            return getFieldMeta('mock-type', 'Non Existent');
+        })()""") is None
+
+        # 7. Caching behavior: verify _lowerCache is created and is non-enumerable
+        cache_check = page.evaluate("""(() => {
+            cachedFieldMeta = {
+                'mock-type': {
+                    'f1': { id: 'f1', display: 'First Name', type: 'text' }
+                }
+            };
+            getFieldMeta('mock-type', 'First Name');
+            const typeMeta = cachedFieldMeta['mock-type'];
+            const hasProperty = typeMeta.hasOwnProperty('_lowerCache');
+            const isEnumerable = Object.keys(typeMeta).includes('_lowerCache');
+            return { hasProperty, isEnumerable };
+        })()""")
+        assert cache_check['hasProperty'] is True
+        assert cache_check['isEnumerable'] is False
     def test_format_csv_field(self, page: Page):
         # Null and undefined
         assert page.evaluate("formatCSVField(null, 'header', 'type')") == ""

@@ -726,7 +726,7 @@ class TestBubbleDataManager:
         # number 30 -> "30"
         # boolean true -> "true"
         # object { role: "admin" } -> '{"role":"admin"}'
-        assert result['strings'] == ["john doe", "30", "true", '{"role":"admin"}']
+        assert result['strings'] == 'john doe\x0030\x00true\x00{"role":"admin"}'
 
         # Verify caching mechanics
         assert result['isCached'] is True

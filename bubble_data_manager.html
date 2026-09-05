@@ -4644,15 +4644,12 @@
 
       function getRecordSearchStrings(record) {
         if (record._cachedSearchStrings === undefined) {
-          const searchStrings = [];
-          for (const val of Object.values(record)) {
-            if (val === null || val === undefined) continue;
-            const stringVal =
-              typeof val === "object" ? JSON.stringify(val) : String(val);
-            searchStrings.push(stringVal.toLowerCase());
-          }
+          const searchStringBlock = Object.values(record)
+            .filter((val) => val !== null && val !== undefined)
+            .map((val) => (typeof val === "object" ? JSON.stringify(val) : String(val)).toLowerCase())
+            .join("\0");
           Object.defineProperty(record, "_cachedSearchStrings", {
-            value: searchStrings,
+            value: searchStringBlock,
             enumerable: false, // Prevents inclusion in Object.values() iteration
             writable: true,
             configurable: true,
@@ -4676,9 +4673,7 @@
         }
 
         currentVisibleRecords = cachedRecords.filter((record) => {
-          return getRecordSearchStrings(record).some((str) =>
-            str.includes(filterValue),
-          );
+          return getRecordSearchStrings(record).includes(filterValue);
         });
 
         if (currentVisibleRecords.length === 0) {

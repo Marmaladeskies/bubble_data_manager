@@ -2864,20 +2864,24 @@
        * E.g.: "Aug 17, 2026, 8:39:35 PM"
        * Falls back to the raw value if parsing fails.
        */
+      let _cachedDateTimeFormat = null;
       function formatDateForDisplay(isoString) {
         if (!isoString) return "";
         try {
           const d = new Date(isoString);
           if (isNaN(d.getTime())) return String(isoString);
-          return d.toLocaleString(undefined, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          });
+          if (!_cachedDateTimeFormat) {
+            _cachedDateTimeFormat = new Intl.DateTimeFormat(undefined, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            });
+          }
+          return _cachedDateTimeFormat.format(d);
         } catch (_) {
           return String(isoString);
         }

@@ -3543,7 +3543,9 @@
           const data = await response.json();
           const results =
             data.response && data.response.results ? data.response.results : [];
-          allRecords = allRecords.concat(results);
+          for (let i = 0; i < results.length; i++) {
+            allRecords.push(results[i]);
+          }
           remaining =
             data.response && data.response.remaining
               ? data.response.remaining
@@ -6629,7 +6631,9 @@
 
           const data = await response.json();
           const results = data.response.results || [];
-          allRecords = allRecords.concat(results);
+          for (let i = 0; i < results.length; i++) {
+            allRecords.push(results[i]);
+          }
           remaining = data.response.remaining;
           cursor += results.length;
         }

@@ -4361,7 +4361,9 @@
               } else if (typeof rawMap === "string") {
                 try {
                   activeOrderMap = JSON.parse(rawMap);
-                } catch (e) {}
+                } catch (e) {
+                  console.error("Error parsing column order map:", e);
+                }
               }
             }
           }
@@ -5372,7 +5374,9 @@
             ) {
               try {
                 constraintValue = new Date(value.trim()).toISOString();
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing date in constraint value:", e);
+              }
             }
           } else if (operator === "not equals") {
             constraintType = "not equal";
@@ -5384,7 +5388,9 @@
             ) {
               try {
                 constraintValue = new Date(value.trim()).toISOString();
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing date in constraint value:", e);
+              }
             }
           } else if (operator === "in" || operator === "not in") {
             constraintType = operator === "in" ? "in" : "not in";
@@ -5741,7 +5747,9 @@
             ) {
               try {
                 originalValue = JSON.parse(originalValue);
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing original JSON value:", e);
+              }
             }
             setCellContent(cell, originalValue, field, recordId, currentType);
             cell.removeAttribute("data-original");
@@ -6508,7 +6516,9 @@
                         newValue = JSON.parse(newValue);
                         displayValue = JSON.stringify(newValue);
                         cell.setAttribute("data-json", displayValue);
-                      } catch (e) {}
+                      } catch (e) {
+                        console.warn("Error parsing JSON during editing:", e);
+                      }
                     } else if (isDate) {
                       if (newValue) {
                         newValue = new Date(newValue).toISOString();

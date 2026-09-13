@@ -125,6 +125,43 @@ class TestBubbleDataManager:
         assert page.evaluate("isBubbleFile(123)") is False
         assert page.evaluate("isBubbleFile({})") is False
 
+    def test_get_cell_content_state(self, page: Page):
+        # Empty values
+        assert page.evaluate("getCellContentState(null, 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState(undefined, 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState('', 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+
+        # Boolean values
+        assert page.evaluate("getCellContentState(true, 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-yes">yes</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState(false, 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-no">no</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState('yes', 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-yes">yes</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+
+        # Option Set values
+        assert page.evaluate("getCellContentState('Opt1', 'f1', 'r1', 'text', {isOptionSet: true})") == {"content": '<span class="type-badge badge-option">Opt1</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+
+        # Date values
+        assert page.evaluate("getCellContentState('2024-01-01T00:00:00.000Z', 'f1', 'r1', 'date', {isDate: true})")['isHTML'] is True
+        assert 'badge-date' in page.evaluate("getCellContentState('2024-01-01T00:00:00.000Z', 'f1', 'r1', 'date', {isDate: true})")['content']
+
+        # Object / JSON values
+        json_obj_result = page.evaluate("getCellContentState({'a': 1}, 'f1', 'r1', 'text', {})")
+        assert json_obj_result['isHTML'] is True
+        assert json_obj_result['dataJson'] == '{"a":1}'
+        assert 'JSON' in json_obj_result['content']
+
+        # JSON strings that are parsed
+        json_str_result = page.evaluate("getCellContentState('{\"b\": 2}', 'f1', 'r1', 'text', {})")
+        assert json_str_result['isHTML'] is True
+        assert json_str_result['dataJson'] == '{"b": 2}'
+        assert 'JSON' in json_str_result['content']
+
+        # Bubble file values
+        file_result = page.evaluate("getCellContentState('https://example.com/image.jpg', 'f1', 'r1', 'text', {})")
+        assert file_result['isHTML'] is True
+        assert file_result['dataRawValue'] == 'https://example.com/image.jpg'
+        assert '<a' in file_result['content']
+        assert '<img' in file_result['content']
+
     def test_format_to_datetime_local(self, page: Page):
         assert page.evaluate("formatToDateTimeLocal('')") == ""
         assert page.evaluate("formatToDateTimeLocal(null)") == ""
@@ -323,6 +360,99 @@ class TestBubbleDataManager:
         })()""")
         assert cache_check['hasProperty'] is True
         assert cache_check['isEnumerable'] is False
+
+
+    def test_show_export_modal(self, page: Page):
+        # The test requires mocking cachedTypeColumns
+        # and checking that the modal list is populated with checkboxes for each data type
+        page.evaluate('''(() => {
+            // Mock both DATA_TYPES and cachedTypeColumns
+            DATA_TYPES = [
+                {value: "User", label: "User"},
+                {value: "Product", label: "Product"},
+                {value: "Order", label: "Order"}
+            ];
+            cachedTypeColumns = {
+                "User": ["Name", "Email"],
+                "Product": ["Price", "Description"],
+                "Order": ["Total", "Status"]
+            };
+
+            const selector = document.getElementById("data-type-selector");
+            if (selector) {
+                selector.innerHTML = '<option value="Product">Product</option>';
+                selector.value = "Product";
+            }
+
+            // Set up UI elements if missing or reset them
+            const modal = document.getElementById("export-modal");
+            const progress = document.getElementById("export-progress-container");
+            const downloadBtn = document.getElementById("export-download-btn");
+            const cancelBtn = document.getElementById("export-cancel-btn");
+
+            if (progress) progress.style.display = "block";
+            if (downloadBtn) {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = "Processing...";
+            }
+            if (cancelBtn) cancelBtn.disabled = true;
+
+            showExportModal();
+        })()''')
+
+        expect(page.locator("#export-modal")).to_be_visible()
+
+        # Verify UI resets
+        expect(page.locator("#export-progress-container")).to_be_hidden()
+        expect(page.locator("#export-download-btn")).to_be_enabled()
+        expect(page.locator("#export-download-btn")).to_have_text("Download CSV")
+        expect(page.locator("#export-cancel-btn")).to_be_enabled()
+
+        # Verify checkboxes
+        checkboxes = page.locator(".export-type-checkbox")
+        expect(checkboxes).to_have_count(3)
+        expect(checkboxes.nth(0)).not_to_be_checked()
+        expect(checkboxes.nth(1)).to_be_checked() # Matches current type 'Product'
+        expect(checkboxes.nth(2)).not_to_be_checked()
+
+        # 2. Test single data type behavior
+        page.evaluate('''(() => {
+            DATA_TYPES = [
+                {value: "Single", label: "Single"}
+            ];
+            cachedTypeColumns = {
+                "Single": ["Field1"]
+            };
+
+            const selector = document.getElementById("data-type-selector");
+            if (selector) {
+                selector.innerHTML = '<option value="Other">Other</option>';
+                selector.value = "Other";
+            }
+
+            showExportModal();
+        })()''')
+
+        checkboxes = page.locator(".export-type-checkbox")
+        expect(checkboxes).to_have_count(1)
+        expect(checkboxes.nth(0)).to_be_checked() # Checked because it's the only one
+
+        # 3. Test missing elements (should return early without error)
+        res = page.evaluate('''(() => {
+            const listContainer = document.getElementById("export-types-list");
+            const originalParent = listContainer.parentNode;
+            originalParent.removeChild(listContainer);
+
+            try {
+                showExportModal();
+                originalParent.appendChild(listContainer); // restore
+                return true;
+            } catch (e) {
+                originalParent.appendChild(listContainer); // restore
+                return false;
+            }
+        })()''')
+        assert res == True
     def test_format_csv_field(self, page: Page):
         # Null and undefined
         assert page.evaluate("formatCSVField(null, 'header', 'type')") == ""
@@ -875,6 +1005,53 @@ class TestBubbleDataManager:
         assert res_error == {"isValid": False, "message": "Could not connect to test.com. The URL may be misspelled, offline, or not a Bubble application."}
         page.unroute("**/api/1.1/obj/auth_validation_dummy*")
 
+    def test_rebuild_data_types(self, page: Page):
+        # Wait for initial app loading to finish so it doesn't overwrite our test
+        expect(page.locator('#data-type-selector option[value="User"]')).to_have_count(1)
+
+        # Mock baseTypes
+        mock_base_types = [
+            {"value": "type1", "label": "Type One", "data_type_name_lowercase": "type one"},
+            {"value": "type2", "label": "Type Two", "data_type_name_lowercase": "type two"},
+            {"value": "type3", "label": "Type Three", "data_type_name_lowercase": "type three"}
+        ]
+
+        # Test without preferredValue
+        page.evaluate(f"""
+            (() => {{
+                const baseTypes = {json.dumps(mock_base_types)};
+                rebuildDataTypes(baseTypes);
+            }})()
+        """)
+
+        # Check selector options
+        selector_options = page.locator('#data-type-selector option')
+        expect(selector_options).to_have_count(3)
+        expect(selector_options.nth(0)).to_have_attribute("value", "type1")
+        expect(selector_options.nth(0)).to_have_text("Type One")
+        expect(selector_options.nth(1)).to_have_attribute("value", "type2")
+        expect(selector_options.nth(2)).to_have_attribute("value", "type3")
+
+        # Check dropdown options
+        dropdown_options = page.locator('#data-types-dropdown option')
+        expect(dropdown_options).to_have_count(3)
+        expect(dropdown_options.nth(0)).to_have_attribute("value", "type1")
+        expect(dropdown_options.nth(0)).to_have_text("Type One")
+        expect(dropdown_options.nth(1)).to_have_attribute("value", "type2")
+        expect(dropdown_options.nth(2)).to_have_attribute("value", "type3")
+
+        # Test with preferredValue
+        page.evaluate(f"""
+            (() => {{
+                const baseTypes = {json.dumps(mock_base_types)};
+                rebuildDataTypes(baseTypes, 'type2');
+            }})()
+        """)
+
+        # Verify preferredValue is selected
+        expect(page.locator('#data-type-selector')).to_have_value("type2")
+        expect(page.locator('#data-types-dropdown')).to_have_value("type2")
+
     def test_option_slug_matches_display_name(self, page: Page):
         # 1. Exact dictionary match
         assert page.evaluate("(() => { optionSlugToDisplayName = { 'custom_slug_1': 'Custom Display Name' }; return optionSlugMatchesDisplayName('custom_slug_1', 'Custom Display Name'); })()") is True
@@ -916,6 +1093,79 @@ class TestBubbleDataManager:
                 content = f.read()
             assert content == "\uFEFFa,b,c\n1,2,3"
 
+    def test_populate_column_filter_group(self, page: Page):
+        res = page.evaluate("""(() => {
+            const originalGetElementById = document.getElementById;
+            const listContainer = document.createElement('div');
+            listContainer.id = 'column-filter-list';
+
+            document.getElementById = function(id) {
+                if (id === 'column-filter-list') return listContainer;
+                return originalGetElementById.call(document, id);
+            };
+
+            // Setup hidden columns set
+            hiddenColumns = new Set(['Header_B', 'Header_C_with_underscores']);
+
+            let updateSelectLinksUICalled = false;
+            window.updateSelectLinksUI = () => { updateSelectLinksUICalled = true; };
+
+            // Should early return if headers is empty or undefined
+            populateColumnFilterGroup([]);
+            const emptyItems = listContainer.innerHTML;
+
+            // Should return correctly formatted headers, sorted by cleanHeader
+            populateColumnFilterGroup(['Header_B', 'Header_A', 'Header_C_with_underscores']);
+
+            const items = Array.from(listContainer.querySelectorAll('.column-filter-item')).map(label => {
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                const span = label.querySelector('span');
+
+                return {
+                    text: span.textContent,
+                    checked: checkbox.checked,
+                    isHiddenClass: label.classList.contains('hidden-column')
+                };
+            });
+
+            // Test toggle event firing
+            let toggleCalledWith = null;
+            window.toggleColumnVisibility = (header, isVisible, label) => {
+                toggleCalledWith = {header, isVisible};
+            };
+
+            const firstCheckbox = listContainer.querySelector('input[type="checkbox"]');
+            firstCheckbox.checked = false; // change to false
+            firstCheckbox.dispatchEvent(new Event('change'));
+
+            document.getElementById = originalGetElementById;
+
+            return {
+                emptyItems: emptyItems,
+                items: items,
+                called: updateSelectLinksUICalled,
+                toggleCalledWith: toggleCalledWith
+            };
+        })()""")
+
+        assert res['emptyItems'] == ''
+        assert len(res['items']) == 3
+
+        # Checking that sorting happened: Header A, Header B, Header C
+        assert res['items'][0]['text'] == 'Header A'
+        assert res['items'][0]['checked'] == True
+        assert res['items'][0]['isHiddenClass'] == False
+
+        assert res['items'][1]['text'] == 'Header B'
+        assert res['items'][1]['checked'] == False
+        assert res['items'][1]['isHiddenClass'] == True
+
+        assert res['items'][2]['text'] == 'Header C with underscores'
+        assert res['items'][2]['checked'] == False
+        assert res['items'][2]['isHiddenClass'] == True
+
+        assert res['called'] == True
+        assert res['toggleCalledWith'] == {'header': 'Header_A', 'isVisible': False}
 
 class TestTimezoneUtilityFunctions:
 
@@ -1015,3 +1265,74 @@ class TestGetExpectedType:
         })()""")
         assert result["type"] == "unknown"
         assert result["cache"] == "unknown"
+
+class TestSetCellContent:
+    def test_set_cell_content_primitive_string(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, "hello world", "test_field", "123", "User", null);
+            return {
+                html: cell.innerHTML,
+                text: cell.innerText,
+                field: cell.getAttribute("data-field"),
+                dataJson: cell.hasAttribute("data-json"),
+                dataRawValue: cell.hasAttribute("data-raw-value")
+            };
+        })()""")
+        assert result["html"] == "hello world"
+        assert result["field"] == "test_field"
+        assert result["dataJson"] is False
+        assert result["dataRawValue"] is False
+
+    def test_set_cell_content_boolean(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, true, "test_field", "123", "User", { isBool: true });
+            return {
+                html: cell.innerHTML,
+                hasYesBadge: cell.innerHTML.includes("badge-boolean-yes"),
+                field: cell.getAttribute("data-field")
+            };
+        })()""")
+        assert result["hasYesBadge"] is True
+        assert result["field"] == "test_field"
+
+    def test_set_cell_content_json_object(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, { key: "value" }, "test_field", "123", "User", null);
+            return {
+                html: cell.innerHTML,
+                dataJson: cell.getAttribute("data-json"),
+                hasJsonBadge: cell.innerHTML.includes("json-badge")
+            };
+        })()""")
+        assert result["hasJsonBadge"] is True
+        assert result["dataJson"] == '{"key":"value"}'
+
+    def test_set_cell_content_date(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, "2023-01-01T00:00:00.000Z", "test_field", "123", "User", { isDate: true });
+            return {
+                html: cell.innerHTML,
+                hasDateBadge: cell.innerHTML.includes("badge-date")
+            };
+        })()""")
+        assert result["hasDateBadge"] is True
+
+    def test_set_cell_content_clears_old_attributes(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            cell.setAttribute("data-json", "old");
+            cell.setAttribute("data-raw-value", "old");
+            setCellContent(cell, "new_value", "test_field", "123", "User", null);
+            return {
+                hasDataJson: cell.hasAttribute("data-json"),
+                hasDataRawValue: cell.hasAttribute("data-raw-value"),
+                html: cell.innerHTML
+            };
+        })()""")
+        assert result["hasDataJson"] is False
+        assert result["hasDataRawValue"] is False
+        assert result["html"] == "new_value"

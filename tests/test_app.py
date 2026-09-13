@@ -888,6 +888,21 @@ class TestBubbleDataManager:
         valid_file = page.evaluate("renderFilePreview('http://example.com/file.pdf')")
         assert 'href="http://example.com/file.pdf"' in valid_file
 
+    def test_close_json_editor(self, page: Page):
+        # Verify the modal is initially hidden
+        modal_locator = page.locator("#json-editor-modal")
+        expect(modal_locator).to_have_css("display", "none")
+
+        # Open the modal manually
+        page.evaluate('document.getElementById("json-editor-modal").style.display = "flex";')
+        expect(modal_locator).to_have_css("display", "flex")
+
+        # Call the function to test
+        page.evaluate("closeJSONEditor()")
+
+        # Verify it is hidden again
+        expect(modal_locator).to_have_css("display", "none")
+
     def test_getOptionSetForField(self, page: Page):
         # We run the tests in a single evaluate block because block-scoped variables (let/const)
         # in the global scope of the page might not persist between `page.evaluate` calls depending on the environment.

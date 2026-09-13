@@ -356,6 +356,12 @@ class TestBubbleDataManager:
         assert page.evaluate("formatCSVField('\\t1+1', 'header', 'type')") == "'\t1+1"
         assert page.evaluate("formatCSVField('\\r1+1', 'header', 'type')") == "\"'\r1+1\""
 
+        # CSV Injection prevention (bypasses with leading whitespace)
+        assert page.evaluate("formatCSVField(' =1+1', 'header', 'type')") == "' =1+1"
+        assert page.evaluate("formatCSVField(' \\t+1+1', 'header', 'type')") == "' \t+1+1"
+        assert page.evaluate("formatCSVField('\\n-1+1', 'header', 'type')") == "\"'\n-1+1\""
+        assert page.evaluate("formatCSVField(' \\r@1+1', 'header', 'type')") == "\"' \\r@1+1\""
+
         # Escaping quotes, commas, newlines
         assert page.evaluate("formatCSVField('hello, world', 'header', 'type')") == '"hello, world"'
         assert page.evaluate("formatCSVField('hello\\nworld', 'header', 'type')") == '"hello\nworld"'
@@ -571,6 +577,10 @@ class TestBubbleDataManager:
         assert page.evaluate("formatCSVField('+1+2', 'Header', 'slug')") == "'+1+2"
         assert page.evaluate("formatCSVField('-1-2', 'Header', 'slug')") == "'-1-2"
         assert page.evaluate("formatCSVField('@SUM', 'Header', 'slug')") == "'@SUM"
+
+        # CSV Injection protection (whitespace evasion)
+        assert page.evaluate("formatCSVField(' =SUM(A1:A2)', 'Header', 'slug')") == "' =SUM(A1:A2)"
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", " \n+1+2") == "\"\' \n+1+2\""
 
         # Tab and carriage return prefixes
         assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", chr(9) + "hello") == "'" + chr(9) + "hello"

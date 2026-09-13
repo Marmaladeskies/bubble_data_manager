@@ -1421,6 +1421,143 @@ class TestBubbleDataManager:
                 content = f.read()
             assert content == "\uFEFFa,b,c\n1,2,3"
 
+    def test_save_text_editor(self, page: Page):
+        res = page.evaluate('''(() => {
+            let error = null;
+            let result = {};
+            try {
+                const originalEditRow = window.editRow;
+                const originalToggleRowSelection = window.toggleRowSelection;
+                const originalUpdateBulkBar = window.updatebulkBar;
+
+                let editRowCalled = false;
+                let toggleRowSelectionCalled = false;
+                let updateBulkBarCalled = false;
+
+                window.editRow = (id) => { editRowCalled = true; };
+                window.toggleRowSelection = (id, val) => { toggleRowSelectionCalled = true; };
+                window.updatebulkBar = () => { updateBulkBarCalled = true; };
+
+                // Test editing existing row
+                window.openTextEditor('123', 'Notes', 'old', false);
+
+                const tbody = document.createElement('tbody');
+                tbody.id = 'fake-tbody';
+                document.body.appendChild(tbody);
+
+                tbody.innerHTML = `
+                    <tr id="row-123">
+                    <td class="select-cell"><input type="checkbox"></td>
+                    <td data-field="Notes">
+                        <input type="hidden" value="old">
+                        <div class="text-preview">old</div>
+                    </td>
+                    </tr>
+                    <tr id="row-new" class="new-row-adding">
+                    <td class="select-cell"><input type="checkbox"></td>
+                    <td data-field="Description">
+                        <input type="hidden" value="">
+                        <div class="text-preview"></div>
+                    </td>
+                    </tr>
+                `;
+
+                document.getElementById('text-editor-textarea').value = 'This is a very long text that exceeds twenty characters.';
+
+                window.saveTextEditor();
+
+                const row = document.getElementById('row-123');
+                const cell = row.querySelector('td[data-field="Notes"]');
+
+                result.existingRow = {
+                    editRowCalled,
+                    toggleRowSelectionCalled,
+                    updateBulkBarCalled,
+                    hiddenVal: cell.querySelector('input[type="hidden"]').value,
+                    previewText: cell.querySelector('.text-preview').innerText,
+                    title: cell.getAttribute('title'),
+                    hasEdits: row.classList.contains('has-edits'),
+                    modalDisplay: document.getElementById('text-editor-modal').style.display,
+                    checkboxChecked: row.querySelector('.select-cell input').checked
+                };
+
+                // Reset flags
+                editRowCalled = false;
+                toggleRowSelectionCalled = false;
+                updateBulkBarCalled = false;
+
+                // Test new row adding
+                window.openTextEditor('new', 'Description', '', true);
+
+                document.getElementById('text-editor-textarea').value = 'Short text';
+
+                window.saveTextEditor();
+
+                const newRow = document.getElementById('row-new');
+                const newCell = newRow.querySelector('td[data-field="Description"]');
+
+                result.newRow = {
+                    editRowCalled,
+                    toggleRowSelectionCalled,
+                    updateBulkBarCalled,
+                    hiddenVal: newCell.querySelector('input[type="hidden"]').value,
+                    previewText: newCell.querySelector('.text-preview').innerText,
+                    title: newCell.getAttribute('title'),
+                    hasEdits: newRow.classList.contains('has-edits'),
+                    modalDisplay: document.getElementById('text-editor-modal').style.display,
+                    checkboxChecked: newRow.querySelector('.select-cell input').checked
+                };
+
+                // Reset flag and test already in edit mode
+                row.classList.add('editing-row');
+                editRowCalled = false;
+                toggleRowSelectionCalled = false;
+
+                window.openTextEditor('123', 'Notes', '', false);
+                window.saveTextEditor();
+
+                result.alreadyEditing = {
+                    editRowCalled,
+                    toggleRowSelectionCalled
+                };
+
+                window.editRow = originalEditRow;
+                window.toggleRowSelection = originalToggleRowSelection;
+                window.updatebulkBar = originalUpdateBulkBar;
+
+                tbody.remove();
+            } catch (e) {
+                error = e.toString() + ' ' + e.stack;
+            }
+
+            return { result, error };
+        })()''')
+
+        assert res['error'] is None
+
+        existing = res['result']['existingRow']
+        assert existing['editRowCalled'] is True
+        assert existing['toggleRowSelectionCalled'] is True
+        assert existing['updateBulkBarCalled'] is True
+        assert existing['hiddenVal'] == 'This is a very long text that exceeds twenty characters.'
+        assert existing['previewText'] == 'This is a very long ...'
+        assert existing['title'] == 'This is a very long text that exceeds twenty characters.'
+        assert existing['hasEdits'] is True
+        assert existing['modalDisplay'] == 'none'
+        assert existing['checkboxChecked'] is True
+
+        newRow = res['result']['newRow']
+        assert newRow['editRowCalled'] is False
+        assert newRow['toggleRowSelectionCalled'] is False
+        assert newRow['updateBulkBarCalled'] is True
+        assert newRow['hiddenVal'] == 'Short text'
+        assert newRow['previewText'] == 'Short text'
+        assert newRow['title'] == 'Short text'
+        assert newRow['hasEdits'] is True
+
+        alreadyEditing = res['result']['alreadyEditing']
+        assert alreadyEditing['editRowCalled'] is False
+        assert alreadyEditing['toggleRowSelectionCalled'] is False
 
 
     def test_render_data_type_sidebar(self, page: Page):

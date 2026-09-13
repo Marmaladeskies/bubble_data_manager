@@ -292,6 +292,78 @@ class TestBubbleDataManager:
         assert all_apps[0] == {"index": 1, "domain": "https://example-bubble-app.com", "apiKey": "fake-api-key"}
         assert all_apps[1] == {"index": 2, "domain": "https://another-app.com", "apiKey": "another-key"}
 
+
+    def test_apply_client_filter(self, page: Page):
+        # Helper to set up the DOM and run the test in one evaluate block
+        def run_filter_test(filter_value):
+            return page.evaluate(f'''(() => {{
+                if (!document.getElementById("table-filter")) {{
+                    const input = document.createElement("input");
+                    input.id = "table-filter";
+                    document.body.appendChild(input);
+                }}
+                if (!document.getElementById("table-container")) {{
+                    const container = document.createElement("div");
+                    container.id = "table-container";
+                    document.body.appendChild(container);
+                }}
+
+                cachedRecords = [
+                    {{ _id: '1', name: 'Alice', age: 30 }},
+                    {{ _id: '2', name: 'Bob', age: 25 }},
+                    {{ _id: '3', name: 'Charlie', age: 30 }}
+                ];
+                cachedRecords.forEach(r => getRecordSearchStrings(r));
+                detectedHeaders = ['_id', 'name', 'age'];
+                currentVisibleRecords = [];
+
+                const renderTableCalls = [];
+                const orig = renderTable;
+                renderTable = function(records, headers, container) {{
+                    renderTableCalls.push(records.map(r => r._id));
+                }};
+
+                document.getElementById('table-filter').value = '{filter_value}';
+
+                if ('{filter_value}' === 'notfound') {{
+                    const container = document.getElementById("table-container");
+                    container.innerHTML = "previous content";
+                }}
+
+                applyClientFilter();
+
+                const containerHtml = document.getElementById("table-container").innerHTML;
+                const res = {{
+                    visibleIds: currentVisibleRecords.map(r => r._id),
+                    renderCalls: renderTableCalls,
+                    containerHtml: containerHtml
+                }};
+
+                renderTable = orig;
+                return res;
+            }})()''')
+
+        # 1. Test empty filter: should reset to cachedRecords
+        result_empty = run_filter_test('')
+        assert result_empty['visibleIds'] == ['1', '2', '3']
+        assert result_empty['renderCalls'] == [['1', '2', '3']]
+
+        # 2. Test matching filter (case-insensitive)
+        result_alice = run_filter_test('alice')
+        assert result_alice['visibleIds'] == ['1']
+        assert result_alice['renderCalls'] == [['1']]
+
+        # 3. Test partial/number match
+        result_30 = run_filter_test('30')
+        assert result_30['visibleIds'] == ['1', '3']
+        assert result_30['renderCalls'] == [['1', '3']]
+
+        # 4. Test no match: should clear container and show message
+        result_none = run_filter_test('notfound')
+        assert result_none['visibleIds'] == []
+        assert result_none['renderCalls'] == [[]]
+        assert "No visible records match" in result_none['containerHtml']
+        assert "notfound" in result_none['containerHtml']
     def test_populate_app_selector(self, page: Page):
         # Set up local storage with multiple apps and set current to index 2
         page.evaluate("""

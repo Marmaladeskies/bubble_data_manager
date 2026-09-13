@@ -875,6 +875,53 @@ class TestBubbleDataManager:
         assert res_error == {"isValid": False, "message": "Could not connect to test.com. The URL may be misspelled, offline, or not a Bubble application."}
         page.unroute("**/api/1.1/obj/auth_validation_dummy*")
 
+    def test_rebuild_data_types(self, page: Page):
+        # Wait for initial app loading to finish so it doesn't overwrite our test
+        expect(page.locator('#data-type-selector option[value="User"]')).to_have_count(1)
+
+        # Mock baseTypes
+        mock_base_types = [
+            {"value": "type1", "label": "Type One", "data_type_name_lowercase": "type one"},
+            {"value": "type2", "label": "Type Two", "data_type_name_lowercase": "type two"},
+            {"value": "type3", "label": "Type Three", "data_type_name_lowercase": "type three"}
+        ]
+
+        # Test without preferredValue
+        page.evaluate(f"""
+            (() => {{
+                const baseTypes = {json.dumps(mock_base_types)};
+                rebuildDataTypes(baseTypes);
+            }})()
+        """)
+
+        # Check selector options
+        selector_options = page.locator('#data-type-selector option')
+        expect(selector_options).to_have_count(3)
+        expect(selector_options.nth(0)).to_have_attribute("value", "type1")
+        expect(selector_options.nth(0)).to_have_text("Type One")
+        expect(selector_options.nth(1)).to_have_attribute("value", "type2")
+        expect(selector_options.nth(2)).to_have_attribute("value", "type3")
+
+        # Check dropdown options
+        dropdown_options = page.locator('#data-types-dropdown option')
+        expect(dropdown_options).to_have_count(3)
+        expect(dropdown_options.nth(0)).to_have_attribute("value", "type1")
+        expect(dropdown_options.nth(0)).to_have_text("Type One")
+        expect(dropdown_options.nth(1)).to_have_attribute("value", "type2")
+        expect(dropdown_options.nth(2)).to_have_attribute("value", "type3")
+
+        # Test with preferredValue
+        page.evaluate(f"""
+            (() => {{
+                const baseTypes = {json.dumps(mock_base_types)};
+                rebuildDataTypes(baseTypes, 'type2');
+            }})()
+        """)
+
+        # Verify preferredValue is selected
+        expect(page.locator('#data-type-selector')).to_have_value("type2")
+        expect(page.locator('#data-types-dropdown')).to_have_value("type2")
+
     def test_option_slug_matches_display_name(self, page: Page):
         # 1. Exact dictionary match
         assert page.evaluate("(() => { optionSlugToDisplayName = { 'custom_slug_1': 'Custom Display Name' }; return optionSlugMatchesDisplayName('custom_slug_1', 'Custom Display Name'); })()") is True
@@ -1040,6 +1087,79 @@ class TestBubbleDataManager:
         assert alreadyEditing['editRowCalled'] is False
         assert alreadyEditing['toggleRowSelectionCalled'] is False
 
+    def test_populate_column_filter_group(self, page: Page):
+        res = page.evaluate("""(() => {
+            const originalGetElementById = document.getElementById;
+            const listContainer = document.createElement('div');
+            listContainer.id = 'column-filter-list';
+
+            document.getElementById = function(id) {
+                if (id === 'column-filter-list') return listContainer;
+                return originalGetElementById.call(document, id);
+            };
+
+            // Setup hidden columns set
+            hiddenColumns = new Set(['Header_B', 'Header_C_with_underscores']);
+
+            let updateSelectLinksUICalled = false;
+            window.updateSelectLinksUI = () => { updateSelectLinksUICalled = true; };
+
+            // Should early return if headers is empty or undefined
+            populateColumnFilterGroup([]);
+            const emptyItems = listContainer.innerHTML;
+
+            // Should return correctly formatted headers, sorted by cleanHeader
+            populateColumnFilterGroup(['Header_B', 'Header_A', 'Header_C_with_underscores']);
+
+            const items = Array.from(listContainer.querySelectorAll('.column-filter-item')).map(label => {
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                const span = label.querySelector('span');
+
+                return {
+                    text: span.textContent,
+                    checked: checkbox.checked,
+                    isHiddenClass: label.classList.contains('hidden-column')
+                };
+            });
+
+            // Test toggle event firing
+            let toggleCalledWith = null;
+            window.toggleColumnVisibility = (header, isVisible, label) => {
+                toggleCalledWith = {header, isVisible};
+            };
+
+            const firstCheckbox = listContainer.querySelector('input[type="checkbox"]');
+            firstCheckbox.checked = false; // change to false
+            firstCheckbox.dispatchEvent(new Event('change'));
+
+            document.getElementById = originalGetElementById;
+
+            return {
+                emptyItems: emptyItems,
+                items: items,
+                called: updateSelectLinksUICalled,
+                toggleCalledWith: toggleCalledWith
+            };
+        })()""")
+
+        assert res['emptyItems'] == ''
+        assert len(res['items']) == 3
+
+        # Checking that sorting happened: Header A, Header B, Header C
+        assert res['items'][0]['text'] == 'Header A'
+        assert res['items'][0]['checked'] == True
+        assert res['items'][0]['isHiddenClass'] == False
+
+        assert res['items'][1]['text'] == 'Header B'
+        assert res['items'][1]['checked'] == False
+        assert res['items'][1]['isHiddenClass'] == True
+
+        assert res['items'][2]['text'] == 'Header C with underscores'
+        assert res['items'][2]['checked'] == False
+        assert res['items'][2]['isHiddenClass'] == True
+
+        assert res['called'] == True
+        assert res['toggleCalledWith'] == {'header': 'Header_A', 'isVisible': False}
 
 class TestTimezoneUtilityFunctions:
 

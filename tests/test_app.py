@@ -78,6 +78,46 @@ def setup_page(page: Page):
 
 class TestBubbleDataManager:
 
+    def test_open_text_editor(self, page: Page):
+        result = page.evaluate("""(() => {
+            openTextEditor('rec_123', 'My Text Field', 'Initial Value Here', true);
+            return {
+                state: currentlyEditingText,
+                title: document.getElementById('text-modal-title').innerText,
+                textarea: document.getElementById('text-editor-textarea').value,
+                display: document.getElementById('text-editor-modal').style.display
+            };
+        })()""")
+
+        assert result['state'] == {
+            'recordId': 'rec_123',
+            'field': 'My Text Field',
+            'isNewRow': True
+        }
+        assert result['title'] == 'Edit Text: My Text Field'
+        assert result['textarea'] == 'Initial Value Here'
+        assert result['display'] == 'flex'
+
+        # Test default parameter for isNewRow and falsy initialValue
+        result2 = page.evaluate("""(() => {
+            openTextEditor('rec_456', 'Another Field', null);
+            return {
+                state: currentlyEditingText,
+                title: document.getElementById('text-modal-title').innerText,
+                textarea: document.getElementById('text-editor-textarea').value,
+                display: document.getElementById('text-editor-modal').style.display
+            };
+        })()""")
+
+        assert result2['state'] == {
+            'recordId': 'rec_456',
+            'field': 'Another Field',
+            'isNewRow': False
+        }
+        assert result2['title'] == 'Edit Text: Another Field'
+        assert result2['textarea'] == ''
+        assert result2['display'] == 'flex'
+
     def test_page_loads_and_initializes(self, page: Page):
         # Check title
         expect(page).to_have_title(re.compile(r"Bubble Data Manager"))

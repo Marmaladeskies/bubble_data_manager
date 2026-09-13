@@ -948,6 +948,80 @@ class TestBubbleDataManager:
         assert page.evaluate("optionSlugMatchesDisplayName(undefined, undefined)") is False
         assert page.evaluate("optionSlugMatchesDisplayName(123, 123)") is False
 
+    def test_populate_column_filter_group(self, page: Page):
+        res = page.evaluate("""(() => {
+            const originalGetElementById = document.getElementById;
+            const listContainer = document.createElement('div');
+            listContainer.id = 'column-filter-list';
+
+            document.getElementById = function(id) {
+                if (id === 'column-filter-list') return listContainer;
+                return originalGetElementById.call(document, id);
+            };
+
+            // Setup hidden columns set
+            hiddenColumns = new Set(['Header_B', 'Header_C_with_underscores']);
+
+            let updateSelectLinksUICalled = false;
+            window.updateSelectLinksUI = () => { updateSelectLinksUICalled = true; };
+
+            // Should early return if headers is empty or undefined
+            populateColumnFilterGroup([]);
+            const emptyItems = listContainer.innerHTML;
+
+            // Should return correctly formatted headers, sorted by cleanHeader
+            populateColumnFilterGroup(['Header_B', 'Header_A', 'Header_C_with_underscores']);
+
+            const items = Array.from(listContainer.querySelectorAll('.column-filter-item')).map(label => {
+                const checkbox = label.querySelector('input[type="checkbox"]');
+                const span = label.querySelector('span');
+
+                return {
+                    text: span.textContent,
+                    checked: checkbox.checked,
+                    isHiddenClass: label.classList.contains('hidden-column')
+                };
+            });
+
+            // Test toggle event firing
+            let toggleCalledWith = null;
+            window.toggleColumnVisibility = (header, isVisible, label) => {
+                toggleCalledWith = {header, isVisible};
+            };
+
+            const firstCheckbox = listContainer.querySelector('input[type="checkbox"]');
+            firstCheckbox.checked = false; // change to false
+            firstCheckbox.dispatchEvent(new Event('change'));
+
+            document.getElementById = originalGetElementById;
+
+            return {
+                emptyItems: emptyItems,
+                items: items,
+                called: updateSelectLinksUICalled,
+                toggleCalledWith: toggleCalledWith
+            };
+        })()""")
+
+        assert res['emptyItems'] == ''
+        assert len(res['items']) == 3
+
+        # Checking that sorting happened: Header A, Header B, Header C
+        assert res['items'][0]['text'] == 'Header A'
+        assert res['items'][0]['checked'] == True
+        assert res['items'][0]['isHiddenClass'] == False
+
+        assert res['items'][1]['text'] == 'Header B'
+        assert res['items'][1]['checked'] == False
+        assert res['items'][1]['isHiddenClass'] == True
+
+        assert res['items'][2]['text'] == 'Header C with underscores'
+        assert res['items'][2]['checked'] == False
+        assert res['items'][2]['isHiddenClass'] == True
+
+        assert res['called'] == True
+        assert res['toggleCalledWith'] == {'header': 'Header_A', 'isVisible': False}
+
 class TestTimezoneUtilityFunctions:
 
 

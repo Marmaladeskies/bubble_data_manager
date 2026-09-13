@@ -2162,6 +2162,10 @@
             </div>
           </div>
           <div
+            id="export-error-msg"
+            style="display: none; color: #dc3545; font-size: 13px; margin-bottom: 12px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;"
+          ></div>
+          <div
             id="export-types-list"
             style="display: flex; flex-direction: column; gap: 6px"
           ></div>
@@ -3411,6 +3415,9 @@
 
         listContainer.innerHTML = "";
 
+        const errorMsg = document.getElementById("export-error-msg");
+        if (errorMsg) errorMsg.style.display = "none";
+
         const progressContainer = document.getElementById(
           "export-progress-container",
         );
@@ -3442,6 +3449,10 @@
           cb.className = "export-type-checkbox";
           cb.value = dt.value;
           cb.checked = dt.value === currentType || DATA_TYPES.length === 1;
+          cb.addEventListener("change", () => {
+            const errorMsg = document.getElementById("export-error-msg");
+            if (errorMsg) errorMsg.style.display = "none";
+          });
 
           const span = document.createElement("span");
           span.textContent = dt.label;
@@ -3463,6 +3474,8 @@
         document.querySelectorAll(".export-type-checkbox").forEach((cb) => {
           cb.checked = select;
         });
+        const errorMsg = document.getElementById("export-error-msg");
+        if (errorMsg) errorMsg.style.display = "none";
       }
 
       function formatCSVField(val, header, typeSlug, isBool = null) {
@@ -3484,7 +3497,7 @@
         }
 
         // Prevent CSV Injection by escaping formulas
-        if (/^[=+\-@\t\r]/.test(str)) {
+        if (/^[ \t\n\r]*[=+\-@\t\r]/.test(str)) {
           str = "'" + str;
         }
 
@@ -3560,10 +3573,16 @@
         const checkedBoxes = Array.from(
           document.querySelectorAll(".export-type-checkbox:checked"),
         );
+
+        const errorMsg = document.getElementById("export-error-msg");
         if (checkedBoxes.length === 0) {
-          alert("Please select at least one data type to export.");
+          if (errorMsg) {
+            errorMsg.textContent = "Please select at least one data type to export.";
+            errorMsg.style.display = "block";
+          }
           return;
         }
+        if (errorMsg) errorMsg.style.display = "none";
 
         const selectedTypes = checkedBoxes.map((cb) => {
           const dt = DATA_TYPES.find((d) => d.value === cb.value);
@@ -4361,7 +4380,9 @@
               } else if (typeof rawMap === "string") {
                 try {
                   activeOrderMap = JSON.parse(rawMap);
-                } catch (e) {}
+                } catch (e) {
+                  console.error("Error parsing column order map:", e);
+                }
               }
             }
           }
@@ -5372,7 +5393,9 @@
             ) {
               try {
                 constraintValue = new Date(value.trim()).toISOString();
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing date in constraint value:", e);
+              }
             }
           } else if (operator === "not equals") {
             constraintType = "not equal";
@@ -5384,7 +5407,9 @@
             ) {
               try {
                 constraintValue = new Date(value.trim()).toISOString();
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing date in constraint value:", e);
+              }
             }
           } else if (operator === "in" || operator === "not in") {
             constraintType = operator === "in" ? "in" : "not in";
@@ -5741,7 +5766,9 @@
             ) {
               try {
                 originalValue = JSON.parse(originalValue);
-              } catch (e) {}
+              } catch (e) {
+                console.warn("Error parsing original JSON value:", e);
+              }
             }
             setCellContent(cell, originalValue, field, recordId, currentType);
             cell.removeAttribute("data-original");
@@ -6508,7 +6535,9 @@
                         newValue = JSON.parse(newValue);
                         displayValue = JSON.stringify(newValue);
                         cell.setAttribute("data-json", displayValue);
-                      } catch (e) {}
+                      } catch (e) {
+                        console.warn("Error parsing JSON during editing:", e);
+                      }
                     } else if (isDate) {
                       if (newValue) {
                         newValue = new Date(newValue).toISOString();

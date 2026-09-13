@@ -362,6 +362,12 @@ class TestBubbleDataManager:
         expect(page.locator("#json-modal-title")).to_have_text("Edit JSON: config_field")
         expect(page.locator("#json-raw-editor")).to_have_value('{\n  "key": "value"\n}')
 
+        # Verify tabs and container visibility
+        expect(page.locator("#tab-nested")).to_have_class(re.compile(r"\bactive\b"))
+        expect(page.locator("#tab-raw")).not_to_have_class(re.compile(r"\bactive\b"))
+        expect(page.locator("#json-nested-container")).to_be_visible()
+        expect(page.locator("#json-raw-editor")).to_be_hidden()
+
         # 2. Test valid JS object (simulated via evaluate)
         page.evaluate('openJSONEditor("rec2", "obj_field", {a: 1}, true)')
         state2 = page.evaluate('currentlyEditingJSON')

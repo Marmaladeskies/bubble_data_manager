@@ -101,6 +101,54 @@ class TestBubbleDataManager:
         keys5 = page.evaluate("getAppStorageKeys(5)")
         assert keys5 == {"domain": "home5", "apiKey": "api5"}
 
+    def test_toggleColumnVisibility(self, page: Page):
+        result = page.evaluate("""
+            (() => {
+                const origApply = window.applyClientFilter;
+                const origMark = window.markConstraintsDirty;
+                const origUpdate = window.updateSelectLinksUI;
+
+                let applyCalled = false;
+                let markCalled = false;
+                let updateCalled = false;
+
+                window.applyClientFilter = () => { applyCalled = true; };
+                window.markConstraintsDirty = () => { markCalled = true; };
+                window.updateSelectLinksUI = () => { updateCalled = true; };
+
+                const label = document.createElement('label');
+
+                // Test adding to hiddenColumns (isVisible = false)
+                toggleColumnVisibility('TestCol1', false, label);
+                const addedToHidden = hiddenColumns.has('TestCol1');
+                const addedClass = label.classList.contains('hidden-column');
+
+                // Test removing from hiddenColumns (isVisible = true)
+                toggleColumnVisibility('TestCol1', true, label);
+                const removedFromHidden = !hiddenColumns.has('TestCol1');
+                const removedClass = !label.classList.contains('hidden-column');
+
+                // Restore original functions
+                window.applyClientFilter = origApply;
+                window.markConstraintsDirty = origMark;
+                window.updateSelectLinksUI = origUpdate;
+
+                return {
+                    addedToHidden, addedClass,
+                    removedFromHidden, removedClass,
+                    applyCalled, markCalled, updateCalled
+                };
+            })();
+        """)
+
+        assert result['addedToHidden'] is True
+        assert result['addedClass'] is True
+        assert result['removedFromHidden'] is True
+        assert result['removedClass'] is True
+        assert result['applyCalled'] is True
+        assert result['markCalled'] is True
+        assert result['updateCalled'] is True
+
     def test_get_all_apps(self, page: Page):
         page.evaluate("""
             window.localStorage.setItem('home2', 'https://another-app.com');

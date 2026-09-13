@@ -78,6 +78,164 @@ def setup_page(page: Page):
 
 class TestBubbleDataManager:
 
+    def test_saveJSONEditor(self, page: Page):
+        # Scenario 1: Raw view active on an existing row (not in edit mode)
+        result_raw = page.evaluate('''() => {
+            document.body.insertAdjacentHTML('beforeend', `
+                <table id="test-table-1">
+                    <tr id="row-123">
+                        <td class="select-cell"><input type="checkbox"></td>
+                        <td data-field="customField">
+                            <input type="hidden" value="{}">
+                        </td>
+                    </tr>
+                </table>
+            `);
+
+            // openJSONEditor automatically handles modal element creation/display logic if missing
+            openJSONEditor('123', 'customField', {a: 1});
+
+            document.getElementById("json-raw-editor").value = '{"a": 2}';
+
+            // Override raw tab to be active
+            document.getElementById("tab-raw").classList.add("active");
+            document.getElementById("tab-nested").classList.remove("active");
+
+            window.updatebulkBarCalled = false;
+            window.editRowCalled = null;
+
+            const origUpdatebulkBar = window.updatebulkBar;
+            const origEditRow = window.editRow;
+            window.updatebulkBar = () => { window.updatebulkBarCalled = true; };
+            window.editRow = (id) => { window.editRowCalled = id; };
+
+            saveJSONEditor();
+
+            const row = document.getElementById("row-123");
+            const hidden = row.querySelector('input[type="hidden"]');
+            const res = {
+                hiddenVal: hidden.value,
+                hasEdits: row.classList.contains("has-edits"),
+                editRowCalled: window.editRowCalled,
+                updatebulkBarCalled: window.updatebulkBarCalled,
+                isModalClosed: document.getElementById("json-editor-modal").style.display === "none"
+            };
+
+            window.updatebulkBar = origUpdatebulkBar;
+            window.editRow = origEditRow;
+            document.getElementById("test-table-1").remove();
+
+            return res;
+        }''')
+
+        assert result_raw["hiddenVal"] == '{"a":2}'
+        assert result_raw["hasEdits"] is True
+        assert result_raw["editRowCalled"] == '123'
+        assert result_raw["updatebulkBarCalled"] is True
+        assert result_raw["isModalClosed"] is True
+
+        # Scenario 2: Nested view active on a new row (already in edit mode)
+        result_nested = page.evaluate('''() => {
+            document.body.insertAdjacentHTML('beforeend', `
+                <table id="test-table-2">
+                    <tr id="row-new" class="new-row-adding">
+                        <td class="select-cell"><input type="checkbox"></td>
+                        <td data-field="newField">
+                            <input type="hidden" value="{}">
+                        </td>
+                    </tr>
+                </table>
+            `);
+
+            openJSONEditor(null, 'newField', {b: 1}, true);
+
+            // In nested view, changes happen in currentlyEditingJSON.data directly.
+            currentlyEditingJSON.data = {b: 2};
+
+            document.getElementById("tab-raw").classList.remove("active");
+            document.getElementById("tab-nested").classList.add("active");
+
+            window.updatebulkBarCalled = false;
+            window.editRowCalled = null;
+
+            const origUpdatebulkBar = window.updatebulkBar;
+            const origEditRow = window.editRow;
+            window.updatebulkBar = () => { window.updatebulkBarCalled = true; };
+            window.editRow = (id) => { window.editRowCalled = id; };
+
+            saveJSONEditor();
+
+            const row = document.getElementById("row-new");
+            const hidden = row.querySelector('input[type="hidden"]');
+            const res = {
+                hiddenVal: hidden.value,
+                hasEdits: row.classList.contains("has-edits"),
+                editRowCalled: window.editRowCalled,
+                updatebulkBarCalled: window.updatebulkBarCalled,
+                isModalClosed: document.getElementById("json-editor-modal").style.display === "none",
+                rawEditorVal: document.getElementById("json-raw-editor").value
+            };
+
+            window.updatebulkBar = origUpdatebulkBar;
+            window.editRow = origEditRow;
+            document.getElementById("test-table-2").remove();
+
+            return res;
+        }''')
+
+        assert result_nested["hiddenVal"] == '{"b":2}'
+        assert result_nested["hasEdits"] is True
+        assert result_nested["editRowCalled"] is None  # Should not call editRow because it's a new row
+        assert result_nested["updatebulkBarCalled"] is True
+        assert result_nested["isModalClosed"] is True
+        assert '2' in result_nested["rawEditorVal"]  # Sync nested to raw works
+
+        # Scenario 3: Error handling - Invalid JSON parsing
+        # The issue description states "mocking the JSON parsing, and verifying that either the cell is updated on success or an alert is shown on error"
+        # However, saveJSONEditor itself does not contain a try/catch with an alert.
+        # syncRawToNested catches invalid JSON and keeps the old data silently.
+        # The place where an alert is shown on error is in openJSONEditor (it logs to console) or in renderJSONPrimitive/onchange (where it alerts "Invalid JSON primitive").
+        # If the user explicitly wants an alert tested in the context of JSON parsing for the editor, let's test renderJSONPrimitive's onchange which calls syncNestedToRaw and alerts.
+        # Wait, the prompt says "Missing test for saveJSONEditor".
+        # Let's mock window.alert and test that syncRawToNested handles the error, but the prompt says: "verifying that either the cell is updated on success or an alert is shown on error".
+        # Let's add a test for the JSON parser failing in openJSONEditor since saveJSONEditor uses that data. But openJSONEditor only console.errors.
+        # Maybe I should just check if syncRawToNested suppresses the error by leaving `currentlyEditingJSON.data` intact if JSON is invalid in raw view.
+
+        result_error = page.evaluate('''() => {
+            document.body.insertAdjacentHTML('beforeend', `
+                <table id="test-table-3">
+                    <tr id="row-456">
+                        <td class="select-cell"><input type="checkbox"></td>
+                        <td data-field="errorField">
+                            <input type="hidden" value="{}">
+                        </td>
+                    </tr>
+                </table>
+            `);
+
+            openJSONEditor('456', 'errorField', {c: 1});
+
+            document.getElementById("json-raw-editor").value = '{invalid JSON}';
+
+            document.getElementById("tab-raw").classList.add("active");
+            document.getElementById("tab-nested").classList.remove("active");
+
+            saveJSONEditor();
+
+            const row = document.getElementById("row-456");
+            const hidden = row.querySelector('input[type="hidden"]');
+            const res = {
+                hiddenVal: hidden.value // Should be {"c":1} because syncRawToNested caught the error and kept old data
+            };
+
+            document.getElementById("test-table-3").remove();
+
+            return res;
+        }''')
+
+        assert result_error["hiddenVal"] == '{"c":1}'
+
+
     def test_page_loads_and_initializes(self, page: Page):
         # Check title
         expect(page).to_have_title(re.compile(r"Bubble Data Manager"))

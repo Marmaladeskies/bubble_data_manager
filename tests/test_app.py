@@ -78,6 +78,102 @@ def setup_page(page: Page):
 
 class TestBubbleDataManager:
 
+    def test_open_text_editor(self, page: Page):
+        result = page.evaluate("""(() => {
+            openTextEditor('rec_123', 'My Text Field', 'Initial Value Here', true);
+            return {
+                state: currentlyEditingText,
+                title: document.getElementById('text-modal-title').innerText,
+                textarea: document.getElementById('text-editor-textarea').value,
+                display: document.getElementById('text-editor-modal').style.display
+            };
+        })()""")
+
+        assert result['state'] == {
+            'recordId': 'rec_123',
+            'field': 'My Text Field',
+            'isNewRow': True
+        }
+        assert result['title'] == 'Edit Text: My Text Field'
+        assert result['textarea'] == 'Initial Value Here'
+        assert result['display'] == 'flex'
+
+        # Test default parameter for isNewRow and falsy initialValue
+        result2 = page.evaluate("""(() => {
+            openTextEditor('rec_456', 'Another Field', null);
+            return {
+                state: currentlyEditingText,
+                title: document.getElementById('text-modal-title').innerText,
+                textarea: document.getElementById('text-editor-textarea').value,
+                display: document.getElementById('text-editor-modal').style.display
+            };
+        })()""")
+
+        assert result2['state'] == {
+            'recordId': 'rec_456',
+            'field': 'Another Field',
+            'isNewRow': False
+        }
+        assert result2['title'] == 'Edit Text: Another Field'
+        assert result2['textarea'] == ''
+        assert result2['display'] == 'flex'
+    def test_switch_json_tab(self, page: Page):
+        result = page.evaluate("""(() => {
+            currentlyEditingJSON.data = { "key": "value" };
+
+            // Switch to raw tab
+            switchJSONTab('raw');
+            const nestedTabRaw = document.getElementById('tab-nested').classList.contains('active');
+            const rawTabRaw = document.getElementById('tab-raw').classList.contains('active');
+            const nestedContainerDisplayRaw = document.getElementById('json-nested-container').style.display;
+            const rawEditorDisplayRaw = document.getElementById('json-raw-editor').style.display;
+
+            // Switch to nested tab
+            switchJSONTab('nested');
+            const nestedTabNested = document.getElementById('tab-nested').classList.contains('active');
+            const rawTabNested = document.getElementById('tab-raw').classList.contains('active');
+            const nestedContainerDisplayNested = document.getElementById('json-nested-container').style.display;
+            const rawEditorDisplayNested = document.getElementById('json-raw-editor').style.display;
+            const nestedContainerHasChildren = document.getElementById('json-nested-container').innerHTML.trim().length > 0;
+
+            // Switch to raw tab again to test sync nested to raw
+            // We simulate saving a primitive first to check raw value
+            currentlyEditingJSON.data = { "key2": "new_value" };
+            syncNestedToRaw(); // this happens when we change values in nested mode usually, or we can just call it to test
+            const finalRawValue = document.getElementById('json-raw-editor').value;
+
+            return {
+                rawView: {
+                    nestedTabActive: nestedTabRaw,
+                    rawTabActive: rawTabRaw,
+                    nestedContainerDisplay: nestedContainerDisplayRaw,
+                    rawEditorDisplay: rawEditorDisplayRaw
+                },
+                nestedView: {
+                    nestedTabActive: nestedTabNested,
+                    rawTabActive: rawTabNested,
+                    nestedContainerDisplay: nestedContainerDisplayNested,
+                    rawEditorDisplay: rawEditorDisplayNested,
+                    nestedContainerHasChildren: nestedContainerHasChildren
+                },
+                finalRawValue: finalRawValue
+            };
+        })()""")
+
+        assert result['rawView']['nestedTabActive'] is False
+        assert result['rawView']['rawTabActive'] is True
+        assert result['rawView']['nestedContainerDisplay'] == "none"
+        assert result['rawView']['rawEditorDisplay'] == "block"
+
+        assert result['nestedView']['nestedTabActive'] is True
+        assert result['nestedView']['rawTabActive'] is False
+        assert result['nestedView']['nestedContainerDisplay'] == "block"
+        assert result['nestedView']['rawEditorDisplay'] == "none"
+        assert result['nestedView']['nestedContainerHasChildren'] is True
+
+        # Test syncNestedToRaw functionality: raw editor gets updated
+        assert '"key2": "new_value"' in result['finalRawValue']
+
     def test_page_loads_and_initializes(self, page: Page):
         # Check title
         expect(page).to_have_title(re.compile(r"Bubble Data Manager"))
@@ -91,6 +187,43 @@ class TestBubbleDataManager:
         expect(data_type_selector).to_be_attached()
         expect(data_type_selector.locator('option[value="User"]')).to_have_count(1)
 
+    def test_openJSONEditor(self, page: Page):
+        # 1. Test valid JSON string
+        page.evaluate('openJSONEditor("rec1", "config_field", \'{"key": "value"}\', false)')
+
+        # Verify global state
+        state = page.evaluate('currentlyEditingJSON')
+        assert state == {
+            "recordId": "rec1",
+            "field": "config_field",
+            "isNewRow": False,
+            "data": {"key": "value"}
+        }
+
+        # Verify modal visibility and content
+        expect(page.locator("#json-editor-modal")).to_be_visible()
+        expect(page.locator("#json-modal-title")).to_have_text("Edit JSON: config_field")
+        expect(page.locator("#json-raw-editor")).to_have_value('{\n  "key": "value"\n}')
+
+        # 2. Test valid JS object (simulated via evaluate)
+        page.evaluate('openJSONEditor("rec2", "obj_field", {a: 1}, true)')
+        state2 = page.evaluate('currentlyEditingJSON')
+        assert state2["data"] == {"a": 1}
+        assert state2["isNewRow"] is True
+        expect(page.locator("#json-raw-editor")).to_have_value('{\n  "a": 1\n}')
+
+        # 3. Test invalid JSON string (should fallback to empty object {})
+        page.evaluate('openJSONEditor("rec3", "bad_field", "not valid json", false)')
+        state3 = page.evaluate('currentlyEditingJSON')
+        assert state3["data"] == {}
+        expect(page.locator("#json-raw-editor")).to_have_value('{}')
+
+        # 4. Test null/empty value (should fallback to empty object {})
+        page.evaluate('openJSONEditor("rec4", "empty_field", null, false)')
+        state4 = page.evaluate('currentlyEditingJSON')
+        assert state4["data"] == {}
+        expect(page.locator("#json-raw-editor")).to_have_value('{}')
+
     def test_get_app_storage_keys(self, page: Page):
         keys1 = page.evaluate("getAppStorageKeys(1)")
         assert keys1 == {"domain": "home", "apiKey": "cached_pref"}
@@ -101,6 +234,54 @@ class TestBubbleDataManager:
         keys5 = page.evaluate("getAppStorageKeys(5)")
         assert keys5 == {"domain": "home5", "apiKey": "api5"}
 
+    def test_toggleColumnVisibility(self, page: Page):
+        result = page.evaluate("""
+            (() => {
+                const origApply = window.applyClientFilter;
+                const origMark = window.markConstraintsDirty;
+                const origUpdate = window.updateSelectLinksUI;
+
+                let applyCalled = false;
+                let markCalled = false;
+                let updateCalled = false;
+
+                window.applyClientFilter = () => { applyCalled = true; };
+                window.markConstraintsDirty = () => { markCalled = true; };
+                window.updateSelectLinksUI = () => { updateCalled = true; };
+
+                const label = document.createElement('label');
+
+                // Test adding to hiddenColumns (isVisible = false)
+                toggleColumnVisibility('TestCol1', false, label);
+                const addedToHidden = hiddenColumns.has('TestCol1');
+                const addedClass = label.classList.contains('hidden-column');
+
+                // Test removing from hiddenColumns (isVisible = true)
+                toggleColumnVisibility('TestCol1', true, label);
+                const removedFromHidden = !hiddenColumns.has('TestCol1');
+                const removedClass = !label.classList.contains('hidden-column');
+
+                // Restore original functions
+                window.applyClientFilter = origApply;
+                window.markConstraintsDirty = origMark;
+                window.updateSelectLinksUI = origUpdate;
+
+                return {
+                    addedToHidden, addedClass,
+                    removedFromHidden, removedClass,
+                    applyCalled, markCalled, updateCalled
+                };
+            })();
+        """)
+
+        assert result['addedToHidden'] is True
+        assert result['addedClass'] is True
+        assert result['removedFromHidden'] is True
+        assert result['removedClass'] is True
+        assert result['applyCalled'] is True
+        assert result['markCalled'] is True
+        assert result['updateCalled'] is True
+
     def test_get_all_apps(self, page: Page):
         page.evaluate("""
             window.localStorage.setItem('home2', 'https://another-app.com');
@@ -110,6 +291,33 @@ class TestBubbleDataManager:
         assert len(all_apps) == 2
         assert all_apps[0] == {"index": 1, "domain": "https://example-bubble-app.com", "apiKey": "fake-api-key"}
         assert all_apps[1] == {"index": 2, "domain": "https://another-app.com", "apiKey": "another-key"}
+
+    def test_populate_app_selector(self, page: Page):
+        # Set up local storage with multiple apps and set current to index 2
+        page.evaluate("""
+            window.localStorage.setItem('home2', 'https://another-app.com');
+            window.localStorage.setItem('api2', 'another-key');
+            window.localStorage.setItem('home3', 'https://third-app.com');
+            window.localStorage.setItem('api3', 'third-key');
+            window.localStorage.setItem('current_app_index', '2');
+        """)
+
+        # Call populateAppSelector
+        page.evaluate("populateAppSelector()")
+
+        app_selector = page.locator('#app-selector')
+        expect(app_selector).to_be_visible()
+
+        # Check options for apps
+        expect(app_selector.locator('option[value="1"]')).to_have_text('https://example-bubble-app.com')
+        expect(app_selector.locator('option[value="2"]')).to_have_text('https://another-app.com')
+        expect(app_selector.locator('option[value="3"]')).to_have_text('https://third-app.com')
+
+        # Check current index is selected
+        expect(app_selector).to_have_value("2")
+
+        # Check 'Connect another app...' option
+        expect(app_selector.locator('option[value="connect_new"]')).to_have_text('Connect another app...')
 
     def test_is_bubble_file(self, page: Page):
         assert page.evaluate("isBubbleFile('//s3.amazonaws.com/app/file.txt')") is True
@@ -186,6 +394,29 @@ class TestBubbleDataManager:
             settingsRecord = { 'bubble_data_manager_settings': { filterData: "some-data" } };
             return parseAllSettings();
         })()""") == {"filterData": "some-data"}
+
+    def test_clear_client_filter(self, page: Page):
+        # 1. Ensure the filter input and clear button exist
+        filter_input = page.locator("#table-filter")
+        clear_btn = page.locator("#clear-filter-btn")
+
+        # Initially, clear button should be hidden (display: none)
+        expect(clear_btn).to_be_hidden()
+
+        # 2. Type into the filter input
+        filter_input.fill("test search")
+
+        # Verify the clear button is now visible
+        expect(clear_btn).to_be_visible()
+
+        # 3. Click the clear button
+        clear_btn.click()
+
+        # 4. Assert the filter input is cleared
+        expect(filter_input).to_have_value("")
+
+        # 5. Assert the clear button is hidden again
+        expect(clear_btn).to_be_hidden()
 
     def test_escape_html(self, page: Page):
         test_strings = [
@@ -486,6 +717,12 @@ class TestBubbleDataManager:
         assert page.evaluate("formatCSVField('\\t1+1', 'header', 'type')") == "'\t1+1"
         assert page.evaluate("formatCSVField('\\r1+1', 'header', 'type')") == "\"'\r1+1\""
 
+        # CSV Injection prevention (bypasses with leading whitespace)
+        assert page.evaluate("formatCSVField(' =1+1', 'header', 'type')") == "' =1+1"
+        assert page.evaluate("formatCSVField(' \\t+1+1', 'header', 'type')") == "' \t+1+1"
+        assert page.evaluate("formatCSVField('\\n-1+1', 'header', 'type')") == "\"'\n-1+1\""
+        assert page.evaluate("formatCSVField(' \\r@1+1', 'header', 'type')") == "\"' \\r@1+1\""
+
         # Escaping quotes, commas, newlines
         assert page.evaluate("formatCSVField('hello, world', 'header', 'type')") == '"hello, world"'
         assert page.evaluate("formatCSVField('hello\\nworld', 'header', 'type')") == '"hello\nworld"'
@@ -702,6 +939,10 @@ class TestBubbleDataManager:
         assert page.evaluate("formatCSVField('-1-2', 'Header', 'slug')") == "'-1-2"
         assert page.evaluate("formatCSVField('@SUM', 'Header', 'slug')") == "'@SUM"
 
+        # CSV Injection protection (whitespace evasion)
+        assert page.evaluate("formatCSVField(' =SUM(A1:A2)', 'Header', 'slug')") == "' =SUM(A1:A2)"
+        assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", " \n+1+2") == "\"\' \n+1+2\""
+
         # Tab and carriage return prefixes
         assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", chr(9) + "hello") == "'" + chr(9) + "hello"
         assert page.evaluate("v => formatCSVField(v, 'Header', 'slug')", chr(13) + "hello") == '"\'' + chr(13) + 'hello"'
@@ -745,6 +986,21 @@ class TestBubbleDataManager:
         # Valid http URL (non-image)
         valid_file = page.evaluate("renderFilePreview('http://example.com/file.pdf')")
         assert 'href="http://example.com/file.pdf"' in valid_file
+
+    def test_close_json_editor(self, page: Page):
+        # Verify the modal is initially hidden
+        modal_locator = page.locator("#json-editor-modal")
+        expect(modal_locator).to_have_css("display", "none")
+
+        # Open the modal manually
+        page.evaluate('document.getElementById("json-editor-modal").style.display = "flex";')
+        expect(modal_locator).to_have_css("display", "flex")
+
+        # Call the function to test
+        page.evaluate("closeJSONEditor()")
+
+        # Verify it is hidden again
+        expect(modal_locator).to_have_css("display", "none")
 
     def test_getOptionSetForField(self, page: Page):
         # We run the tests in a single evaluate block because block-scoped variables (let/const)
@@ -1117,6 +1373,100 @@ class TestBubbleDataManager:
                 container.remove();
             }
         """)
+    def test_download_csv_file(self, page: Page):
+        with page.expect_download() as download_info:
+            page.evaluate("downloadCSVFile('a,b,c\\n1,2,3', 'my_data.csv')")
+
+        download = download_info.value
+        assert download.suggested_filename == "my_data.csv"
+
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "test.csv")
+            download.save_as(path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            assert content == "\uFEFFa,b,c\n1,2,3"
+
+
+
+    def test_render_data_type_sidebar(self, page: Page):
+        result = page.evaluate('''(() => {
+            const container = document.createElement("div");
+
+            const listEl = document.createElement("div");
+            listEl.id = "mock-data-types-list"; // unique id
+            container.appendChild(listEl);
+
+            const selectorEl = document.createElement("select");
+            selectorEl.id = "mock-data-type-selector"; // unique id
+            const option = document.createElement("option");
+            option.value = "TypeB";
+            selectorEl.appendChild(option);
+            selectorEl.value = "TypeB";
+            container.appendChild(selectorEl);
+
+            document.body.appendChild(container);
+
+            const oldDataTypes = DATA_TYPES;
+            DATA_TYPES = [
+                { value: "TypeA", label: "Type A" },
+                { value: "TypeB", label: "Type B" }
+            ];
+            const oldCurrentFilterName = currentFilterName;
+            currentFilterName = "View1";
+
+            const originalGetSettingsEntry = window.getSettingsEntry;
+            window.getSettingsEntry = (key) => {
+                if (key === SETTINGS_KEY_FILTER_DATA) {
+                    return {
+                        "TypeB": {
+                            "View1": {},
+                            "View2": {}
+                        }
+                    };
+                }
+                return {};
+            };
+
+            // Override document.getElementById temporarily to return our mock elements
+            const originalGetElementById = document.getElementById.bind(document);
+            document.getElementById = (id) => {
+                if (id === "data-types-list") return listEl;
+                if (id === "data-type-selector") return selectorEl;
+                return originalGetElementById(id);
+            };
+
+            try {
+                renderDataTypeSidebar();
+
+                const items = Array.from(listEl.children).map(child => {
+                    return {
+                        className: child.className,
+                        text: child.textContent,
+                        isFilter: child.classList.contains("saved-filter-item")
+                    };
+                });
+                return items;
+            } finally {
+                document.getElementById = originalGetElementById;
+                window.getSettingsEntry = originalGetSettingsEntry;
+                document.body.removeChild(container);
+                DATA_TYPES = oldDataTypes;
+                currentFilterName = oldCurrentFilterName;
+            }
+        })()''')
+        assert len(result) == 4
+        assert result[0]["className"] == "data-type-item"
+        assert result[0]["text"] == "Type A"
+        assert result[1]["className"] == "data-type-item"
+        assert result[1]["text"] == "Type B"
+        assert result[2]["isFilter"] == True
+        assert result[2]["className"] == "saved-filter-item active"
+        assert "View1" in result[2]["text"]
+        assert result[3]["isFilter"] == True
+        assert result[3]["className"] == "saved-filter-item"
+        assert "View2" in result[3]["text"]
 
     def test_populate_column_filter_group(self, page: Page):
         res = page.evaluate("""(() => {
@@ -1291,6 +1641,144 @@ class TestGetExpectedType:
         assert result["type"] == "unknown"
         assert result["cache"] == "unknown"
 
+class TestCreateStyledSelect:
+    def test_create_styled_select_basic(self, page: Page):
+        result = page.evaluate("""(() => {
+            const select1 = createStyledSelect();
+            const tag1 = select1.tagName;
+
+            const config = {
+                className: "test-class",
+                width: "100px",
+                minWidth: "50px",
+                maxWidth: "200px",
+                boxSizing: "border-box",
+                padding: "5px"
+            };
+            const select2 = createStyledSelect(config);
+
+            return {
+                tag1,
+                tag2: select2.tagName,
+                className: select2.className,
+                width: select2.style.width,
+                minWidth: select2.style.minWidth,
+                maxWidth: select2.style.maxWidth,
+                boxSizing: select2.style.boxSizing,
+                padding: select2.style.padding,
+                optionsLength: select2.options.length
+            };
+        })()""")
+
+        assert result["tag1"] == "SELECT"
+        assert result["tag2"] == "SELECT"
+        assert result["className"] == "test-class"
+        assert result["width"] == "100px"
+        assert result["minWidth"] == "50px"
+        assert result["maxWidth"] == "200px"
+        assert result["boxSizing"] == "border-box"
+        assert result["padding"] == "5px"
+        assert result["optionsLength"] == 0
+
+    def test_create_styled_select_with_blank_option(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                blankOptionText: "--- Select an option ---"
+            };
+            const select = createStyledSelect(config);
+
+            if (select.options.length === 0) return null;
+            const opt = select.options[0];
+
+            return {
+                length: select.options.length,
+                value: opt.value,
+                text: opt.text
+            };
+        })()""")
+
+        assert result is not None
+        assert result["length"] == 1
+        assert result["value"] == ""
+        assert result["text"] == "--- Select an option ---"
+
+    def test_create_styled_select_with_options(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                options: [
+                    { value: "val1", text: "Text 1" },
+                    { value: "val2", text: "Text 2", selected: true },
+                    { value: "val3", text: "Text 3" }
+                ]
+            };
+            const select = createStyledSelect(config);
+
+            return {
+                length: select.options.length,
+                opt1Value: select.options[0].value,
+                opt1Text: select.options[0].text,
+                opt1Selected: select.options[0].selected,
+                opt2Value: select.options[1].value,
+                opt2Text: select.options[1].text,
+                opt2Selected: select.options[1].selected,
+            };
+        })()""")
+
+        assert result["length"] == 3
+        assert result["opt1Value"] == "val1"
+        assert result["opt1Text"] == "Text 1"
+        assert result["opt1Selected"] == False
+        assert result["opt2Value"] == "val2"
+        assert result["opt2Text"] == "Text 2"
+        assert result["opt2Selected"] == True
+
+    def test_create_styled_select_with_option_styles(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                options: [
+                    {
+                        value: "val1",
+                        text: "Text 1",
+                        style: { fontStyle: "italic", textTransform: "uppercase" }
+                    }
+                ]
+            };
+            const select = createStyledSelect(config);
+
+            if (select.options.length === 0) return null;
+            const opt = select.options[0];
+
+            return {
+                fontStyle: opt.style.fontStyle,
+                textTransform: opt.style.textTransform
+            };
+        })()""")
+
+        assert result is not None
+        assert result["fontStyle"] == "italic"
+        assert result["textTransform"] == "uppercase"
+
+    def test_create_styled_select_onchange(self, page: Page):
+        result = page.evaluate("""(() => {
+            let changed = false;
+            const config = {
+                onchange: () => { changed = true; }
+            };
+            const select = createStyledSelect(config);
+
+            // Trigger the onchange manually to test if it's attached
+            if (select.onchange) {
+                select.onchange();
+            }
+
+            return {
+                hasOnchange: typeof select.onchange === 'function',
+                changed
+            };
+        })()""")
+
+        assert result["hasOnchange"] == True
+        assert result["changed"] == True
 class TestSetCellContent:
     def test_set_cell_content_primitive_string(self, page: Page):
         result = page.evaluate("""(() => {

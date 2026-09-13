@@ -901,6 +901,22 @@ class TestBubbleDataManager:
         assert page.evaluate("optionSlugMatchesDisplayName(undefined, undefined)") is False
         assert page.evaluate("optionSlugMatchesDisplayName(123, 123)") is False
 
+    def test_download_csv_file(self, page: Page):
+        with page.expect_download() as download_info:
+            page.evaluate("downloadCSVFile('a,b,c\\n1,2,3', 'my_data.csv')")
+
+        download = download_info.value
+        assert download.suggested_filename == "my_data.csv"
+
+        import tempfile, os
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = os.path.join(tmpdir, "test.csv")
+            download.save_as(path)
+            with open(path, "r", encoding="utf-8") as f:
+                content = f.read()
+            assert content == "\uFEFFa,b,c\n1,2,3"
+
+
 class TestTimezoneUtilityFunctions:
 
 

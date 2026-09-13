@@ -125,6 +125,43 @@ class TestBubbleDataManager:
         assert page.evaluate("isBubbleFile(123)") is False
         assert page.evaluate("isBubbleFile({})") is False
 
+    def test_get_cell_content_state(self, page: Page):
+        # Empty values
+        assert page.evaluate("getCellContentState(null, 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState(undefined, 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState('', 'f1', 'r1', 'text', {})") == {"content": "", "isHTML": False, "dataJson": None, "dataRawValue": None}
+
+        # Boolean values
+        assert page.evaluate("getCellContentState(true, 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-yes">yes</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState(false, 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-no">no</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+        assert page.evaluate("getCellContentState('yes', 'f1', 'r1', 'boolean', {isBool: true})") == {"content": '<span class="type-badge badge-boolean-yes">yes</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+
+        # Option Set values
+        assert page.evaluate("getCellContentState('Opt1', 'f1', 'r1', 'text', {isOptionSet: true})") == {"content": '<span class="type-badge badge-option">Opt1</span>', "isHTML": True, "dataJson": None, "dataRawValue": None}
+
+        # Date values
+        assert page.evaluate("getCellContentState('2024-01-01T00:00:00.000Z', 'f1', 'r1', 'date', {isDate: true})")['isHTML'] is True
+        assert 'badge-date' in page.evaluate("getCellContentState('2024-01-01T00:00:00.000Z', 'f1', 'r1', 'date', {isDate: true})")['content']
+
+        # Object / JSON values
+        json_obj_result = page.evaluate("getCellContentState({'a': 1}, 'f1', 'r1', 'text', {})")
+        assert json_obj_result['isHTML'] is True
+        assert json_obj_result['dataJson'] == '{"a":1}'
+        assert 'JSON' in json_obj_result['content']
+
+        # JSON strings that are parsed
+        json_str_result = page.evaluate("getCellContentState('{\"b\": 2}', 'f1', 'r1', 'text', {})")
+        assert json_str_result['isHTML'] is True
+        assert json_str_result['dataJson'] == '{"b": 2}'
+        assert 'JSON' in json_str_result['content']
+
+        # Bubble file values
+        file_result = page.evaluate("getCellContentState('https://example.com/image.jpg', 'f1', 'r1', 'text', {})")
+        assert file_result['isHTML'] is True
+        assert file_result['dataRawValue'] == 'https://example.com/image.jpg'
+        assert '<a' in file_result['content']
+        assert '<img' in file_result['content']
+
     def test_format_to_datetime_local(self, page: Page):
         assert page.evaluate("formatToDateTimeLocal('')") == ""
         assert page.evaluate("formatToDateTimeLocal(null)") == ""

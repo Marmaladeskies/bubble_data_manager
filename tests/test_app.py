@@ -1419,6 +1419,45 @@ class TestBubbleDataManager:
         assert page.evaluate("optionSlugMatchesDisplayName(undefined, undefined)") is False
         assert page.evaluate("optionSlugMatchesDisplayName(123, 123)") is False
 
+    def test_select_all_export_types(self, page: Page):
+        # Inject mock checkboxes into the DOM
+        page.evaluate("""
+            const container = document.createElement('div');
+            container.id = 'test-export-container';
+
+            // Create three checkboxes, mixed initial state
+            for (let i = 0; i < 3; i++) {
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.className = 'export-type-checkbox';
+                cb.checked = (i % 2 === 0); // 0 and 2 are true, 1 is false
+                container.appendChild(cb);
+            }
+
+            document.body.appendChild(container);
+        """)
+
+        # Test selecting all
+        page.evaluate("selectAllExportTypes(true)")
+        checked_states = page.evaluate("""
+            Array.from(document.querySelectorAll('.export-type-checkbox')).map(cb => cb.checked)
+        """)
+        assert all(checked_states) is True, f"Expected all to be True, got {checked_states}"
+
+        # Test deselecting all
+        page.evaluate("selectAllExportTypes(false)")
+        checked_states = page.evaluate("""
+            Array.from(document.querySelectorAll('.export-type-checkbox')).map(cb => cb.checked)
+        """)
+        assert any(checked_states) is False, f"Expected all to be False, got {checked_states}"
+
+        # Cleanup
+        page.evaluate("""
+            const container = document.getElementById('test-export-container');
+            if (container) {
+                container.remove();
+            }
+        """)
     def test_download_csv_file(self, page: Page):
         with page.expect_download() as download_info:
             page.evaluate("downloadCSVFile('a,b,c\\n1,2,3', 'my_data.csv')")

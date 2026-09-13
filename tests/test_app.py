@@ -467,6 +467,19 @@ class TestBubbleDataManager:
             return parseAllSettings();
         })()""") == {"filterData": "some-data"}
 
+    def test_buildDataTypes(self, page: Page):
+        result = page.evaluate("""
+            (() => {
+                const baseTypes = [
+                    { value: "custom_type_1", label: "Custom Type 1", data_type_name_lowercase: "custom type 1" },
+                    { value: "custom_type_2", label: "Custom Type 2" },
+                ];
+                return buildDataTypes(baseTypes);
+            })()
+        """)
+        assert len(result) == 2
+        assert result[0] == {"value": "custom_type_1", "label": "Custom Type 1"}
+        assert result[1] == {"value": "custom_type_2", "label": "Custom Type 2"}
     def test_clear_client_filter(self, page: Page):
         # 1. Ensure the filter input and clear button exist
         filter_input = page.locator("#table-filter")

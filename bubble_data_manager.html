@@ -3656,18 +3656,15 @@
               }
             } catch (_) {}
 
-            const booleanFieldsMap = {};
-            headers.forEach(h => {
-              booleanFieldsMap[h] = isBooleanField(typeObj.value, h);
-            });
+            const isBoolArray = headers.map(h => isBooleanField(typeObj.value, h));
 
             const headerRow = headers
-              .map((h) => formatCSVField(h, h, typeObj.value, booleanFieldsMap[h]))
+              .map((h, idx) => formatCSVField(h, h, typeObj.value, isBoolArray[idx]))
               .join(",");
             const csvRows = records.map((record) => {
               return headers
-                .map((header) =>
-                  formatCSVField(record[header], header, typeObj.value, booleanFieldsMap[header]),
+                .map((header, idx) =>
+                  formatCSVField(record[header], header, typeObj.value, isBoolArray[idx]),
                 )
                 .join(",");
             });

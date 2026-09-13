@@ -91,6 +91,43 @@ class TestBubbleDataManager:
         expect(data_type_selector).to_be_attached()
         expect(data_type_selector.locator('option[value="User"]')).to_have_count(1)
 
+    def test_openJSONEditor(self, page: Page):
+        # 1. Test valid JSON string
+        page.evaluate('openJSONEditor("rec1", "config_field", \'{"key": "value"}\', false)')
+
+        # Verify global state
+        state = page.evaluate('currentlyEditingJSON')
+        assert state == {
+            "recordId": "rec1",
+            "field": "config_field",
+            "isNewRow": False,
+            "data": {"key": "value"}
+        }
+
+        # Verify modal visibility and content
+        expect(page.locator("#json-editor-modal")).to_be_visible()
+        expect(page.locator("#json-modal-title")).to_have_text("Edit JSON: config_field")
+        expect(page.locator("#json-raw-editor")).to_have_value('{\n  "key": "value"\n}')
+
+        # 2. Test valid JS object (simulated via evaluate)
+        page.evaluate('openJSONEditor("rec2", "obj_field", {a: 1}, true)')
+        state2 = page.evaluate('currentlyEditingJSON')
+        assert state2["data"] == {"a": 1}
+        assert state2["isNewRow"] is True
+        expect(page.locator("#json-raw-editor")).to_have_value('{\n  "a": 1\n}')
+
+        # 3. Test invalid JSON string (should fallback to empty object {})
+        page.evaluate('openJSONEditor("rec3", "bad_field", "not valid json", false)')
+        state3 = page.evaluate('currentlyEditingJSON')
+        assert state3["data"] == {}
+        expect(page.locator("#json-raw-editor")).to_have_value('{}')
+
+        # 4. Test null/empty value (should fallback to empty object {})
+        page.evaluate('openJSONEditor("rec4", "empty_field", null, false)')
+        state4 = page.evaluate('currentlyEditingJSON')
+        assert state4["data"] == {}
+        expect(page.locator("#json-raw-editor")).to_have_value('{}')
+
     def test_get_app_storage_keys(self, page: Page):
         keys1 = page.evaluate("getAppStorageKeys(1)")
         assert keys1 == {"domain": "home", "apiKey": "cached_pref"}

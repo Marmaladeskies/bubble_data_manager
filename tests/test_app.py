@@ -901,6 +901,88 @@ class TestBubbleDataManager:
         assert page.evaluate("optionSlugMatchesDisplayName(undefined, undefined)") is False
         assert page.evaluate("optionSlugMatchesDisplayName(123, 123)") is False
 
+
+
+
+    def test_render_data_type_sidebar(self, page: Page):
+        result = page.evaluate('''(() => {
+            const container = document.createElement("div");
+
+            const listEl = document.createElement("div");
+            listEl.id = "mock-data-types-list"; // unique id
+            container.appendChild(listEl);
+
+            const selectorEl = document.createElement("select");
+            selectorEl.id = "mock-data-type-selector"; // unique id
+            const option = document.createElement("option");
+            option.value = "TypeB";
+            selectorEl.appendChild(option);
+            selectorEl.value = "TypeB";
+            container.appendChild(selectorEl);
+
+            document.body.appendChild(container);
+
+            const oldDataTypes = DATA_TYPES;
+            DATA_TYPES = [
+                { value: "TypeA", label: "Type A" },
+                { value: "TypeB", label: "Type B" }
+            ];
+            const oldCurrentFilterName = currentFilterName;
+            currentFilterName = "View1";
+
+            const originalGetSettingsEntry = window.getSettingsEntry;
+            window.getSettingsEntry = (key) => {
+                if (key === SETTINGS_KEY_FILTER_DATA) {
+                    return {
+                        "TypeB": {
+                            "View1": {},
+                            "View2": {}
+                        }
+                    };
+                }
+                return {};
+            };
+
+            // Override document.getElementById temporarily to return our mock elements
+            const originalGetElementById = document.getElementById.bind(document);
+            document.getElementById = (id) => {
+                if (id === "data-types-list") return listEl;
+                if (id === "data-type-selector") return selectorEl;
+                return originalGetElementById(id);
+            };
+
+            try {
+                renderDataTypeSidebar();
+
+                const items = Array.from(listEl.children).map(child => {
+                    return {
+                        className: child.className,
+                        text: child.textContent,
+                        isFilter: child.classList.contains("saved-filter-item")
+                    };
+                });
+                return items;
+            } finally {
+                document.getElementById = originalGetElementById;
+                window.getSettingsEntry = originalGetSettingsEntry;
+                document.body.removeChild(container);
+                DATA_TYPES = oldDataTypes;
+                currentFilterName = oldCurrentFilterName;
+            }
+        })()''')
+        assert len(result) == 4
+        assert result[0]["className"] == "data-type-item"
+        assert result[0]["text"] == "Type A"
+        assert result[1]["className"] == "data-type-item"
+        assert result[1]["text"] == "Type B"
+        assert result[2]["isFilter"] == True
+        assert result[2]["className"] == "saved-filter-item active"
+        assert "View1" in result[2]["text"]
+        assert result[3]["isFilter"] == True
+        assert result[3]["className"] == "saved-filter-item"
+        assert "View2" in result[3]["text"]
+
+
 class TestTimezoneUtilityFunctions:
 
 

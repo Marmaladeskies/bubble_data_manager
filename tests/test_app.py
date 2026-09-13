@@ -999,3 +999,142 @@ class TestGetExpectedType:
         })()""")
         assert result["type"] == "unknown"
         assert result["cache"] == "unknown"
+
+class TestCreateStyledSelect:
+    def test_create_styled_select_basic(self, page: Page):
+        result = page.evaluate("""(() => {
+            const select1 = createStyledSelect();
+            const tag1 = select1.tagName;
+
+            const config = {
+                className: "test-class",
+                width: "100px",
+                minWidth: "50px",
+                maxWidth: "200px",
+                boxSizing: "border-box",
+                padding: "5px"
+            };
+            const select2 = createStyledSelect(config);
+
+            return {
+                tag1,
+                tag2: select2.tagName,
+                className: select2.className,
+                width: select2.style.width,
+                minWidth: select2.style.minWidth,
+                maxWidth: select2.style.maxWidth,
+                boxSizing: select2.style.boxSizing,
+                padding: select2.style.padding,
+                optionsLength: select2.options.length
+            };
+        })()""")
+
+        assert result["tag1"] == "SELECT"
+        assert result["tag2"] == "SELECT"
+        assert result["className"] == "test-class"
+        assert result["width"] == "100px"
+        assert result["minWidth"] == "50px"
+        assert result["maxWidth"] == "200px"
+        assert result["boxSizing"] == "border-box"
+        assert result["padding"] == "5px"
+        assert result["optionsLength"] == 0
+
+    def test_create_styled_select_with_blank_option(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                blankOptionText: "--- Select an option ---"
+            };
+            const select = createStyledSelect(config);
+
+            if (select.options.length === 0) return null;
+            const opt = select.options[0];
+
+            return {
+                length: select.options.length,
+                value: opt.value,
+                text: opt.text
+            };
+        })()""")
+
+        assert result is not None
+        assert result["length"] == 1
+        assert result["value"] == ""
+        assert result["text"] == "--- Select an option ---"
+
+    def test_create_styled_select_with_options(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                options: [
+                    { value: "val1", text: "Text 1" },
+                    { value: "val2", text: "Text 2", selected: true },
+                    { value: "val3", text: "Text 3" }
+                ]
+            };
+            const select = createStyledSelect(config);
+
+            return {
+                length: select.options.length,
+                opt1Value: select.options[0].value,
+                opt1Text: select.options[0].text,
+                opt1Selected: select.options[0].selected,
+                opt2Value: select.options[1].value,
+                opt2Text: select.options[1].text,
+                opt2Selected: select.options[1].selected,
+            };
+        })()""")
+
+        assert result["length"] == 3
+        assert result["opt1Value"] == "val1"
+        assert result["opt1Text"] == "Text 1"
+        assert result["opt1Selected"] == False
+        assert result["opt2Value"] == "val2"
+        assert result["opt2Text"] == "Text 2"
+        assert result["opt2Selected"] == True
+
+    def test_create_styled_select_with_option_styles(self, page: Page):
+        result = page.evaluate("""(() => {
+            const config = {
+                options: [
+                    {
+                        value: "val1",
+                        text: "Text 1",
+                        style: { fontStyle: "italic", textTransform: "uppercase" }
+                    }
+                ]
+            };
+            const select = createStyledSelect(config);
+
+            if (select.options.length === 0) return null;
+            const opt = select.options[0];
+
+            return {
+                fontStyle: opt.style.fontStyle,
+                textTransform: opt.style.textTransform
+            };
+        })()""")
+
+        assert result is not None
+        assert result["fontStyle"] == "italic"
+        assert result["textTransform"] == "uppercase"
+
+    def test_create_styled_select_onchange(self, page: Page):
+        result = page.evaluate("""(() => {
+            let changed = false;
+            const config = {
+                onchange: () => { changed = true; }
+            };
+            const select = createStyledSelect(config);
+
+            // Trigger the onchange manually to test if it's attached
+            if (select.onchange) {
+                select.onchange();
+            }
+
+            return {
+                hasOnchange: typeof select.onchange === 'function',
+                changed
+            };
+        })()""")
+
+        assert result["hasOnchange"] == True
+        assert result["changed"] == True

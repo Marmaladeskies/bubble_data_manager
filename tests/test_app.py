@@ -1213,3 +1213,74 @@ class TestGetExpectedType:
         })()""")
         assert result["type"] == "unknown"
         assert result["cache"] == "unknown"
+
+class TestSetCellContent:
+    def test_set_cell_content_primitive_string(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, "hello world", "test_field", "123", "User", null);
+            return {
+                html: cell.innerHTML,
+                text: cell.innerText,
+                field: cell.getAttribute("data-field"),
+                dataJson: cell.hasAttribute("data-json"),
+                dataRawValue: cell.hasAttribute("data-raw-value")
+            };
+        })()""")
+        assert result["html"] == "hello world"
+        assert result["field"] == "test_field"
+        assert result["dataJson"] is False
+        assert result["dataRawValue"] is False
+
+    def test_set_cell_content_boolean(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, true, "test_field", "123", "User", { isBool: true });
+            return {
+                html: cell.innerHTML,
+                hasYesBadge: cell.innerHTML.includes("badge-boolean-yes"),
+                field: cell.getAttribute("data-field")
+            };
+        })()""")
+        assert result["hasYesBadge"] is True
+        assert result["field"] == "test_field"
+
+    def test_set_cell_content_json_object(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, { key: "value" }, "test_field", "123", "User", null);
+            return {
+                html: cell.innerHTML,
+                dataJson: cell.getAttribute("data-json"),
+                hasJsonBadge: cell.innerHTML.includes("json-badge")
+            };
+        })()""")
+        assert result["hasJsonBadge"] is True
+        assert result["dataJson"] == '{"key":"value"}'
+
+    def test_set_cell_content_date(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            setCellContent(cell, "2023-01-01T00:00:00.000Z", "test_field", "123", "User", { isDate: true });
+            return {
+                html: cell.innerHTML,
+                hasDateBadge: cell.innerHTML.includes("badge-date")
+            };
+        })()""")
+        assert result["hasDateBadge"] is True
+
+    def test_set_cell_content_clears_old_attributes(self, page: Page):
+        result = page.evaluate("""(() => {
+            const cell = document.createElement('td');
+            cell.setAttribute("data-json", "old");
+            cell.setAttribute("data-raw-value", "old");
+            setCellContent(cell, "new_value", "test_field", "123", "User", null);
+            return {
+                hasDataJson: cell.hasAttribute("data-json"),
+                hasDataRawValue: cell.hasAttribute("data-raw-value"),
+                html: cell.innerHTML
+            };
+        })()""")
+        assert result["hasDataJson"] is False
+        assert result["hasDataRawValue"] is False
+        assert result["html"] == "new_value"

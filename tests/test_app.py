@@ -78,6 +78,63 @@ def setup_page(page: Page):
 
 class TestBubbleDataManager:
 
+    def test_switch_json_tab(self, page: Page):
+        result = page.evaluate("""(() => {
+            currentlyEditingJSON.data = { "key": "value" };
+
+            // Switch to raw tab
+            switchJSONTab('raw');
+            const nestedTabRaw = document.getElementById('tab-nested').classList.contains('active');
+            const rawTabRaw = document.getElementById('tab-raw').classList.contains('active');
+            const nestedContainerDisplayRaw = document.getElementById('json-nested-container').style.display;
+            const rawEditorDisplayRaw = document.getElementById('json-raw-editor').style.display;
+
+            // Switch to nested tab
+            switchJSONTab('nested');
+            const nestedTabNested = document.getElementById('tab-nested').classList.contains('active');
+            const rawTabNested = document.getElementById('tab-raw').classList.contains('active');
+            const nestedContainerDisplayNested = document.getElementById('json-nested-container').style.display;
+            const rawEditorDisplayNested = document.getElementById('json-raw-editor').style.display;
+            const nestedContainerHasChildren = document.getElementById('json-nested-container').innerHTML.trim().length > 0;
+
+            // Switch to raw tab again to test sync nested to raw
+            // We simulate saving a primitive first to check raw value
+            currentlyEditingJSON.data = { "key2": "new_value" };
+            syncNestedToRaw(); // this happens when we change values in nested mode usually, or we can just call it to test
+            const finalRawValue = document.getElementById('json-raw-editor').value;
+
+            return {
+                rawView: {
+                    nestedTabActive: nestedTabRaw,
+                    rawTabActive: rawTabRaw,
+                    nestedContainerDisplay: nestedContainerDisplayRaw,
+                    rawEditorDisplay: rawEditorDisplayRaw
+                },
+                nestedView: {
+                    nestedTabActive: nestedTabNested,
+                    rawTabActive: rawTabNested,
+                    nestedContainerDisplay: nestedContainerDisplayNested,
+                    rawEditorDisplay: rawEditorDisplayNested,
+                    nestedContainerHasChildren: nestedContainerHasChildren
+                },
+                finalRawValue: finalRawValue
+            };
+        })()""")
+
+        assert result['rawView']['nestedTabActive'] is False
+        assert result['rawView']['rawTabActive'] is True
+        assert result['rawView']['nestedContainerDisplay'] == "none"
+        assert result['rawView']['rawEditorDisplay'] == "block"
+
+        assert result['nestedView']['nestedTabActive'] is True
+        assert result['nestedView']['rawTabActive'] is False
+        assert result['nestedView']['nestedContainerDisplay'] == "block"
+        assert result['nestedView']['rawEditorDisplay'] == "none"
+        assert result['nestedView']['nestedContainerHasChildren'] is True
+
+        # Test syncNestedToRaw functionality: raw editor gets updated
+        assert '"key2": "new_value"' in result['finalRawValue']
+
     def test_page_loads_and_initializes(self, page: Page):
         # Check title
         expect(page).to_have_title(re.compile(r"Bubble Data Manager"))

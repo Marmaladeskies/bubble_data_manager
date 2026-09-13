@@ -6660,9 +6660,7 @@
 
           const data = await response.json();
           const results = data.response.results || [];
-          for (let i = 0; i < results.length; i++) {
-            allRecords.push(results[i]);
-          }
+          allRecords.push(...results);
           remaining = data.response.remaining;
           cursor += results.length;
         }

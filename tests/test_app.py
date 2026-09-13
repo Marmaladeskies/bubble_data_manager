@@ -150,6 +150,29 @@ class TestBubbleDataManager:
             return parseAllSettings();
         })()""") == {"filterData": "some-data"}
 
+    def test_clear_client_filter(self, page: Page):
+        # 1. Ensure the filter input and clear button exist
+        filter_input = page.locator("#table-filter")
+        clear_btn = page.locator("#clear-filter-btn")
+
+        # Initially, clear button should be hidden (display: none)
+        expect(clear_btn).to_be_hidden()
+
+        # 2. Type into the filter input
+        filter_input.fill("test search")
+
+        # Verify the clear button is now visible
+        expect(clear_btn).to_be_visible()
+
+        # 3. Click the clear button
+        clear_btn.click()
+
+        # 4. Assert the filter input is cleared
+        expect(filter_input).to_have_value("")
+
+        # 5. Assert the clear button is hidden again
+        expect(clear_btn).to_be_hidden()
+
     def test_escape_html(self, page: Page):
         test_strings = [
             {'input': 'Tom & Jerry', 'expected': 'Tom &amp; Jerry'},

@@ -2162,6 +2162,10 @@
             </div>
           </div>
           <div
+            id="export-error-msg"
+            style="display: none; color: #dc3545; font-size: 13px; margin-bottom: 12px; padding: 8px; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px;"
+          ></div>
+          <div
             id="export-types-list"
             style="display: flex; flex-direction: column; gap: 6px"
           ></div>
@@ -3411,6 +3415,9 @@
 
         listContainer.innerHTML = "";
 
+        const errorMsg = document.getElementById("export-error-msg");
+        if (errorMsg) errorMsg.style.display = "none";
+
         const progressContainer = document.getElementById(
           "export-progress-container",
         );
@@ -3442,6 +3449,10 @@
           cb.className = "export-type-checkbox";
           cb.value = dt.value;
           cb.checked = dt.value === currentType || DATA_TYPES.length === 1;
+          cb.addEventListener("change", () => {
+            const errorMsg = document.getElementById("export-error-msg");
+            if (errorMsg) errorMsg.style.display = "none";
+          });
 
           const span = document.createElement("span");
           span.textContent = dt.label;
@@ -3463,6 +3474,8 @@
         document.querySelectorAll(".export-type-checkbox").forEach((cb) => {
           cb.checked = select;
         });
+        const errorMsg = document.getElementById("export-error-msg");
+        if (errorMsg) errorMsg.style.display = "none";
       }
 
       function formatCSVField(val, header, typeSlug, isBool = null) {
@@ -3560,10 +3573,16 @@
         const checkedBoxes = Array.from(
           document.querySelectorAll(".export-type-checkbox:checked"),
         );
+
+        const errorMsg = document.getElementById("export-error-msg");
         if (checkedBoxes.length === 0) {
-          alert("Please select at least one data type to export.");
+          if (errorMsg) {
+            errorMsg.textContent = "Please select at least one data type to export.";
+            errorMsg.style.display = "block";
+          }
           return;
         }
+        if (errorMsg) errorMsg.style.display = "none";
 
         const selectedTypes = checkedBoxes.map((cb) => {
           const dt = DATA_TYPES.find((d) => d.value === cb.value);

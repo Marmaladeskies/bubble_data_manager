@@ -323,6 +323,99 @@ class TestBubbleDataManager:
         })()""")
         assert cache_check['hasProperty'] is True
         assert cache_check['isEnumerable'] is False
+
+
+    def test_show_export_modal(self, page: Page):
+        # The test requires mocking cachedTypeColumns
+        # and checking that the modal list is populated with checkboxes for each data type
+        page.evaluate('''(() => {
+            // Mock both DATA_TYPES and cachedTypeColumns
+            DATA_TYPES = [
+                {value: "User", label: "User"},
+                {value: "Product", label: "Product"},
+                {value: "Order", label: "Order"}
+            ];
+            cachedTypeColumns = {
+                "User": ["Name", "Email"],
+                "Product": ["Price", "Description"],
+                "Order": ["Total", "Status"]
+            };
+
+            const selector = document.getElementById("data-type-selector");
+            if (selector) {
+                selector.innerHTML = '<option value="Product">Product</option>';
+                selector.value = "Product";
+            }
+
+            // Set up UI elements if missing or reset them
+            const modal = document.getElementById("export-modal");
+            const progress = document.getElementById("export-progress-container");
+            const downloadBtn = document.getElementById("export-download-btn");
+            const cancelBtn = document.getElementById("export-cancel-btn");
+
+            if (progress) progress.style.display = "block";
+            if (downloadBtn) {
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = "Processing...";
+            }
+            if (cancelBtn) cancelBtn.disabled = true;
+
+            showExportModal();
+        })()''')
+
+        expect(page.locator("#export-modal")).to_be_visible()
+
+        # Verify UI resets
+        expect(page.locator("#export-progress-container")).to_be_hidden()
+        expect(page.locator("#export-download-btn")).to_be_enabled()
+        expect(page.locator("#export-download-btn")).to_have_text("Download CSV")
+        expect(page.locator("#export-cancel-btn")).to_be_enabled()
+
+        # Verify checkboxes
+        checkboxes = page.locator(".export-type-checkbox")
+        expect(checkboxes).to_have_count(3)
+        expect(checkboxes.nth(0)).not_to_be_checked()
+        expect(checkboxes.nth(1)).to_be_checked() # Matches current type 'Product'
+        expect(checkboxes.nth(2)).not_to_be_checked()
+
+        # 2. Test single data type behavior
+        page.evaluate('''(() => {
+            DATA_TYPES = [
+                {value: "Single", label: "Single"}
+            ];
+            cachedTypeColumns = {
+                "Single": ["Field1"]
+            };
+
+            const selector = document.getElementById("data-type-selector");
+            if (selector) {
+                selector.innerHTML = '<option value="Other">Other</option>';
+                selector.value = "Other";
+            }
+
+            showExportModal();
+        })()''')
+
+        checkboxes = page.locator(".export-type-checkbox")
+        expect(checkboxes).to_have_count(1)
+        expect(checkboxes.nth(0)).to_be_checked() # Checked because it's the only one
+
+        # 3. Test missing elements (should return early without error)
+        res = page.evaluate('''(() => {
+            const listContainer = document.getElementById("export-types-list");
+            const originalParent = listContainer.parentNode;
+            originalParent.removeChild(listContainer);
+
+            try {
+                showExportModal();
+                originalParent.appendChild(listContainer); // restore
+                return true;
+            } catch (e) {
+                originalParent.appendChild(listContainer); // restore
+                return false;
+            }
+        })()''')
+        assert res == True
     def test_format_csv_field(self, page: Page):
         # Null and undefined
         assert page.evaluate("formatCSVField(null, 'header', 'type')") == ""

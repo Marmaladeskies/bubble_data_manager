@@ -111,6 +111,33 @@ class TestBubbleDataManager:
         assert all_apps[0] == {"index": 1, "domain": "https://example-bubble-app.com", "apiKey": "fake-api-key"}
         assert all_apps[1] == {"index": 2, "domain": "https://another-app.com", "apiKey": "another-key"}
 
+    def test_populate_app_selector(self, page: Page):
+        # Set up local storage with multiple apps and set current to index 2
+        page.evaluate("""
+            window.localStorage.setItem('home2', 'https://another-app.com');
+            window.localStorage.setItem('api2', 'another-key');
+            window.localStorage.setItem('home3', 'https://third-app.com');
+            window.localStorage.setItem('api3', 'third-key');
+            window.localStorage.setItem('current_app_index', '2');
+        """)
+
+        # Call populateAppSelector
+        page.evaluate("populateAppSelector()")
+
+        app_selector = page.locator('#app-selector')
+        expect(app_selector).to_be_visible()
+
+        # Check options for apps
+        expect(app_selector.locator('option[value="1"]')).to_have_text('https://example-bubble-app.com')
+        expect(app_selector.locator('option[value="2"]')).to_have_text('https://another-app.com')
+        expect(app_selector.locator('option[value="3"]')).to_have_text('https://third-app.com')
+
+        # Check current index is selected
+        expect(app_selector).to_have_value("2")
+
+        # Check 'Connect another app...' option
+        expect(app_selector.locator('option[value="connect_new"]')).to_have_text('Connect another app...')
+
     def test_is_bubble_file(self, page: Page):
         assert page.evaluate("isBubbleFile('//s3.amazonaws.com/app/file.txt')") is True
         assert page.evaluate("isBubbleFile('https://example.s3.amazonaws.com/file.pdf')") is True

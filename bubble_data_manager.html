@@ -6815,14 +6815,14 @@
 
         let successCount = 0;
         let failCount = 0;
+        let processedCount = 0;
 
         const successfullyDeletedIds = new Set();
 
-        for (let i = 0; i < idsToDelete.length; i += DELETE_BATCH_SIZE) {
-          const batchIds = idsToDelete.slice(i, i + DELETE_BATCH_SIZE);
-          countSpan.textContent = `Deleting rows ${i + 1}-${Math.min(i + DELETE_BATCH_SIZE, idsToDelete.length)} of ${idsToDelete.length}...`;
-
-          const deletePromises = batchIds.map(async (id) => {
+        const worker = async () => {
+          while (processedCount < idsToDelete.length) {
+            const id = idsToDelete[processedCount++];
+            countSpan.textContent = `Deleting rows ${processedCount} of ${idsToDelete.length}...`;
             try {
               const fetchUrl = `${API_BASE_URL}${currentType}/${id}`;
               const response = await fetch(fetchUrl, {
@@ -6834,31 +6834,24 @@
                 throw new Error(`HTTP ${response.status}`);
               }
 
-              return { id, success: true };
-            } catch (error) {
-              console.error(`Failed to delete ${id}:`, error);
-              return { id, success: false };
-            }
-          });
-
-          const results = await Promise.all(deletePromises);
-
-          for (const { id, success } of results) {
-            if (success) {
               successCount++;
               successfullyDeletedIds.add(id);
-
-              // Remove from local selection
               selectedRows.delete(id);
 
-              // Remove the row from the DOM immediately
               const row = document.getElementById(`row-${id}`);
               if (row) row.remove();
-            } else {
+            } catch (error) {
+              console.error(`Failed to delete ${id}:`, error);
               failCount++;
             }
           }
+        };
+
+        const workers = [];
+        for (let i = 0; i < Math.min(DELETE_BATCH_SIZE, idsToDelete.length); i++) {
+          workers.push(worker());
         }
+        await Promise.all(workers);
 
         // Update local cache outside the loop to improve performance (O(N) instead of O(N*M))
         if (successfullyDeletedIds.size > 0) {
